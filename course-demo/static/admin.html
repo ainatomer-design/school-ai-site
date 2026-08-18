@@ -460,14 +460,29 @@ function renderClasses() {
         <button class="btn btn-ghost" onclick="state.classes.splice(${i},1);renderClasses()">🗑️</button>
       </div>
       <details style="margin-top:8px">
-        <summary style="cursor:pointer;font-size:.78rem;font-weight:700;color:var(--muted);user-select:none;padding:2px 0">⚙️ הגדרות AI למחנך הכיתה</summary>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px;background:#f8fafc;border-radius:8px;margin-top:4px">
-          <span style="font-size:.78rem;font-weight:700;color:var(--muted)">מודל מועדף:</span>
-          <select style="width:auto;min-width:200px;font-size:.82rem;padding:5px 8px"
-            onchange="setClassTeacherModel(${i},this.value)">
-            ${_aiOpts(c.teacher_ai && c.teacher_ai.model ? c.teacher_ai.model : 'gemini-3.6-flash')}
-          </select>
-          <span style="font-size:.72rem;color:var(--muted)">נשמר עם הכיתה ב-Supabase</span>
+        <summary style="cursor:pointer;font-size:.78rem;font-weight:700;color:var(--muted);user-select:none;padding:2px 0">⚙️ הגדרות AI ו-קישורי כיתה</summary>
+        <div style="padding:8px;background:#f8fafc;border-radius:8px;margin-top:4px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <span style="font-size:.78rem;font-weight:700;color:var(--muted)">מודל מועדף:</span>
+            <select style="width:auto;min-width:200px;font-size:.82rem;padding:5px 8px"
+              onchange="setClassTeacherModel(${i},this.value)">
+              ${_aiOpts(c.teacher_ai && c.teacher_ai.model ? c.teacher_ai.model : 'gemini-3.6-flash')}
+            </select>
+            <span style="font-size:.72rem;color:var(--muted)">נשמר עם הכיתה ב-Supabase</span>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:8px;display:flex;flex-direction:column;gap:6px">
+            <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">קישורים לשיתוף</div>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span style="font-size:.75rem;color:var(--primary);font-weight:600;word-break:break-all">👩‍🏫 מחנך: ${location.origin}/teacher/class/${esc(c.id)}</span>
+              <button class="btn btn-ghost" style="padding:4px 10px;font-size:.72rem"
+                onclick="navigator.clipboard.writeText(location.origin+'/teacher/class/${esc(c.id)}').then(()=>toast('📋 קישור מחנך הועתק'))">📋</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span style="font-size:.75rem;color:#166534;font-weight:600;word-break:break-all">🎓 תלמיד: ${location.origin}/class/${esc(c.id)}</span>
+              <button class="btn btn-ghost" style="padding:4px 10px;font-size:.72rem"
+                onclick="navigator.clipboard.writeText(location.origin+'/class/${esc(c.id)}').then(()=>toast('📋 קישור תלמיד הועתק'))">📋</button>
+            </div>
+          </div>
         </div>
       </details>
     </div>`).join('');

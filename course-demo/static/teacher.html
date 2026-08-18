@@ -407,6 +407,12 @@ async function login() {
 
 /* ===== Enter App ===== */
 function enterApp() {
+  // If teacher logged in at /teacher (no class in URL) but has a class_id → redirect to dedicated URL
+  if (!_URL_CLASS && currentUser && currentUser.class_id) {
+    location.replace('/teacher/class/' + encodeURIComponent(currentUser.class_id));
+    return;
+  }
+
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-screen').style.display   = 'block';
 
