@@ -112,9 +112,16 @@ function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'
 
 async function init() {
   const pathParts = location.pathname.split('/');
-  const codeFromUrl = pathParts[pathParts.indexOf('class') + 1] || '';
+  const idx = pathParts.indexOf('class');
+  const codeFromUrl = idx >= 0 ? decodeURIComponent(pathParts[idx + 1] || '') : '';
   if (codeFromUrl) {
-    await enterClass(codeFromUrl);
+    // כניסה דרך לחיצה על כרטיסיית כיתה — מנסים קוד גישה, אחרת class ID ישיר
+    const err = await enterClass(codeFromUrl, true);
+    if (err) {
+      document.getElementById('code-screen').style.display = 'flex';
+      const el = document.getElementById('code-error');
+      el.textContent = err; el.style.display = 'block';
+    }
   } else {
     document.getElementById('code-screen').style.display = 'flex';
   }
@@ -123,7 +130,7 @@ async function init() {
 async function enterByCode() {
   const code = document.getElementById('manual-code').value.trim().toUpperCase();
   if (!code) return;
-  const err = await enterClass(code);
+  const err = await enterClass(code, false);
   if (err) {
     const el = document.getElementById('code-error');
     el.textContent = err;
@@ -131,21 +138,43 @@ async function enterByCode() {
   }
 }
 
-async function enterClass(code) {
+async function enterClass(code, isFromUrl) {
   try {
     const r = await fetch('/api/auth/class', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({code})
     });
     const d = await r.json();
-    if (!r.ok) return d.error?.message || 'קוד שגוי';
-    classId = d.class_id || code;
-    document.getElementById('code-screen').style.display = 'none';
-    document.getElementById('class-screen').style.display = 'block';
-    document.getElementById('class-label').textContent = 'כיתה: ' + classId;
-    loadFeatures();
-    return null;
+    if (r.ok) {
+      classId = d.class_id || code;
+      showClassScreen(d.student_name || null);
+      return null;
+    }
+    // קוד גישה לא נמצא — אם הגיעו מ-URL (לחיצה על כרטיסיית כיתה)
+    // נשתמש בקוד עצמו כ-class ID ונטען את הפיצ'רים ישירות
+    if (isFromUrl) {
+      classId = code;
+      showClassScreen(null);
+      return null;
+    }
+    return d.error?.message || 'קוד שגוי';
   } catch { return 'שגיאת חיבור'; }
+}
+
+function showClassScreen(studentName) {
+  document.getElementById('code-screen').style.display = 'none';
+  document.getElementById('class-screen').style.display = 'block';
+  // טוען שם כיתה מה-state
+  fetch('/api/state').then(r => r.json()).then(d => {
+    const cls = (d.state?.classes || []).find(c => c.id === classId);
+    const label = cls
+      ? cls.name + (studentName ? ' · ' + studentName : '')
+      : (studentName ? classId + ' · ' + studentName : classId);
+    document.getElementById('class-label').textContent = label;
+  }).catch(() => {
+    document.getElementById('class-label').textContent = studentName ? classId + ' · ' + studentName : classId;
+  });
+  loadFeatures();
 }
 
 async function loadFeatures() {
