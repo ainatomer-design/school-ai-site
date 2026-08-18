@@ -125,6 +125,15 @@
               <p style="font-size:.75rem;color:var(--muted);margin-top:4px">שתף קוד זה רק עם מי שאמור לראות את הפיצ'ר.</p>
             </div>
           </div>
+          <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <label style="margin:0;font-size:.78rem;white-space:nowrap">מודל Gemini:</label>
+            <select id="teacher-model-select" onchange="saveTeacherModel(this.value)" style="width:auto;min-width:200px;padding:6px 10px">
+              <option value="gemini-2.5-flash">⚡ Gemini 2.5 Flash — מהיר</option>
+              <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro — מתקדם</option>
+              <option value="gemini-2.0-flash">🔷 Gemini 2.0 Flash</option>
+              <option value="gemini-1.5-flash">🔹 Gemini 1.5 Flash</option>
+            </select>
+          </div>
           <div class="btn-row">
             <button class="btn btn-primary" onclick="buildFeature()">✨ צור פיצ'ר</button>
           </div>
@@ -163,6 +172,9 @@
 <script>
 let currentUser = null;
 let geminiKey = localStorage.getItem('koors_teacher_gemini') || '';
+const TEACHER_MODEL_LS = 'koors_teacher_model';
+function getTeacherModel() { return localStorage.getItem(TEACHER_MODEL_LS) || 'gemini-2.5-flash'; }
+function saveTeacherModel(v) { localStorage.setItem(TEACHER_MODEL_LS, v); }
 
 function showError(msg) {
   const el = document.getElementById('login-error');
@@ -191,6 +203,7 @@ function enterApp() {
   document.getElementById('teacher-name-badge').textContent = currentUser.name + ' · ' + (currentUser.role === 'teacher' ? 'מחנך' : 'צוות');
   loadClassCode();
   setupNav();
+  document.getElementById('teacher-model-select').value = getTeacherModel();
   if (!geminiKey) {
     geminiKey = prompt('הזן מפתח Gemini API (מ-aistudio.google.com):') || '';
     if (geminiKey) localStorage.setItem('koors_teacher_gemini', geminiKey);
@@ -237,6 +250,7 @@ async function buildFeature() {
         description: desc,
         target_class: currentUser.class_id || '',
         gemini_key: geminiKey,
+        model: getTeacherModel(),
         access_level: protected_ ? 'protected' : 'public',
         feature_code: protected_ ? feat_code : '',
       })

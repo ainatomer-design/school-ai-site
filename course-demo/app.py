@@ -39,7 +39,7 @@ load_dotenv(ROOT / ".env")
 load_dotenv(ROOT.parent / ".env")
 STATIC = ROOT / "static"
 SCHOOL_ID = "default"
-DEFAULT_MODEL = "gemini-3.6-flash"
+DEFAULT_MODEL = "gemini-2.5-flash"
 
 app = Flask(__name__, static_folder=str(STATIC), static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY", "koors-school-secret-2025")
@@ -591,10 +591,11 @@ def create_feature():
     creator = session.get("teacher") or {"name": "מנהל"}
     class_name = target_class or "הכיתה"
 
+    req_model = (data.get("model") or "").strip() or DEFAULT_MODEL
     try:
         client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
-            model=DEFAULT_MODEL,
+            model=req_model,
             contents=description,
             config=types.GenerateContentConfig(
                 max_output_tokens=2048,
