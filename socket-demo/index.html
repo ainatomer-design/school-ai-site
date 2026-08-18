@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>טופס שליחה — שרת Socket</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 480px; margin: 60px auto; padding: 0 16px; }
+    label { display: block; margin-bottom: 6px; font-weight: bold; }
+    input[type="text"] {
+      width: 100%; padding: 10px; margin-bottom: 16px;
+      box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px;
+    }
+    button {
+      padding: 10px 20px; border: none; border-radius: 6px;
+      background: #1a73e8; color: #fff; font-size: 1rem; cursor: pointer;
+    }
+    button:hover { background: #1558b0; }
+  </style>
+</head>
+<body>
+  <h1>שליחת הודעה לשרת</h1>
+  <p>הטופס שולח בקשת <strong>POST</strong> לשרת ה-HTTP המקומי.</p>
+  <form method="POST" action="/">
+    <label for="message">הודעה</label>
+    <input type="text" id="message" name="message" placeholder="הקלד כאן..." required>
+    <button type="submit">שלח</button>
+  </form>
+</body>
+</html>

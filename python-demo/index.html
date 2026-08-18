@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Demo</title>
+</head>
+<body>
+  <h2>Send text to terminal</h2>
+  <form id="form">
+    <input type="text" id="msg" placeholder="Type something..." style="padding:6px;width:260px">
+    <button type="submit" style="padding:6px 14px">Send</button>
+  </form>
+  <p id="status"></p>
+
+  <script>
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = document.getElementById('msg').value;
+      const res = await fetch('/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      const data = await res.json();
+      document.getElementById('status').textContent = data.message;
+    });
+  </script>
+</body>
+</html>

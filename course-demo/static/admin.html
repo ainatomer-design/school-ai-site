@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>לוח ניהול — עוזר AI לבית הספר</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:#1a73e8; --accent:#34a853; --danger:#ea4335; --warn:#f9ab00;
+      --bg:#f0f4f8; --card:#fff; --text:#202124; --muted:#5f6368; --border:#e8ecf0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Heebo, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .topbar {
+      background: #0f172a; color: #fff; height: 58px; display: flex; align-items: center;
+      justify-content: space-between; padding: 0 20px; position: sticky; top: 0; z-index: 20;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+    .logo { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg,#3b82f6,#34a853); display:flex; align-items:center; justify-content:center; }
+    .topbar a { color: #93c5fd; font-size: .82rem; text-decoration: none; }
+    .status { font-size: .75rem; opacity: .75; }
+    .status.ok { color: #86efac; } .status.bad { color: #fca5a5; }
+    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 58px); }
+    nav { background: #fff; border-left: 1px solid var(--border); padding: 12px 0; }
+    .nav-item {
+      display: flex; gap: 8px; padding: 10px 16px; cursor: pointer; color: var(--muted); font-size: .9rem;
+      border-right: 3px solid transparent;
+    }
+    .nav-item.active { background: #e8f0fe; color: var(--primary); font-weight: 700; border-right-color: var(--primary); }
+    main { padding: 24px; }
+    .panel { display: none; } .panel.active { display: block; }
+    h1 { font-size: 1.35rem; margin-bottom: 6px; }
+    .sub { color: var(--muted); font-size: .85rem; margin-bottom: 18px; }
+    .card { background: var(--card); border-radius: 14px; padding: 18px; margin-bottom: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.05); }
+    label { display: block; font-size: .78rem; font-weight: 700; margin: 10px 0 6px; color: var(--muted); }
+    input, textarea, select {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+      font-family: inherit; font-size: .9rem;
+    }
+    textarea { min-height: 80px; resize: vertical; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn {
+      border: 0; border-radius: 10px; padding: 10px 16px; font-family: inherit; font-weight: 700;
+      cursor: pointer; font-size: .88rem;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-ok { background: var(--accent); color: #fff; }
+    .btn-ghost { background: #eef2f6; color: var(--text); }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .chip { background: #e8f0fe; color: var(--primary); border: 0; border-radius: 999px; padding: 6px 12px; font-size: .78rem; cursor: pointer; font-family: inherit; }
+    .chat { background: #f8fafc; border-radius: 12px; min-height: 280px; max-height: 420px; overflow: auto; padding: 12px; }
+    .msg { display: flex; gap: 8px; margin-bottom: 10px; }
+    .bubble { background: #fff; border-radius: 12px; padding: 10px 12px; font-size: .88rem; line-height: 1.5; box-shadow: 0 1px 4px rgba(0,0,0,.05); max-width: 92%; }
+    .msg.user { justify-content: flex-start; }
+    .msg.user .bubble { background: #e8f0fe; }
+    .chat-in { display: flex; gap: 8px; margin-top: 10px; }
+    .chat-in textarea { min-height: 48px; }
+    .preview-frame { width: 100%; height: 520px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+    .log { font-size: .82rem; border-bottom: 1px solid var(--border); padding: 10px 0; }
+    .log time { color: var(--muted); font-size: .72rem; }
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #0f172a; color: #fff;
+      padding: 10px 18px; border-radius: 999px; font-size: .85rem; opacity: 0; pointer-events: none; transition: .2s;
+    }
+    .toast.show { opacity: 1; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .7rem; font-weight: 700; }
+    .badge.ok { background: #dcfce7; color: #166534; }
+    .badge.bad { background: #fee2e2; color: #991b1b; }
+    .hint { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 10px 12px; font-size: .82rem; color: #9a3412; margin-bottom: 12px; }
+    .cls-item, .link-item { display: grid; grid-template-columns: 1fr 1fr 80px 32px; gap: 8px; margin-bottom: 8px; align-items: center; }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      nav { display: flex; overflow-x: auto; border-left: 0; border-bottom: 1px solid var(--border); }
+      .nav-item { white-space: nowrap; }
+      .row, .cls-item, .link-item { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="logo">🏫</div>לוח ניהול — בית הספר</div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <span class="status" id="db-status">בודק חיבור...</span>
+      <a href="/" target="_blank">צפה באתר ↗</a>
+      <a href="/admin/logout" style="background:#ef4444;color:#fff;padding:5px 12px;border-radius:8px;font-weight:700;text-decoration:none">יציאה</a>
+    </div>
+  </header>
+  <div class="layout">
+    <nav>
+      <div class="nav-item active" data-tab="keys">🔑 מפתחות</div>
+      <div class="nav-item" data-tab="ai">✨ עוזר AI</div>
+      <div class="nav-item" data-tab="content">📋 תוכן האתר</div>
+      <div class="nav-item" data-tab="staff">👥 צוות</div>
+      <div class="nav-item" data-tab="users">👤 משתמשים</div>
+      <div class="nav-item" data-tab="moderation">⏳ אישורים</div>
+      <div class="nav-item" data-tab="access">⚙️ גישה</div>
+      <div class="nav-item" data-tab="preview">👁️ תצוגה</div>
+      <div class="nav-item" data-tab="logs">🗂️ יומן AI</div>
+    </nav>
+    <main>
+      <section class="panel active" id="tab-keys">
+        <h1>הזנת מפתחות</h1>
+        <p class="sub">בלי המפתחות האפליקציה לא עובדת — זה חלק מההגשה.</p>
+        <div class="card">
+          <div id="sb-box"></div>
+          <label>מפתח Gemini API</label>
+          <input type="password" id="gemini-key" placeholder="AIza...">
+          <p class="sub" style="margin:8px 0 0">מתקבל ב־Google AI Studio. נשמר רק בדפדפן הזה (localStorage), לא בקוד.</p>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="saveKey()">💾 שמור מפתח</button>
+            <button class="btn btn-ghost" onclick="document.getElementById('gemini-key').type = document.getElementById('gemini-key').type==='password'?'text':'password'">👁️ הצג/הסתר</button>
+          </div>
+        </div>
+        <div class="card">
+          <strong>מה חייב להיות ב-Railway Variables</strong>
+          <p class="sub" style="margin-top:8px">
+            <code>SUPABASE_URL</code> · <code>SUPABASE_SERVICE_ROLE_KEY</code><br>
+            אופציונלי: <code>GEMINI_API_KEY</code> (אם לא מזינים כאן)
+          </p>
+        </div>
+      </section>
+
+      <section class="panel" id="tab-ai">
+        <h1>עוזר AI</h1>
+        <p class="sub">דברו בעברית. אפשר לבקש לשנות שם, צבע, הודעה, כיתה או כפתור — ואז להחיל לאתר.</p>
+        <div class="hint" id="ai-hint" style="display:none">קודם הזינו מפתח Gemini בלשונית מפתחות.</div>
+        <div class="card">
+          <div class="chat" id="chat">
+            <div class="msg"><div class="bubble">שלום! אני מנהל את אתר בית הספר. נסו: «שנה את הצבע הראשי לכחול כהה» או «הוסף כיתה ו'1 עם המורה דנה».</div></div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+            <button class="chip" onclick="suggest('שנה את שם בית הספר לאור תורה')">שם בית ספר</button>
+            <button class="chip" onclick="suggest('שנה את הצבע הראשי לכחול כהה #1a3a6b')">צבע</button>
+            <button class="chip" onclick="suggest('פרסם הודעה: מחר אין לימודים')">הודעה</button>
+            <button class="chip" onclick="suggest('הוסף כיתה ו\'1 עם המורה דנה כהן בחדר 5')">כיתה</button>
+          </div>
+          <div class="chat-in">
+            <textarea id="chat-input" placeholder="כתבו הנחיה..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI();}"></textarea>
+            <button class="btn btn-primary" onclick="sendAI()">שלח</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="tab-content">
+        <h1>תוכן האתר</h1>
+        <p class="sub">נשמר ל-Supabase. אפשר לערוך ידנית או לתת ל-AI לעדכן.</p>
+        <div class="card">
+          <div class="row">
+            <div><label>שם בית הספר</label><input id="s-name"></div>
+            <div><label>שנה</label><input id="s-year"></div>
+          </div>
+          <label>סלוגן</label><input id="s-motto">
+          <div class="row">
+            <div><label>צבע ראשי</label><input id="c-primary" type="color"></div>
+            <div><label>צבע משני</label><input id="c-secondary" type="color"></div>
+          </div>
+          <label>הודעה גלובלית</label>
+          <textarea id="ann-text"></textarea>
+          <label><input type="checkbox" id="ann-on" style="width:auto"> הודעה פעילה</label>
+        </div>
+        <div class="card">
+          <strong>כיתות</strong>
+          <div id="class-list" style="margin-top:10px;"></div>
+          <button class="btn btn-ghost" onclick="addClass()">➕ כיתה</button>
+        </div>
+        <div class="card">
+          <strong>כפתורים</strong>
+          <div id="link-list" style="margin-top:10px;"></div>
+          <button class="btn btn-ghost" onclick="addLink()">➕ כפתור</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ok" onclick="saveAll()">☁️ שמור ל-Supabase</button>
+        </div>
+      </section>
+
+      <!-- ניהול משתמשים -->
+      <section class="panel" id="tab-users">
+        <h1>ניהול משתמשים</h1>
+        <p class="sub">צור קודי גישה למחנכים, צוות ותלמידים. שתף את הקוד עם המשתמש.</p>
+        <div class="card">
+          <strong>הוסף משתמש חדש</strong>
+          <div class="row" style="margin-top:10px">
+            <div><label>שם</label><input id="new-user-name" placeholder="שם מלא"></div>
+            <div><label>תפקיד</label>
+              <select id="new-user-role">
+                <option value="teacher">מחנך</option>
+                <option value="staff">צוות</option>
+                <option value="student">תלמיד</option>
+              </select>
+            </div>
+          </div>
+          <label>כיתה (ID) — אופציונלי</label>
+          <input id="new-user-class" placeholder="לדוגמה: c1">
+          <div class="btn-row"><button class="btn btn-primary" onclick="createUser()">➕ צור משתמש וקבל קוד גישה</button></div>
+          <div id="new-user-result" style="margin-top:10px"></div>
+        </div>
+        <div class="card">
+          <strong>משתמשים קיימים</strong>
+          <div id="users-list" style="margin-top:10px">טוען...</div>
+        </div>
+      </section>
+
+      <!-- מודרציה -->
+      <section class="panel" id="tab-moderation">
+        <h1>אישור פיצ'רים</h1>
+        <p class="sub">פיצ'רים שמחנכים יצרו — אשר, ערוך, השבת או מחק.</p>
+        <div id="pending-list"><div class="card" style="color:var(--muted)">טוען...</div></div>
+        <h1 style="margin-top:20px">פיצ'רים פעילים</h1>
+        <div id="active-list"><div class="card" style="color:var(--muted)">טוען...</div></div>
+      </section>
+
+      <!-- הגדרות גישה -->
+      <section class="panel" id="tab-access">
+        <h1>הגדרות גישה ואבטחה</h1>
+        <p class="sub">שלוט על מי יכול לגשת לאתר ולפיצ'רים.</p>
+
+        <div class="card">
+          <strong>🌐 הגנה על האתר הציבורי</strong>
+          <p class="sub" style="margin-top:6px;margin-bottom:12px">כאשר מופעל — כל מבקר יצטרך להזין קוד לפני שיוכל לראות את האתר.</p>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.9rem;font-weight:600;color:var(--text)">
+            <input type="checkbox" id="site-protected" style="width:18px;height:18px;accent-color:var(--primary)">
+            האתר מוגן בקוד גישה
+          </label>
+          <div id="site-code-box" style="margin-top:12px;display:none">
+            <label>קוד גישה לאתר</label>
+            <input id="site-code" type="text" placeholder="הזן קוד (לדוגמה: school2025)" style="max-width:300px">
+            <p class="sub" style="margin-top:6px">שתף קוד זה עם הורים / תלמידים מורשים בלבד.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <strong>👥 מודל גישה למחנכים ותלמידים</strong>
+          <p class="sub" style="margin-top:6px;margin-bottom:10px">כיצד מחנכים ותלמידים מזדהים במערכת?</p>
+          <label>מודל גישה</label>
+          <select id="access-mode">
+            <option value="code">קוד גישה אישי לכל משתמש (מומלץ)</option>
+            <option value="per_user">קוד כיתה משותף לכל כיתה</option>
+            <option value="open">גישה חופשית — ללא קוד</option>
+          </select>
+          <p class="sub" style="margin-top:8px" id="access-mode-desc">כל מחנך/תלמיד מקבל קוד אישי. הכי בטוח.</p>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-ok" onclick="saveAccessMode()">💾 שמור הגדרות גישה</button>
+        </div>
+
+        <div class="card" style="margin-top:6px">
+          <strong>קישורים</strong>
+          <p class="sub" style="margin-top:6px">מחנכים: <strong id="teacher-link"></strong></p>
+          <p class="sub" style="margin-top:4px">תלמידים: <strong id="student-link"></strong></p>
+        </div>
+      </section>
+
+      <section class="panel" id="tab-staff">
+        <h1>צוות בית הספר</h1>
+        <p class="sub">נהל את רשימת אנשי הצוות — שם, תפקיד, טלפון.</p>
+        <div class="card">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 32px;gap:8px;margin-bottom:6px;font-size:.75rem;font-weight:700;color:var(--muted)">
+            <span>שם</span><span>תפקיד</span><span>טלפון</span><span></span>
+          </div>
+          <div id="staff-list"></div>
+          <button class="btn btn-ghost" onclick="addStaff()" style="margin-top:8px">➕ הוסף איש צוות</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ok" onclick="saveAll()">☁️ שמור ל-Supabase</button>
+        </div>
+      </section>
+
+      <section class="panel" id="tab-preview">
+        <h1>תצוגת האתר</h1>
+        <p class="sub">כך זה נראה למבקרים. אחרי שמירה / החלת AI — רעננו.</p>
+        <iframe class="preview-frame" id="preview" src="/"></iframe>
+        <div class="btn-row"><button class="btn btn-ghost" onclick="document.getElementById('preview').src='/'">↻ רענון</button></div>
+      </section>
+
+      <section class="panel" id="tab-logs">
+        <h1>יומן שיחות AI</h1>
+        <p class="sub">כל בקשה נשמרת בטבלת <code>ai_logs</code> ב-Supabase.</p>
+        <div class="card" id="logs">טוען...</div>
+      </section>
+    </main>
+  </div>
+  <div class="toast" id="toast"></div>
+
+<script>
+const KEY_LS = 'koors_course_gemini';
+let state = {
+  school: { name: '', year: '', motto: '', email: '' },
+  colors: { primary: '#1a73e8', secondary: '#fbbc04', accent: '#34a853', bg: '#f0f4f8' },
+  classes: [], links: [], staff: [],
+  announcement: { active: false, text: '', type: 'info' },
+};
+let history = [];
+let pending = null;
+
+function uid() { return crypto.randomUUID ? crypto.randomUUID() : String(Date.now()); }
+function toast(m) {
+  const t = document.getElementById('toast');
+  t.textContent = m; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2800);
+}
+function getKey() { return (localStorage.getItem(KEY_LS) || document.getElementById('gemini-key').value || '').trim(); }
+function saveKey() {
+  const k = document.getElementById('gemini-key').value.trim();
+  if (!k) { toast('הזינו מפתח Gemini'); return; }
+  localStorage.setItem(KEY_LS, k);
+  toast('מפתח Gemini נשמר בדפדפן');
+  updateKeyHint();
+}
+function updateKeyHint() {
+  const has = !!getKey();
+  document.getElementById('ai-hint').style.display = has ? 'none' : 'block';
+}
+
+async function health() {
+  const st = document.getElementById('db-status');
+  const box = document.getElementById('sb-box');
+  try {
+    const r = await fetch('/api/health'); const d = await r.json();
+    if (d.supabase) {
+      st.textContent = 'Supabase מחובר'; st.className = 'status ok';
+      box.innerHTML = '<span class="badge ok">Supabase מחובר</span>';
+    } else {
+      st.textContent = 'Supabase לא מחובר'; st.className = 'status bad';
+      box.innerHTML = '<span class="badge bad">Supabase חסר</span><p class="sub" style="margin-top:8px">' +
+        (d.supabase_error || '') + '<br>הדביקו SUPABASE_URL ו-SUPABASE_SERVICE_ROLE_KEY ב-Railway או בקובץ .env</p>';
+    }
+  } catch {
+    st.textContent = 'שרת לא זמין'; st.className = 'status bad';
+  }
+}
+
+async function loadState() {
+  const r = await fetch('/api/state');
+  const d = await r.json();
+  if (d.state) state = Object.assign(state, d.state);
+  fillForm();
+}
+
+function fillForm() {
+  document.getElementById('s-name').value = state.school.name || '';
+  document.getElementById('s-year').value = state.school.year || '';
+  document.getElementById('s-motto').value = state.school.motto || '';
+  document.getElementById('c-primary').value = state.colors.primary || '#1a73e8';
+  document.getElementById('c-secondary').value = state.colors.secondary || '#fbbc04';
+  document.getElementById('ann-text').value = state.announcement.text || '';
+  document.getElementById('ann-on').checked = !!state.announcement.active;
+  renderClasses(); renderLinks(); renderStaff();
+}
+function readForm() {
+  state.school.name = document.getElementById('s-name').value;
+  state.school.year = document.getElementById('s-year').value;
+  state.school.motto = document.getElementById('s-motto').value;
+  state.colors.primary = document.getElementById('c-primary').value;
+  state.colors.secondary = document.getElementById('c-secondary').value;
+  state.announcement.text = document.getElementById('ann-text').value;
+  state.announcement.active = document.getElementById('ann-on').checked;
+}
+function renderClasses() {
+  document.getElementById('class-list').innerHTML = (state.classes || []).map((c,i) => `
+    <div class="cls-item">
+      <input value="${esc(c.name)}" oninput="state.classes[${i}].name=this.value" placeholder="שם כיתה">
+      <input value="${esc(c.teacher||'')}" oninput="state.classes[${i}].teacher=this.value" placeholder="מורה">
+      <input value="${esc(c.room||'')}" oninput="state.classes[${i}].room=this.value" placeholder="חדר">
+      <button class="btn btn-ghost" onclick="state.classes.splice(${i},1);renderClasses()">🗑️</button>
+    </div>`).join('');
+}
+function renderLinks() {
+  document.getElementById('link-list').innerHTML = (state.links || []).map((l,i) => `
+    <div class="link-item">
+      <input value="${esc(l.icon||'🔗')}" oninput="state.links[${i}].icon=this.value">
+      <input value="${esc(l.text||'')}" oninput="state.links[${i}].text=this.value">
+      <input value="${esc(l.url||'')}" oninput="state.links[${i}].url=this.value" placeholder="https://">
+      <button class="btn btn-ghost" onclick="state.links.splice(${i},1);renderLinks()">🗑️</button>
+    </div>`).join('');
+}
+function addClass() { state.classes.push({ id: uid(), name: "כיתה חדשה", teacher: "", room: "", subjects: [] }); renderClasses(); }
+function addLink() { state.links.push({ id: uid(), icon: "🔗", text: "כפתור", url: "#", color: "#1a73e8" }); renderLinks(); }
+function renderStaff() {
+  document.getElementById('staff-list').innerHTML = (state.staff || []).map((s,i) => `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 32px;gap:8px;margin-bottom:8px;align-items:center">
+      <input value="${esc(s.name||'')}" oninput="state.staff[${i}].name=this.value" placeholder="שם מלא">
+      <input value="${esc(s.role||'')}" oninput="state.staff[${i}].role=this.value" placeholder="תפקיד">
+      <input value="${esc(s.phone||'')}" oninput="state.staff[${i}].phone=this.value" placeholder="טלפון">
+      <button class="btn btn-ghost" onclick="state.staff.splice(${i},1);renderStaff()">🗑️</button>
+    </div>`).join('');
+}
+function addStaff() { state.staff.push({ id: uid(), name: '', role: '', phone: '' }); renderStaff(); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+async function saveAll() {
+  readForm();
+  const r = await fetch('/api/state', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state }) });
+  const d = await r.json();
+  if (!r.ok) { toast(d.error?.message || 'שגיאת שמירה'); return; }
+  toast('נשמר ב-Supabase');
+  document.getElementById('preview').src = '/';
+}
+
+function suggest(t) { document.getElementById('chat-input').value = t; document.getElementById('chat-input').focus(); }
+function addMsg(role, html) {
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = '<div class="bubble">' + html + '</div>';
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+function deepMerge(t, s) {
+  for (const k in s) {
+    if (s[k] && typeof s[k] === 'object' && !Array.isArray(s[k])) {
+      if (!t[k] || typeof t[k] !== 'object') t[k] = {};
+      deepMerge(t[k], s[k]);
+    } else t[k] = s[k];
+  }
+}
+async function applyPending() {
+  if (!pending) { toast('אין שינויים ממתינים'); return; }
+  deepMerge(state, pending.changes);
+  fillForm();
+  await saveAll();
+  await fetch('/api/logs/applied', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_message: pending.userMsg, assistant_message: pending.raw })
+  });
+  pending = null;
+  addMsg('bot', 'השינויים הוחלו ונשמרו ב-Supabase. רעננו את תצוגת האתר.');
+}
+
+function systemPrompt() {
+  const snap = JSON.stringify({
+    school: state.school, colors: state.colors,
+    classes: (state.classes||[]).map(c => ({ name:c.name, teacher:c.teacher, room:c.room, subjects:c.subjects })),
+    links: (state.links||[]).map(l => l.text),
+    staff: (state.staff||[]).map(s => ({ name:s.name, role:s.role })),
+    announcement: state.announcement
+  }, null, 2);
+  return `אתה עוזר לניהול אתר בית ספר ישראלי. ענה תמיד בעברית JSON בלבד.
+מצב נוכחי:
+${snap}
+אם מבקשים לשנות תוכן, החזר:
+{"type":"state","message":"הסבר קצר","changes":{ ... שינויים חלקיים ... }}
+אם שואלים שאלה:
+{"type":"text","message":"תשובה"}`;
+}
+
+async function sendAI() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  if (!getKey()) { toast('הזינו מפתח Gemini'); return; }
+  input.value = '';
+  addMsg('user', esc(msg));
+  history.push({ role: 'user', content: msg });
+  if (history.length > 12) history = history.slice(-12);
+  const think = document.createElement('div');
+  think.className = 'msg'; think.innerHTML = '<div class="bubble">מעבד...</div>';
+  document.getElementById('chat').appendChild(think);
+
+  try {
+    const r = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Gemini-Key': getKey() },
+      body: JSON.stringify({ messages: history, system: systemPrompt(), gemini_key: getKey(), max_tokens: 1024 })
+    });
+    const d = await r.json();
+    think.remove();
+    if (!r.ok) throw new Error(d.error?.message || 'שגיאת AI');
+    const raw = d.content?.[0]?.text || '';
+    history.push({ role: 'assistant', content: raw });
+    let parsed;
+    try {
+      const m = raw.match(/```json\n?([\s\S]*?)```/) || raw.match(/(\{[\s\S]*\})/);
+      parsed = JSON.parse(m ? m[1] : raw);
+    } catch { parsed = { type: 'text', message: raw }; }
+
+    if (parsed.type === 'state' && parsed.changes) {
+      pending = { changes: parsed.changes, userMsg: msg, raw };
+      addMsg('bot', esc(parsed.message || 'מוכן לעדכון') +
+        '<div class="btn-row"><button class="btn btn-ok" onclick="applyPending()">✅ החל ושמור ל-Supabase</button></div>');
+    } else {
+      addMsg('bot', esc(parsed.message || raw));
+    }
+  } catch (e) {
+    think.remove();
+    addMsg('bot', 'שגיאה: ' + esc(e.message));
+  }
+}
+
+async function loadLogs() {
+  const el = document.getElementById('logs');
+  el.textContent = 'טוען...';
+  try {
+    const r = await fetch('/api/logs'); const d = await r.json();
+    if (!d.logs?.length) { el.textContent = 'עדיין אין רשומות.'; return; }
+    el.innerHTML = d.logs.map(x => `
+      <div class="log">
+        <time>${new Date(x.created_at).toLocaleString('he-IL')}</time>
+        ${x.applied ? ' · <span class="badge ok">הוחל</span>' : ''}
+        · ${x.change_type || ''}
+        <div><strong>מנהל:</strong> ${esc(x.user_message)}</div>
+        <div style="color:#5f6368">${esc((x.assistant_message||'').slice(0,240))}</div>
+      </div>`).join('');
+  } catch (e) { el.textContent = e.message; }
+}
+
+// ===== ניהול משתמשים =====
+async function createUser() {
+  const name = document.getElementById('new-user-name').value.trim();
+  const role = document.getElementById('new-user-role').value;
+  const class_id = document.getElementById('new-user-class').value.trim() || null;
+  if (!name) { toast('הזן שם'); return; }
+  const r = await fetch('/api/users', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, role, class_id}) });
+  const d = await r.json();
+  const el = document.getElementById('new-user-result');
+  if (!r.ok) { el.innerHTML = `<span style="color:#991b1b">${esc(d.error?.message)}</span>`; return; }
+  const code = d.user?.access_code || '—';
+  el.innerHTML = `<div style="background:#dcfce7;border-radius:10px;padding:12px;color:#166534">
+    ✅ <strong>${esc(name)}</strong> נוצר בהצלחה.<br>
+    קוד גישה: <strong style="font-size:1.2rem;letter-spacing:.1em">${esc(code)}</strong><br>
+    <span style="font-size:.8rem">שתף קוד זה עם ${esc(name)}</span>
+  </div>`;
+  document.getElementById('new-user-name').value = '';
+  document.getElementById('new-user-class').value = '';
+  loadUsers();
+}
+
+async function loadUsers() {
+  const el = document.getElementById('users-list');
+  const r = await fetch('/api/users');
+  const d = await r.json();
+  const users = d.users || [];
+  if (!users.length) { el.innerHTML = '<span style="color:var(--muted)">אין משתמשים עדיין.</span>'; return; }
+  const roleLabel = { teacher:'מחנך', staff:'צוות', student:'תלמיד' };
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:.85rem">
+    <thead><tr style="background:#f8fafc">
+      <th style="padding:8px;text-align:right;border-bottom:1px solid var(--border)">שם</th>
+      <th style="padding:8px;text-align:right;border-bottom:1px solid var(--border)">תפקיד</th>
+      <th style="padding:8px;text-align:right;border-bottom:1px solid var(--border)">כיתה</th>
+      <th style="padding:8px;text-align:right;border-bottom:1px solid var(--border)">קוד</th>
+      <th style="padding:8px;border-bottom:1px solid var(--border)"></th>
+    </tr></thead>
+    <tbody>${users.map(u => `<tr>
+      <td style="padding:8px">${esc(u.name)}</td>
+      <td style="padding:8px">${roleLabel[u.role]||u.role}</td>
+      <td style="padding:8px">${esc(u.class_id||'—')}</td>
+      <td style="padding:8px"><code style="background:#f0f4f8;padding:2px 8px;border-radius:6px">${esc(u.access_code)}</code></td>
+      <td style="padding:8px"><button class="btn btn-ghost" style="font-size:.75rem;padding:4px 10px" onclick="deleteUser('${u.id}')">🗑️</button></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+async function deleteUser(uid) {
+  if (!confirm('למחוק משתמש זה?')) return;
+  await fetch(`/api/users/${uid}`, {method:'DELETE'});
+  loadUsers();
+  toast('משתמש נמחק');
+}
+
+// ===== מודרציה =====
+async function loadModeration() {
+  await loadFeaturesByStatus('pending', 'pending-list');
+  await loadFeaturesByStatus('active', 'active-list');
+}
+
+async function loadFeaturesByStatus(status, elId) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '<div style="color:var(--muted)">טוען...</div>';
+  const r = await fetch(`/api/features?status=${status}`);
+  const d = await r.json();
+  const features = d.features || [];
+  if (!features.length) { el.innerHTML = `<div class="card" style="color:var(--muted)">${status === 'pending' ? 'אין פיצ\'רים הממתינים לאישור.' : 'אין פיצ\'רים פעילים.'}</div>`; return; }
+  el.innerHTML = features.map(f => `
+    <div class="card" style="border-right:4px solid ${status==='pending'?'#f9ab00':'#34a853'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-weight:700">${esc(f.title)}</div>
+          <div style="font-size:.8rem;color:var(--muted)">${esc(f.description)} · ${esc(f.feature_type)} · נוצר ע"י: ${esc(f.creator_name)}</div>
+          ${f.target_class ? `<div style="font-size:.78rem;color:var(--muted)">כיתה: ${esc(f.target_class)}</div>` : ''}
+        </div>
+        <div class="btn-row" style="margin-top:0">
+          ${status==='pending' ? `<button class="btn btn-ok" onclick="approveFeature('${f.id}')">✅ אשר</button>` : ''}
+          ${status==='active' ? `<button class="btn btn-ghost" onclick="toggleFeature('${f.id}','disabled')">⏸ השבת</button>` : ''}
+          ${status==='disabled' ? `<button class="btn btn-ok" onclick="toggleFeature('${f.id}','active')">▶ הפעל</button>` : ''}
+          ${status==='pending' ? `<button class="btn" style="background:#fee2e2;color:#991b1b" onclick="rejectFeature('${f.id}')">❌ דחה</button>` : ''}
+          <button class="btn btn-ghost" onclick="deleteFeature('${f.id}')">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function approveFeature(id) {
+  await fetch(`/api/features/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:'active'})});
+  toast('פיצ\'ר אושר ופעיל!');
+  loadModeration();
+}
+async function rejectFeature(id) {
+  await fetch(`/api/features/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:'disabled'})});
+  toast('פיצ\'ר נדחה.');
+  loadModeration();
+}
+async function toggleFeature(id, status) {
+  await fetch(`/api/features/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status})});
+  toast('סטטוס עודכן');
+  loadModeration();
+}
+async function deleteFeature(id) {
+  if (!confirm('למחוק פיצ\'ר זה לצמיתות?')) return;
+  await fetch(`/api/features/${id}`, {method:'DELETE'});
+  toast('פיצ\'ר נמחק');
+  loadModeration();
+}
+
+// ===== הגדרות גישה =====
+async function loadAccessSettings() {
+  const r = await fetch('/api/access-settings');
+  const d = await r.json();
+  const s = d.settings || {};
+  document.getElementById('access-mode').value = s.mode || 'code';
+  updateAccessDesc(s.mode || 'code');
+  const prot = !!s.site_protected;
+  document.getElementById('site-protected').checked = prot;
+  document.getElementById('site-code-box').style.display = prot ? 'block' : 'none';
+  document.getElementById('site-code').value = s.site_code || '';
+  document.getElementById('teacher-link').textContent = location.origin + '/teacher';
+  document.getElementById('student-link').textContent = location.origin + '/class/[קוד-כיתה]';
+}
+function updateAccessDesc(mode) {
+  const desc = {code:'כל מחנך/תלמיד מקבל קוד אישי. הכי בטוח.',per_user:'קוד אחד לכל כיתה — קל לתלמידים.',open:'ללא קוד — כל מי שיש לו קישור יכול לראות.'};
+  document.getElementById('access-mode-desc').textContent = desc[mode]||'';
+}
+document.getElementById('access-mode').onchange = function() { updateAccessDesc(this.value); };
+document.getElementById('site-protected').onchange = function() {
+  document.getElementById('site-code-box').style.display = this.checked ? 'block' : 'none';
+};
+async function saveAccessMode() {
+  const mode = document.getElementById('access-mode').value;
+  const site_protected = document.getElementById('site-protected').checked;
+  const site_code = document.getElementById('site-code').value.trim();
+  if (site_protected && !site_code) { toast('הזן קוד גישה לאתר'); return; }
+  const r = await fetch('/api/access-settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mode, site_protected, site_code})});
+  if (r.ok) toast('הגדרות גישה נשמרו ✅');
+  else toast('שגיאת שמירה');
+}
+
+// הרחבת nav לטאבים החדשים
+const _origNav = document.querySelectorAll('.nav-item');
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.onclick = () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-' + el.dataset.tab).classList.add('active');
+    if (el.dataset.tab === 'logs') loadLogs();
+    if (el.dataset.tab === 'preview') document.getElementById('preview').src = '/';
+    if (el.dataset.tab === 'users') loadUsers();
+    if (el.dataset.tab === 'moderation') loadModeration();
+    if (el.dataset.tab === 'access') loadAccessSettings();
+  };
+});
+
+document.getElementById('gemini-key').value = localStorage.getItem(KEY_LS) || '';
+updateKeyHint();
+health();
+loadState();
+</script>
+</body>
+</html>

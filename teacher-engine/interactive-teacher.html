@@ -1,0 +1,2785 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>עוזר הוראה אינטראקטיבי — AI Teacher Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <!-- Google Identity Services (OAuth 2.0) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- Speaker Diarization module -->
+  <script src="speaker-diarization.js"></script>
+  <style>
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  /* Light mode (setup / editor) */
+  --bg:      #f0f4f8;
+  --card:    #ffffff;
+  --primary: #1a73e8;
+  --pri-dk:  #1557b0;
+  --pri-lt:  #e8f0fe;
+  --accent:  #34a853;
+  --danger:  #ea4335;
+  --warn:    #f9ab00;
+  --text:    #202124;
+  --text-2:  #5f6368;
+  --text-3:  #9aa0a6;
+  --border:  #e8ecf0;
+
+  /* Projection mode (dark) */
+  --proj-bg:      #070c18;
+  --proj-card:    #0f172a;
+  --proj-card2:   #1e293b;
+  --proj-text:    #f1f5f9;
+  --proj-text2:   #94a3b8;
+  --proj-primary: #3b82f6;
+  --proj-correct: #22c55e;
+  --proj-wrong:   #ef4444;
+  --proj-border:  rgba(255,255,255,.08);
+
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 24px; --r-full: 9999px;
+  --sh-sm: 0 1px 4px rgba(0,0,0,.06);
+  --sh-md: 0 4px 16px rgba(0,0,0,.10);
+  --sh-lg: 0 8px 32px rgba(0,0,0,.14);
+  --t: .2s ease;
+}
+
+body {
+  font-family: 'Heebo', sans-serif;
+  direction: rtl;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 15px;
+}
+
+/* ============================================================
+   TOPBAR
+   ============================================================ */
+.topbar {
+  background: #0f172a;
+  height: 58px; padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 16px rgba(0,0,0,.3);
+}
+.topbar-brand { display: flex; align-items: center; gap: 10px; }
+.topbar-logo  {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+}
+.topbar-title { color: #f1f5f9; font-size: .95rem; font-weight: 700; }
+.topbar-sub   { color: rgba(255,255,255,.4); font-size: .7rem; }
+.topbar-steps { display: flex; gap: 6px; align-items: center; }
+.step {
+  display: flex; align-items: center; gap: 5px;
+  font-size: .75rem; color: rgba(255,255,255,.35); font-weight: 600;
+  padding: 4px 12px; border-radius: var(--r-full);
+  transition: all var(--t);
+}
+.step.active  { color: #3b82f6; background: rgba(59,130,246,.15); }
+.step.done    { color: #22c55e; }
+.step-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 1.5px solid currentColor;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .68rem;
+}
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+.screen { display: none; min-height: calc(100vh - 58px); }
+.screen.active { display: block; }
+
+/* ============================================================
+   SCREEN 1 — SETUP
+   ============================================================ */
+.setup-wrap {
+  max-width: 520px; margin: 0 auto;
+  padding: 40px 20px;
+}
+.setup-hero {
+  text-align: center; margin-bottom: 32px;
+}
+.setup-hero .hero-icon { font-size: 3.5rem; margin-bottom: 12px; }
+.setup-hero h1 { font-size: 1.8rem; font-weight: 900; color: #0f172a; margin-bottom: 6px; }
+.setup-hero p  { color: var(--text-2); font-size: .9rem; line-height: 1.7; }
+
+.setup-card {
+  background: var(--card); border-radius: var(--r-xl);
+  padding: 28px; box-shadow: var(--sh-md); border: 1px solid var(--border);
+}
+
+/* ===== PROVIDER TABS ===== */
+.provider-tabs { display: flex; gap: 8px; margin-bottom: 4px; }
+.prov-tab {
+  flex: 1; padding: 8px 10px;
+  background: #f8fafc; border: 1.5px solid var(--border);
+  border-radius: var(--r-md); font-family: inherit; font-size: .8rem; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: var(--t); color: var(--text-2);
+}
+.prov-tab:hover  { border-color: var(--primary); color: var(--primary); background: var(--pri-lt); }
+.prov-tab.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+.prov-icon { font-size: .9rem; }
+
+/* ===== PROVIDER GUIDE ===== */
+.prov-guide {
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: #f8fafc; border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+}
+.guide-steps { font-size: .76rem; color: var(--text-2); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.guide-step {
+  background: var(--primary); color: #fff;
+  width: 18px; height: 18px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: .65rem; font-weight: 800; flex-shrink: 0;
+}
+.guide-link {
+  font-size: .76rem; color: var(--primary); font-weight: 700;
+  text-decoration: none; white-space: nowrap;
+}
+.guide-link:hover { text-decoration: underline; }
+.card-section-title {
+  font-size: .78rem; font-weight: 700; color: var(--text-3);
+  letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px;
+}
+
+.form-group { margin-bottom: 14px; }
+label { display: block; font-size: .8rem; font-weight: 600; color: #3c4043; margin-bottom: 5px; }
+input[type=text], input[type=password], input[type=number], select, textarea {
+  width: 100%; padding: 10px 13px;
+  border: 1.5px solid var(--border); border-radius: var(--r-sm);
+  font-family: 'Heebo', sans-serif; font-size: .9rem; color: var(--text);
+  direction: rtl; background: #fafbfc; transition: all var(--t);
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--primary);
+  background: #fff; box-shadow: 0 0 0 3px rgba(26,115,232,.1);
+}
+.input-hint { font-size: .72rem; color: var(--text-3); margin-top: 4px; }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 10px 20px; border-radius: var(--r-sm);
+  font-family: 'Heebo', sans-serif; font-size: .9rem; font-weight: 700;
+  cursor: pointer; border: none; transition: all var(--t);
+  user-select: none; white-space: nowrap;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(26,115,232,.3); }
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-success { background: var(--accent); color: #fff; }
+.btn-danger  { background: var(--danger); color: #fff; }
+.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text-2); }
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); background: var(--pri-lt); }
+.btn-ghost { background: transparent; color: var(--text-2); }
+.btn-ghost:hover { background: #f1f3f4; }
+.btn-sm { padding: 6px 14px; font-size: .8rem; }
+.btn-xs { padding: 4px 10px; font-size: .74rem; }
+.btn-icon { padding: 8px; border-radius: var(--r-sm); }
+.btn-block { width: 100%; }
+.btn-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+
+/* ============================================================
+   SCREEN 2 — UPLOAD
+   ============================================================ */
+.upload-wrap { max-width: 700px; margin: 0 auto; padding: 32px 20px; }
+.upload-header { margin-bottom: 24px; }
+.upload-header h2 { font-size: 1.4rem; font-weight: 900; color: #0f172a; }
+.upload-header p  { color: var(--text-2); font-size: .88rem; margin-top: 4px; }
+
+.drop-zone {
+  border: 2.5px dashed var(--border); border-radius: var(--r-xl);
+  padding: 56px 24px; text-align: center;
+  background: var(--card); cursor: pointer;
+  transition: all var(--t); position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--primary); background: var(--pri-lt);
+}
+.drop-icon { font-size: 3rem; margin-bottom: 14px; }
+.drop-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; color: #0f172a; }
+.drop-sub   { font-size: .85rem; color: var(--text-2); }
+.drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+.upload-preview {
+  display: none; background: var(--card); border-radius: var(--r-xl);
+  overflow: hidden; box-shadow: var(--sh-md); border: 1px solid var(--border);
+}
+.upload-preview.show { display: block; }
+.preview-img-wrap { background: #1e293b; padding: 20px; text-align: center; }
+.preview-img-wrap img { max-width: 100%; max-height: 360px; border-radius: var(--r-md); }
+.preview-info { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+.preview-name { font-size: .85rem; font-weight: 700; }
+.preview-size { font-size: .75rem; color: var(--text-3); margin-top: 2px; }
+
+/* ============================================================
+   SCREEN 3 — ANALYZING
+   ============================================================ */
+.analyzing-wrap {
+  max-width: 460px; margin: 0 auto; padding: 60px 20px;
+  text-align: center;
+}
+.ai-spinner {
+  width: 80px; height: 80px; margin: 0 auto 24px;
+  position: relative;
+}
+.ai-spinner-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 3px solid transparent; animation: spin 1.2s linear infinite;
+}
+.ai-spinner-ring:nth-child(1) { border-top-color: #3b82f6; }
+.ai-spinner-ring:nth-child(2) { border-right-color: #8b5cf6; animation-delay: .2s; inset: 8px; }
+.ai-spinner-ring:nth-child(3) { border-bottom-color: #06b6d4; animation-delay: .4s; inset: 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.analyzing-step {
+  font-size: .88rem; color: var(--text-2); margin-bottom: 6px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.analyzing-step .dot { width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; }
+.analyzing-step.done .dot { background: #22c55e; }
+.analyzing-step.done { color: #15803d; }
+
+/* ============================================================
+   SCREEN 4 — EDITOR
+   ============================================================ */
+.editor-wrap { display: grid; grid-template-columns: 280px 1fr; height: calc(100vh - 58px); }
+.editor-sidebar {
+  background: var(--card); border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.sidebar-top {
+  padding: 16px; border-bottom: 1px solid var(--border);
+}
+.sidebar-top h3 { font-size: 1rem; font-weight: 900; color: #0f172a; margin-bottom: 4px; }
+.sidebar-top p  { font-size: .78rem; color: var(--text-3); }
+.q-list { flex: 1; overflow-y: auto; padding: 8px; }
+
+.q-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-radius: var(--r-md);
+  cursor: pointer; transition: all var(--t); margin-bottom: 4px;
+  border: 1.5px solid transparent;
+}
+.q-item:hover { background: #f8f9fa; }
+.q-item.active { background: var(--pri-lt); border-color: var(--primary); }
+.q-num {
+  width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+  background: #f1f3f4; display: flex; align-items: center; justify-content: center;
+  font-size: .78rem; font-weight: 700; color: var(--text-2);
+}
+.q-item.active .q-num { background: var(--primary); color: #fff; }
+.q-preview { flex: 1; min-width: 0; }
+.q-preview-text { font-size: .82rem; font-weight: 600; color: var(--text); truncate; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-preview-type { font-size: .68rem; color: var(--text-3); margin-top: 1px; }
+.q-type-badge {
+  font-size: .62rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+}
+.badge-mc  { background: #dbeafe; color: #1d4ed8; }
+.badge-op  { background: #d1fae5; color: #065f46; }
+.badge-tf  { background: #fde68a; color: #78350f; }
+
+.editor-main { overflow-y: auto; padding: 28px; background: var(--bg); }
+.q-editor-card {
+  background: var(--card); border-radius: var(--r-xl); padding: 24px;
+  box-shadow: var(--sh-sm); border: 1px solid var(--border); margin-bottom: 16px;
+}
+.q-editor-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.q-editor-num { font-size: .75rem; font-weight: 700; color: var(--text-3); }
+.q-type-select {
+  padding: 4px 10px; border-radius: var(--r-full);
+  border: 1.5px solid var(--border); font-size: .8rem;
+  font-family: 'Heebo', sans-serif; background: #fafbfc; color: var(--text);
+}
+
+.options-list { display: flex; flex-direction: column; gap: 8px; }
+.option-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.option-letter {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: #f1f3f4; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: .82rem; flex-shrink: 0;
+}
+.option-correct { background: #d1fae5 !important; color: #065f46; }
+.correct-radio { cursor: pointer; }
+
+.image-thumbnail {
+  position: sticky; top: 20px; border-radius: var(--r-xl);
+  overflow: hidden; box-shadow: var(--sh-md);
+}
+.image-thumbnail img { width: 100%; display: block; }
+
+/* ============================================================
+   SCREEN 5 — PROJECTION (FULL DARK)
+   ============================================================ */
+#screen-projection {
+  background: var(--proj-bg);
+  min-height: 100vh;
+  display: none;
+  flex-direction: column;
+  position: relative;
+}
+#screen-projection.active { display: flex; }
+
+/* Projection top bar */
+.proj-topbar {
+  background: rgba(255,255,255,.03);
+  border-bottom: 1px solid var(--proj-border);
+  padding: 12px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.proj-class   { color: #60a5fa; font-size: .9rem; font-weight: 700; }
+.proj-info    { display: flex; align-items: center; gap: 20px; }
+.proj-timer   {
+  color: var(--proj-text2); font-size: .85rem; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.proj-q-counter {
+  color: var(--proj-text2); font-size: .85rem; font-weight: 600;
+  background: var(--proj-card2); padding: 4px 12px; border-radius: var(--r-full);
+}
+.proj-exit {
+  color: var(--proj-text2); font-size: .8rem; cursor: pointer;
+  padding: 4px 12px; border-radius: var(--r-full); border: 1px solid var(--proj-border);
+  background: none; font-family: 'Heebo', sans-serif; transition: all var(--t);
+}
+.proj-exit:hover { border-color: var(--proj-wrong); color: var(--proj-wrong); }
+
+/* Projection main area */
+.proj-main {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 32px 48px;
+  overflow-y: auto;
+}
+
+/* Question card */
+.proj-q-card {
+  width: 100%; max-width: 900px;
+  background: var(--proj-card);
+  border: 1px solid var(--proj-border);
+  border-radius: 24px; padding: 40px 48px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  margin-bottom: 24px;
+}
+.proj-q-number {
+  font-size: .85rem; font-weight: 700; color: #60a5fa;
+  letter-spacing: 2px; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.proj-q-text {
+  font-size: 2.2rem; font-weight: 900; color: var(--proj-text);
+  line-height: 1.45; margin-bottom: 32px;
+}
+
+/* MC options */
+.proj-options {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+}
+.proj-option {
+  padding: 18px 24px; border-radius: 16px;
+  border: 2px solid var(--proj-border);
+  background: var(--proj-card2); color: var(--proj-text);
+  font-size: 1.3rem; font-weight: 600; cursor: pointer;
+  transition: all var(--t); display: flex; align-items: center; gap: 14px;
+  text-align: right;
+}
+.proj-option:hover { border-color: #3b82f6; background: rgba(59,130,246,.1); transform: translateY(-2px); }
+.proj-option.selected { border-color: #3b82f6; background: rgba(59,130,246,.15); }
+.proj-option.correct  { border-color: var(--proj-correct)!important; background: rgba(34,197,94,.12)!important; color: var(--proj-correct); }
+.proj-option.wrong    { border-color: var(--proj-wrong)!important;   background: rgba(239,68,68,.12)!important;   color: var(--proj-wrong); }
+.opt-letter {
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  background: rgba(255,255,255,.07); display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; font-weight: 900; color: #94a3b8;
+}
+
+/* T/F options */
+.proj-tf { display: flex; gap: 16px; }
+.proj-tf-btn {
+  flex: 1; padding: 24px; border-radius: 18px;
+  border: 2px solid var(--proj-border); background: var(--proj-card2);
+  font-size: 1.6rem; font-weight: 900; cursor: pointer;
+  transition: all var(--t); color: var(--proj-text); text-align: center;
+}
+.proj-tf-btn:hover { transform: translateY(-3px); }
+.proj-tf-btn.true-btn:hover  { border-color: var(--proj-correct); color: var(--proj-correct); }
+.proj-tf-btn.false-btn:hover { border-color: var(--proj-wrong);   color: var(--proj-wrong); }
+
+/* Open question textarea (projection) */
+.proj-open-area {
+  width: 100%; padding: 18px; font-size: 1.1rem;
+  border: 2px solid var(--proj-border); border-radius: 16px;
+  background: var(--proj-card2); color: var(--proj-text);
+  min-height: 120px; resize: vertical; font-family: 'Heebo', sans-serif;
+}
+.proj-open-area:focus {
+  outline: none; border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59,130,246,.15);
+}
+
+/* STT Listen button */
+.proj-listen-wrap { display: flex; justify-content: center; margin-top: 28px; }
+.proj-listen-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 32px; border-radius: var(--r-full);
+  background: rgba(59,130,246,.15); border: 2px solid rgba(59,130,246,.4);
+  color: #60a5fa; font-size: 1rem; font-weight: 700;
+  cursor: pointer; font-family: 'Heebo', sans-serif;
+  transition: all var(--t);
+}
+.proj-listen-btn:hover { background: rgba(59,130,246,.25); border-color: #3b82f6; }
+.proj-listen-btn.listening {
+  background: rgba(239,68,68,.15); border-color: rgba(239,68,68,.5); color: #f87171;
+  animation: pulse-border 1.2s ease-in-out infinite;
+}
+@keyframes pulse-border {
+  0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.4); }
+  50%      { box-shadow: 0 0 0 12px rgba(239,68,68,0); }
+}
+.mic-waves { display: flex; gap: 3px; align-items: center; height: 18px; }
+.mic-wave {
+  width: 3px; background: currentColor; border-radius: 2px;
+  animation: wave 0.8s ease-in-out infinite;
+}
+.mic-wave:nth-child(2) { animation-delay: .1s; }
+.mic-wave:nth-child(3) { animation-delay: .2s; }
+.mic-wave:nth-child(4) { animation-delay: .1s; }
+@keyframes wave {
+  0%,100% { height: 4px; }
+  50%      { height: 16px; }
+}
+
+/* AI Response bubble */
+.proj-ai-response {
+  width: 100%; max-width: 900px;
+  display: none;
+  animation: slideUp .3s ease;
+}
+.proj-ai-response.show { display: block; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+.proj-response-card {
+  background: var(--proj-card); border: 1px solid var(--proj-border);
+  border-radius: 20px; padding: 22px 28px;
+  display: flex; align-items: flex-start; gap: 16px;
+}
+.proj-ai-avatar {
+  width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+}
+.proj-ai-body { flex: 1; }
+.proj-ai-student-name {
+  font-size: .8rem; font-weight: 700; color: #60a5fa; margin-bottom: 5px;
+}
+.proj-ai-text {
+  font-size: 1.35rem; font-weight: 600; color: var(--proj-text);
+  line-height: 1.55;
+}
+.proj-ai-text.correct-fb { color: var(--proj-correct); }
+.proj-ai-text.wrong-fb   { color: var(--proj-wrong); }
+
+/* Interim transcript display */
+.proj-transcript {
+  width: 100%; max-width: 900px; margin-top: 12px;
+  font-size: 1rem; color: var(--proj-text2); text-align: center;
+  min-height: 28px; transition: all var(--t);
+}
+
+/* ============================================================
+   TEACHER CONTROL BAR
+   ============================================================ */
+.teacher-bar {
+  background: rgba(0,0,0,.6); backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255,255,255,.07);
+  padding: 14px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; gap: 12px; flex-wrap: wrap;
+}
+
+.teacher-bar-left  { display: flex; gap: 8px; align-items: center; }
+.teacher-bar-mid   { display: flex; gap: 10px; align-items: center; }
+.teacher-bar-right { display: flex; gap: 8px; align-items: center; }
+
+.t-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border-radius: var(--r-full);
+  font-family: 'Heebo', sans-serif; font-size: .85rem; font-weight: 700;
+  cursor: pointer; border: 1.5px solid; transition: all var(--t);
+  white-space: nowrap;
+}
+.t-btn:active { transform: scale(.96); }
+.t-btn-nav {
+  border-color: rgba(255,255,255,.15); background: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.7);
+}
+.t-btn-nav:hover { border-color: rgba(255,255,255,.4); color: #fff; }
+.t-btn-hint {
+  border-color: rgba(251,191,36,.4); background: rgba(251,191,36,.1);
+  color: #fbbf24;
+}
+.t-btn-hint:hover { background: rgba(251,191,36,.2); }
+.t-btn-fix {
+  border-color: rgba(251,146,60,.4); background: rgba(251,146,60,.1);
+  color: #fb923c;
+}
+.t-btn-fix:hover { background: rgba(251,146,60,.2); }
+.t-btn-reveal {
+  border-color: rgba(34,197,94,.4); background: rgba(34,197,94,.1);
+  color: #4ade80;
+}
+.t-btn-reveal:hover { background: rgba(34,197,94,.2); }
+.t-btn-read {
+  border-color: rgba(139,92,246,.4); background: rgba(139,92,246,.1);
+  color: #a78bfa;
+}
+.t-btn-read:hover { background: rgba(139,92,246,.2); }
+.t-btn-fs {
+  border-color: rgba(255,255,255,.15); background: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.5); padding: 9px 12px;
+}
+.t-btn-fs:hover { color: #fff; }
+
+/* ============================================================
+   STUDENT ANSWER TRACKER (panel inside projection)
+   ============================================================ */
+.students-panel {
+  position: fixed; left: 16px; top: 50%;
+  transform: translateY(-50%);
+  background: var(--proj-card); border: 1px solid var(--proj-border);
+  border-radius: 16px; padding: 12px;
+  min-width: 180px; max-height: 60vh; overflow-y: auto;
+  z-index: 50;
+  display: none;
+}
+.students-panel.show { display: block; }
+.students-panel h4 { font-size: .75rem; color: #60a5fa; font-weight: 700; margin-bottom: 10px; letter-spacing: 1px; }
+.student-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 8px; margin-bottom: 4px;
+}
+.student-row.correct { background: rgba(34,197,94,.1); }
+.student-row.wrong   { background: rgba(239,68,68,.1); }
+.student-icon { font-size: .95rem; }
+.student-name { font-size: .82rem; font-weight: 600; color: var(--proj-text); flex: 1; }
+.student-ans  { font-size: .75rem; color: var(--proj-text2); }
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+.toast {
+  position: fixed; bottom: 90px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #0f172a; color: #f1f5f9;
+  padding: 10px 22px; border-radius: 12px;
+  font-size: .88rem; font-weight: 600;
+  box-shadow: var(--sh-lg); z-index: 999;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+  white-space: nowrap; pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ============================================================
+   MISC
+   ============================================================ */
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+/* ============================================================
+   GOOGLE AUTH — topbar
+   ============================================================ */
+.auth-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 12px 5px 8px;
+  border-radius: 99px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.06);
+  cursor: pointer;
+  transition: background .2s;
+}
+.auth-chip:hover { background: rgba(255,255,255,.12); }
+.auth-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  object-fit: cover; display: block;
+}
+.auth-avatar-placeholder {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg,#3b82f6,#8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .8rem; color: #fff; font-weight: 700;
+}
+.auth-name  { color: #f1f5f9; font-size: .78rem; font-weight: 600; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auth-sub   { color: rgba(255,255,255,.4); font-size: .65rem; }
+.auth-signin-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 99px;
+  background: #fff; border: none; cursor: pointer;
+  font-family: 'Heebo', sans-serif; font-size: .8rem; font-weight: 700;
+  color: #202124; transition: opacity .2s;
+}
+.auth-signin-btn:hover { opacity: .88; }
+.auth-signin-btn img { width: 16px; height: 16px; }
+
+/* ── Sign-out dropdown ── */
+.auth-dropdown {
+  position: fixed; top: 66px; left: 16px;
+  background: #fff; border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.15);
+  border: 1px solid #e8ecf0;
+  padding: 8px 0;
+  min-width: 220px;
+  z-index: 200;
+  display: none;
+}
+.auth-dropdown.show { display: block; }
+.auth-dropdown-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; font-size: .85rem; cursor: pointer;
+  transition: background .15s; color: #202124; font-weight: 500;
+}
+.auth-dropdown-item:hover { background: #f8fafc; }
+.auth-dropdown-item.danger { color: #ea4335; }
+
+/* ============================================================
+   BILLING SECTION — setup screen
+   ============================================================ */
+.billing-tabs {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;
+}
+.billing-tab {
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  background: #fff;
+  text-align: center;
+  transition: all var(--t);
+  font-family: 'Heebo', sans-serif;
+  font-size: .85rem; font-weight: 600; color: var(--text-2);
+}
+.billing-tab:hover  { border-color: var(--primary); color: var(--text); }
+.billing-tab.active { border-color: var(--primary); background: var(--pri-lt); color: var(--primary); }
+.billing-tab .bt-icon { font-size: 1.2rem; display: block; margin-bottom: 4px; }
+.billing-school-key-info {
+  background: #dcfce7; color: #166534;
+  border: 1px solid #86efac; border-radius: 10px;
+  padding: 10px 14px; font-size: .8rem; font-weight: 600;
+  display: none;
+}
+.billing-school-key-info.show { display: block; }
+
+/* ============================================================
+   DIARIZATION BADGE / SPEAKER TAG
+   ============================================================ */
+.speaker-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 99px;
+  font-size: .75rem; font-weight: 700; color: #fff;
+}
+.diarization-info {
+  font-size: .72rem; color: var(--text-2);
+  margin-top: 4px;
+}
+
+/* ============================================================
+   PDF / PRINT SECTION
+   ============================================================ */
+.pdf-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border-radius: var(--r-full);
+  border: 1.5px solid rgba(139,92,246,.4);
+  background: rgba(139,92,246,.08);
+  color: #7c3aed; font-family: 'Heebo', sans-serif;
+  font-size: .85rem; font-weight: 700; cursor: pointer;
+  transition: all var(--t);
+}
+.pdf-btn:hover { background: rgba(139,92,246,.15); }
+
+/* ── Print stylesheet ── */
+@media print {
+  .topbar, .editor-sidebar, .teacher-bar,
+  .students-panel, .toast, #proj-listen-btn,
+  .editor-main > div:first-child,
+  button, .btn { display: none !important; }
+
+  body, .screen { background: #fff !important; color: #000 !important; }
+  .print-worksheet { display: block !important; }
+  .print-q-card { break-inside: avoid; margin-bottom: 18px; border: 1px solid #ddd; border-radius: 8px; padding: 16px; }
+  .screen.active { display: block !important; min-height: auto !important; }
+}
+
+/* Print worksheet (hidden unless printing) */
+.print-worksheet { display: none; }
+.print-header { text-align: center; margin-bottom: 24px; }
+.print-header h1 { font-size: 1.4rem; font-weight: 900; }
+.print-header p  { font-size: .85rem; color: #5f6368; }
+.print-q-card { margin-bottom: 16px; }
+.print-q-num  { font-size: .75rem; font-weight: 700; color: #5f6368; margin-bottom: 4px; }
+.print-q-text { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+.print-option { padding: 4px 0; font-size: .9rem; }
+
+/* ============================================================
+   ANALYTICS BUTTON — teacher bar + editor
+   ============================================================ */
+.t-btn-analytics {
+  border-color: rgba(99,102,241,.4);
+  background: rgba(99,102,241,.1);
+  color: #818cf8;
+}
+.t-btn-analytics:hover { background: rgba(99,102,241,.2); }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.voice-toggle-wrap { display: flex; align-items: center; gap: 8px; }
+.toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+.toggle input { display: none; }
+.toggle-slider {
+  position: absolute; inset: 0; background: #ccc; border-radius: 22px;
+  cursor: pointer; transition: background var(--t);
+}
+.toggle-slider::before {
+  content: ''; position: absolute; width: 16px; height: 16px;
+  right: 3px; top: 3px; background: #fff; border-radius: 50%;
+  transition: transform var(--t); box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.toggle input:checked + .toggle-slider { background: var(--primary); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(-18px); }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .editor-wrap { grid-template-columns: 1fr; }
+  .editor-sidebar { max-height: 240px; }
+  .proj-q-text { font-size: 1.6rem; }
+  .proj-options { grid-template-columns: 1fr; }
+  .proj-q-card { padding: 24px; }
+  .teacher-bar { justify-content: center; }
+}
+@media (max-width: 600px) {
+  .proj-q-text { font-size: 1.3rem; }
+  .setup-wrap, .upload-wrap, .analyzing-wrap { padding: 20px 14px; }
+  .topbar-steps { display: none; }
+}
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOPBAR
+     ============================================================ -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">🧑‍🏫</div>
+    <div>
+      <div class="topbar-title">עוזר הוראה אינטראקטיבי</div>
+      <div class="topbar-sub">AI Teacher Engine · Beta</div>
+    </div>
+  </div>
+  <div class="topbar-steps">
+    <div class="step active" id="step-1"><div class="step-num">1</div> הגדרה</div>
+    <div class="step" id="step-2"><div class="step-num">2</div> העלאה</div>
+    <div class="step" id="step-3"><div class="step-num">3</div> עריכה</div>
+    <div class="step" id="step-4"><div class="step-num">4</div> הקרנה</div>
+  </div>
+
+  <!-- Google Auth chip -->
+  <div id="auth-area">
+    <!-- Signed-out state -->
+    <button class="auth-signin-btn" id="auth-signin-btn" onclick="triggerGoogleSignIn()" title="כניסה עם Google">
+      <svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.86-1.6 2.43v2h2.6c1.52-1.4 2.4-3.46 2.4-5.9 0-.58-.05-1.14-.17-1.53z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2c-.72.48-1.63.77-2.7.77-2.08 0-3.84-1.4-4.46-3.29H1.86v2.07C3.18 15.07 5.89 17 8.98 17z"/><path fill="#FBBC05" d="M4.52 10.54c-.16-.48-.25-.99-.25-1.54s.09-1.06.25-1.54V5.39H1.86A8 8 0 0 0 1 9c0 1.29.31 2.51.86 3.61l2.66-2.07z"/><path fill="#EA4335" d="M8.98 3.58c1.17 0 2.23.4 3.06 1.2l2.3-2.3C12.95.9 11.14 0 8.98 0 5.89 0 3.18 1.93 1.86 4.77l2.66 2.07c.62-1.89 2.38-3.26 4.46-3.26z"/></svg>
+      כניסה עם Google
+    </button>
+    <!-- Signed-in state (hidden initially) -->
+    <div class="auth-chip" id="auth-chip" style="display:none;" onclick="toggleAuthDropdown()">
+      <img class="auth-avatar" id="auth-avatar" src="" alt="">
+      <div>
+        <div class="auth-name" id="auth-name-display">שם המורה</div>
+        <div class="auth-sub" id="auth-email-display">מחובר</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Auth dropdown menu -->
+<div class="auth-dropdown" id="auth-dropdown">
+  <div class="auth-dropdown-item" onclick="openBillingSettings()">
+    💳 הגדרות חיוב
+  </div>
+  <div class="auth-dropdown-item" onclick="openAnalytics()">
+    📊 פתח אנליטיקה
+  </div>
+  <div class="auth-dropdown-item danger" onclick="signOutGoogle()">
+    ← התנתק
+  </div>
+</div>
+
+<!-- ============================================================
+     SCREEN 1: SETUP
+     ============================================================ -->
+<div class="screen active" id="screen-setup">
+  <div class="setup-wrap">
+    <div class="setup-hero">
+      <div class="hero-icon">🤖</div>
+      <h1>עוזר הוראה AI</h1>
+      <p>העלה דף עבודה · ה-AI יהפוך אותו לשאלות אינטראקטיביות ·<br>הקרן לכיתה · שוחח עם תלמידים בקול</p>
+    </div>
+
+    <div class="setup-card">
+      <!-- ==================== AI PROVIDER ==================== -->
+      <div class="card-section-title">🤖 מנוע AI</div>
+
+      <!-- Provider tabs -->
+      <div class="provider-tabs" id="provider-tabs">
+        <button class="prov-tab active" data-p="gemini"    onclick="selectProvider('gemini')">
+          <span class="prov-icon">🔵</span> Gemini
+        </button>
+        <button class="prov-tab" data-p="claude"    onclick="selectProvider('claude')">
+          <span class="prov-icon">🟠</span> Claude
+        </button>
+        <button class="prov-tab" data-p="openai"    onclick="selectProvider('openai')">
+          <span class="prov-icon">⚫</span> GPT
+        </button>
+      </div>
+
+      <!-- ==================== BILLING MODE ==================== -->
+      <div class="card-section-title" style="margin-top:4px;">💳 מצב שימוש</div>
+      <div class="billing-tabs" id="billing-tabs">
+        <button class="billing-tab active" data-b="personal" onclick="selectBillingMode('personal')">
+          <span class="bt-icon">🔑</span>
+          מפתח אישי
+        </button>
+        <button class="billing-tab" data-b="school" onclick="selectBillingMode('school')">
+          <span class="bt-icon">🏫</span>
+          חשבון בית-ספרי
+        </button>
+      </div>
+      <div class="billing-school-key-info" id="billing-school-info">
+        ✅ משתמש במפתח הבית-ספרי. אין צורך במפתח אישי.
+      </div>
+
+      <!-- API Key input -->
+      <div class="form-group" style="margin-top:12px" id="api-key-group">
+        <label id="api-key-label">מפתח API (Gemini)</label>
+        <div style="display:flex;gap:8px">
+          <input type="password" id="api-key-input" placeholder="הדבק כאן את מפתח ה-API שלך..."
+                 style="flex:1" oninput="saveApiKey(this.value)">
+          <button class="btn btn-outline btn-sm" onclick="toggleKeyVis()" title="הצג/הסתר">👁</button>
+        </div>
+      </div>
+
+      <!-- Instructions per provider -->
+      <div class="prov-guide" id="guide-gemini">
+        <div class="guide-steps">
+          <span class="guide-step">1</span> כנס ל-<strong>aistudio.google.com</strong>
+          <span class="guide-step">2</span> לחץ <strong>"Get API Key"</strong>
+          <span class="guide-step">3</span> צור מפתח חדש והעתק
+        </div>
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="guide-link">פתח Google AI Studio ↗</a>
+      </div>
+      <div class="prov-guide" id="guide-claude" style="display:none">
+        <div class="guide-steps">
+          <span class="guide-step">1</span> כנס ל-<strong>console.anthropic.com</strong>
+          <span class="guide-step">2</span> API Keys → <strong>Create Key</strong>
+          <span class="guide-step">3</span> העתק את המפתח
+        </div>
+        <a href="https://console.anthropic.com/settings/keys" target="_blank" class="guide-link">פתח Anthropic Console ↗</a>
+      </div>
+      <div class="prov-guide" id="guide-openai" style="display:none">
+        <div class="guide-steps">
+          <span class="guide-step">1</span> כנס ל-<strong>platform.openai.com</strong>
+          <span class="guide-step">2</span> API Keys → <strong>Create new secret key</strong>
+          <span class="guide-step">3</span> העתק והדבק כאן
+        </div>
+        <a href="https://platform.openai.com/api-keys" target="_blank" class="guide-link">פתח OpenAI Platform ↗</a>
+      </div>
+
+      <div class="divider"></div>
+      <div class="card-section-title">🏫 פרטי השיעור</div>
+      <div class="g2">
+        <div class="form-group">
+          <label>שם הכיתה</label>
+          <input type="text" id="class-name" placeholder="כיתה ד'2" value="הכיתה שלי">
+        </div>
+        <div class="form-group">
+          <label>שם המורה</label>
+          <input type="text" id="teacher-name" placeholder="שם המורה" value="המורה">
+        </div>
+        <div class="form-group">
+          <label>מקצוע</label>
+          <input type="text" id="subject-name" placeholder="מדעים, עברית...">
+        </div>
+        <div class="form-group">
+          <label>שפת זיהוי קול</label>
+          <select id="speech-lang">
+            <option value="he-IL" selected>עברית 🇮🇱</option>
+            <option value="en-US">English 🇺🇸</option>
+            <option value="ar-IL">عربى 🇸🇦</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="card-section-title">🎙️ הגדרות קול</div>
+      <div class="g2">
+        <div class="form-group">
+          <div class="voice-toggle-wrap">
+            <label style="margin:0">קריאת שאלות אוטומטית</label>
+            <label class="toggle"><input type="checkbox" id="auto-read" checked><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>מהירות דיבור: <span id="speed-val">0.9</span></label>
+          <input type="range" id="voice-speed" min="0.5" max="1.5" step="0.1" value="0.9"
+                 oninput="document.getElementById('speed-val').textContent=this.value" style="width:100%">
+        </div>
+        <div class="form-group">
+          <div class="voice-toggle-wrap">
+            <label style="margin:0">זיהוי דוברים אוטומטי (Speaker ID)</label>
+            <label class="toggle"><input type="checkbox" id="diarization-on"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="diarization-info">זיהוי קול תלמידים לפי תדר קול, גם ללא הצהרת שם</div>
+        </div>
+        <div class="form-group">
+          <label>Google OAuth Client ID
+            <span style="font-size:.7rem;color:var(--text-3);font-weight:400;">(לכניסה עם Google)</span>
+          </label>
+          <input type="text" id="google-client-id"
+                 placeholder="xxx.apps.googleusercontent.com"
+                 oninput="saveGoogleClientId(this.value)">
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Browser support check -->
+      <div id="browser-support" style="padding:12px; border-radius:10px; font-size:.82rem; margin-bottom:14px;"></div>
+
+      <button class="btn btn-primary btn-block" onclick="goToUpload()">
+        המשך → העלאת דף עבודה
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCREEN 2: UPLOAD
+     ============================================================ -->
+<div class="screen" id="screen-upload">
+  <div class="upload-wrap">
+    <div class="upload-header">
+      <h2>📄 העלאת דף עבודה</h2>
+      <p>צלם או העלה תמונה של דף עבודה מודפס — ה-AI ינתח ויהפוך לשאלות דינמיות</p>
+    </div>
+
+    <!-- Drop Zone -->
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" id="file-input" accept="image/*" onchange="handleFileSelect(event)">
+      <div class="drop-icon">🗂️</div>
+      <div class="drop-title">גרור תמונה לכאן</div>
+      <div class="drop-sub">PNG, JPG, WebP, HEIC — עד 20MB<br>או לחץ לבחירת קובץ</div>
+    </div>
+
+    <!-- Camera capture (mobile) -->
+    <div style="text-align:center; margin: 14px 0;">
+      <label style="cursor:pointer;">
+        <input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleFileSelect(event)">
+        <span class="btn btn-outline" style="display:inline-flex;">📷 צלם בצלמית (מובייל)</span>
+      </label>
+    </div>
+
+    <!-- Preview -->
+    <div class="upload-preview" id="upload-preview">
+      <div class="preview-img-wrap">
+        <img id="preview-img" src="" alt="תצוגה מקדימה">
+      </div>
+      <div class="preview-info">
+        <div>
+          <div class="preview-name" id="preview-name"></div>
+          <div class="preview-size" id="preview-size"></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="clearFile()">🗑️ הסר</button>
+          <button class="btn btn-primary btn-sm" onclick="startAnalysis()">🔍 נתח עם AI</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manual create -->
+    <div style="text-align:center; margin-top:20px; color:var(--text-2); font-size:.85rem;">
+      — או —<br>
+      <button class="btn btn-ghost btn-sm" onclick="createManual()" style="margin-top:8px;">
+        ✍️ צור דף עבודה ריק ידנית
+      </button>
+    </div>
+
+    <div style="margin-top:20px;">
+      <button class="btn btn-ghost btn-sm" onclick="showScreen('setup')">← חזור להגדרות</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCREEN 3: ANALYZING
+     ============================================================ -->
+<div class="screen" id="screen-analyzing">
+  <div class="analyzing-wrap">
+    <div class="ai-spinner">
+      <div class="ai-spinner-ring"></div>
+      <div class="ai-spinner-ring"></div>
+      <div class="ai-spinner-ring"></div>
+    </div>
+    <h2 style="font-size:1.5rem; font-weight:900; margin-bottom:8px;">מנתח את דף העבודה...</h2>
+    <p style="color:var(--text-2); margin-bottom:28px; font-size:.9rem;">ה-AI קורא ומבין את השאלות בתמונה</p>
+    <div id="analysis-steps">
+      <div class="analyzing-step active" id="as-1"><div class="dot"></div>מעבד את התמונה</div>
+      <div class="analyzing-step" id="as-2"><div class="dot"></div>מזהה שאלות ותשובות</div>
+      <div class="analyzing-step" id="as-3"><div class="dot"></div>מסדר לפורמט אינטראקטיבי</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCREEN 4: EDITOR
+     ============================================================ -->
+<div class="screen" id="screen-editor">
+  <div class="editor-wrap">
+
+    <!-- Sidebar: question list -->
+    <div class="editor-sidebar">
+      <div class="sidebar-top">
+        <h3 id="ws-title-display">דף עבודה</h3>
+        <p id="ws-q-count" style="font-size:.75rem; color:var(--text-3);"></p>
+      </div>
+      <div class="q-list" id="q-list"></div>
+      <div style="padding:10px;">
+        <button class="btn btn-outline btn-sm btn-block" onclick="addNewQuestion()">➕ הוסף שאלה</button>
+      </div>
+    </div>
+
+    <!-- Main: question editor + image -->
+    <div class="editor-main">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+        <div>
+          <h2 style="font-size:1.2rem; font-weight:900; color:#0f172a;">✏️ עריכת שאלות</h2>
+          <p style="font-size:.8rem; color:var(--text-2);">ערוך, הוסף או מחק שאלות לפני ההקרנה</p>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" onclick="showScreen('upload')">← חזור</button>
+          <button class="pdf-btn" onclick="printWorksheet()">🖨️ הדפס / PDF</button>
+          <button class="btn btn-primary" onclick="startProjection()">🎬 התחל הקרנה ←</button>
+        </div>
+      </div>
+
+      <!-- Worksheet metadata editor -->
+      <div class="q-editor-card">
+        <div class="card-section-title">📋 פרטי דף העבודה</div>
+        <div class="g2">
+          <div class="form-group">
+            <label>כותרת דף העבודה</label>
+            <input type="text" id="ws-title" placeholder="שם הדף" oninput="updateWSTitle()">
+          </div>
+          <div class="form-group">
+            <label>מקצוע / נושא</label>
+            <input type="text" id="ws-subject" placeholder="מדעים, עברית...">
+          </div>
+        </div>
+      </div>
+
+      <!-- Image thumbnail (if uploaded) -->
+      <div class="image-thumbnail" id="editor-img-wrap" style="display:none; margin-bottom:20px;">
+        <img id="editor-img" src="" alt="דף העבודה">
+      </div>
+
+      <!-- Questions list (editable) -->
+      <div id="questions-editor"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCREEN 5: PROJECTION
+     ============================================================ -->
+<div class="screen" id="screen-projection">
+
+  <!-- Projection TopBar -->
+  <div class="proj-topbar">
+    <div class="proj-class" id="proj-class-name">הכיתה שלי</div>
+    <div class="proj-info">
+      <div class="proj-timer" id="proj-timer">00:00</div>
+      <div class="proj-q-counter" id="proj-q-counter">שאלה 1 / 1</div>
+      <button class="proj-exit" onclick="exitProjection()">✕ יציאה</button>
+    </div>
+  </div>
+
+  <!-- Projection Main -->
+  <div class="proj-main" id="proj-main">
+
+    <!-- Question Card -->
+    <div class="proj-q-card" id="proj-q-card">
+      <div class="proj-q-number" id="proj-q-number">שאלה 1</div>
+      <div class="proj-q-text"  id="proj-q-text">טוען שאלה...</div>
+      <div id="proj-q-options"></div>
+    </div>
+
+    <!-- Listen Button -->
+    <div class="proj-listen-wrap">
+      <button class="proj-listen-btn" id="proj-listen-btn" onclick="toggleListening()">
+        <span id="listen-icon">🎤</span>
+        <span id="listen-label">הקשב לתלמיד</span>
+        <div class="mic-waves" id="mic-waves" style="display:none;">
+          <div class="mic-wave"></div>
+          <div class="mic-wave"></div>
+          <div class="mic-wave"></div>
+          <div class="mic-wave"></div>
+        </div>
+      </button>
+    </div>
+
+    <!-- Interim transcript -->
+    <div class="proj-transcript" id="proj-transcript"></div>
+
+    <!-- AI Response -->
+    <div class="proj-ai-response" id="proj-ai-response">
+      <div class="proj-response-card">
+        <div class="proj-ai-avatar">🤖</div>
+        <div class="proj-ai-body">
+          <div class="proj-ai-student-name" id="ai-student-name"></div>
+          <div class="proj-ai-text" id="ai-response-text"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Students Panel (optional) -->
+  <div class="students-panel" id="students-panel">
+    <h4>👥 תלמידים שענו</h4>
+    <div id="students-list"></div>
+  </div>
+
+  <!-- Teacher Control Bar -->
+  <div class="teacher-bar">
+    <!-- Left: Navigation -->
+    <div class="teacher-bar-left">
+      <button class="t-btn t-btn-nav" onclick="prevQuestion()">← שאלה קודמת</button>
+      <button class="t-btn t-btn-read" onclick="readCurrentQuestion()">🔊 קרא שוב</button>
+      <button class="t-btn t-btn-nav" onclick="nextQuestion()">שאלה הבאה →</button>
+    </div>
+
+    <!-- Mid: AI Actions -->
+    <div class="teacher-bar-mid">
+      <button class="t-btn t-btn-hint"   onclick="teacherAction('hint')">💡 תן רמז</button>
+      <button class="t-btn t-btn-fix"    onclick="teacherAction('correct')">✏️ תקן בעדינות</button>
+      <button class="t-btn t-btn-reveal" onclick="teacherAction('reveal')">✅ חשוף תשובה</button>
+    </div>
+
+    <!-- Right: Utilities -->
+    <div class="teacher-bar-right">
+      <button class="t-btn t-btn-nav" onclick="toggleStudentsPanel()">👥</button>
+      <button class="t-btn t-btn-analytics" onclick="openAnalytics()" title="אנליטיקה">📊 דוח</button>
+      <button class="t-btn t-btn-fs"  onclick="toggleFullscreen()" title="מסך מלא">⛶</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ============================================================
+     PRINT WORKSHEET OVERLAY (hidden; revealed on @media print)
+     ============================================================ -->
+<div class="print-worksheet" id="print-worksheet">
+  <div class="print-header">
+    <h1 id="print-title">דף עבודה</h1>
+    <p id="print-meta">כיתה · מקצוע</p>
+  </div>
+  <div id="print-questions"></div>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+'use strict';
+
+/* ============================================================
+   APP STATE
+   ============================================================ */
+const APP = {
+  imageB64:  null,
+  imageMime: null,
+  worksheet: null,
+  provider: 'gemini',   // 'gemini' | 'claude' | 'openai'
+  apiKey:   '',
+  billingMode: 'personal',   // 'personal' | 'school'
+  schoolApiKey: '',           // set by admin/license
+  googleClientId: '',
+  session: {
+    active:            false,
+    currentQ:          0,
+    startTime:         null,
+    timerInterval:     null,
+    listening:         false,
+    lastStudentName:   null,
+    lastStudentAnswer: null,
+    students:          [],
+    questionStats:     [],   // [{ qIdx, correct:0, wrong:0, answers:[] }]
+    duration:          0,
+  },
+  settings: {
+    className:    'הכיתה שלי',
+    teacherName:  'המורה',
+    subjectName:  '',
+    speechLang:   'he-IL',
+    autoRead:     true,
+    voiceSpeed:   0.9,
+    diarization:  false,
+  },
+  auth: {
+    user: null,   // { name, email, picture } after Google Sign-In
+  },
+};
+
+let recognition = null;   // SpeechRecognition instance
+let synth        = window.speechSynthesis;
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function checkLicense() {
+  try {
+    const raw = localStorage.getItem('koors_license');
+    if (!raw) { window.location.href = '../license/license-gate.html?redirect=' + encodeURIComponent(location.href); return false; }
+    const data = JSON.parse(atob(raw));
+    if (data.expiry < Date.now()) {
+      localStorage.removeItem('koors_license');
+      window.location.href = '../license/license-gate.html?reason=expired&redirect=' + encodeURIComponent(location.href);
+      return false;
+    }
+    return true;
+  } catch {
+    window.location.href = '../license/license-gate.html?redirect=' + encodeURIComponent(location.href);
+    return false;
+  }
+}
+
+function init() {
+  if (!checkLicense()) return;
+
+  // Load saved settings + API key
+  try {
+    const saved = localStorage.getItem('teacher_engine');
+    if (saved) {
+      const s = JSON.parse(saved);
+      if (s.settings)       Object.assign(APP.settings, s.settings);
+      if (s.provider)       { APP.provider = s.provider; selectProvider(s.provider, true); }
+      if (s.apiKey)         { APP.apiKey   = s.apiKey;   document.getElementById('api-key-input').value = s.apiKey; }
+      if (s.billingMode)    { APP.billingMode = s.billingMode; selectBillingMode(s.billingMode, true); }
+      if (s.schoolApiKey)   APP.schoolApiKey = s.schoolApiKey;
+      if (s.googleClientId) { APP.googleClientId = s.googleClientId; document.getElementById('google-client-id').value = s.googleClientId; }
+    }
+  } catch {}
+
+  // Restore settings UI
+  const st = APP.settings;
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+  setVal('class-name',    st.className);
+  setVal('teacher-name',  st.teacherName);
+  setVal('subject-name',  st.subjectName);
+  setVal('speech-lang',   st.speechLang);
+  const autoRead = document.getElementById('auto-read');
+  if (autoRead) autoRead.checked = st.autoRead;
+  const diarEl = document.getElementById('diarization-on');
+  if (diarEl) diarEl.checked = !!st.diarization;
+  const speedEl = document.getElementById('voice-speed');
+  if (speedEl) { speedEl.value = st.voiceSpeed; document.getElementById('speed-val').textContent = st.voiceSpeed; }
+
+  // Try to restore Google auth from localStorage
+  try {
+    const authRaw = localStorage.getItem('koors_google_auth');
+    if (authRaw) {
+      const u = JSON.parse(authRaw);
+      if (u && u.email) updateAuthUI(u);
+    }
+  } catch {}
+
+  // Init Google GIS if client ID available
+  if (APP.googleClientId) initGoogleAuth(APP.googleClientId);
+
+  // Try to load school API key from license
+  try {
+    const lic = JSON.parse(atob(localStorage.getItem('koors_license') || ''));
+    if (lic.schoolApiKey) APP.schoolApiKey = lic.schoolApiKey;
+  } catch {}
+
+  // Check browser support
+  checkBrowserSupport();
+
+  // Bind drop zone
+  const dz = document.getElementById('drop-zone');
+  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop',      e => { e.preventDefault(); dz.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
+
+  // Close auth dropdown on outside click
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#auth-area') && !e.target.closest('#auth-chip') && !e.target.closest('#auth-dropdown')) {
+      document.getElementById('auth-dropdown')?.classList.remove('show');
+    }
+  });
+}
+
+/* ============================================================
+   BROWSER SUPPORT CHECK
+   ============================================================ */
+function checkBrowserSupport() {
+  const el    = document.getElementById('browser-support');
+  const hasTTS = 'speechSynthesis' in window;
+  const hasSTT = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
+
+  if (hasTTS && hasSTT) {
+    el.style.cssText = 'background:#d1fae5; color:#065f46;';
+    el.innerHTML = '✅ הדפדפן שלך תומך בזיהוי קול וקריאת טקסט (TTS+STT).';
+  } else if (hasTTS) {
+    el.style.cssText = 'background:#fef3c7; color:#78350f;';
+    el.innerHTML = '⚠️ קריאת טקסט זמינה אבל זיהוי קול אינו נתמך. השתמש ב-Chrome לחוויה מלאה.';
+  } else {
+    el.style.cssText = 'background:#fee2e2; color:#7f1d1d;';
+    el.innerHTML = '❌ הדפדפן אינו תומך בזיהוי קול. השתמש ב-Chrome לחוויה מלאה.';
+  }
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const sc = document.getElementById('screen-' + id);
+  if (sc) sc.classList.add('active');
+  updateSteps(id);
+}
+
+function updateSteps(screen) {
+  const map = { setup: 1, upload: 2, analyzing: 2, editor: 3, projection: 4 };
+  const n   = map[screen] || 1;
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('step-' + i);
+    if (!el) return;
+    el.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+    el.querySelector('.step-num').textContent = i < n ? '✓' : String(i);
+  });
+}
+
+function goToUpload() {
+  APP.settings.className   = document.getElementById('class-name').value  || 'הכיתה שלי';
+  APP.settings.teacherName = document.getElementById('teacher-name').value || 'המורה';
+  APP.settings.subjectName = document.getElementById('subject-name').value || '';
+  APP.settings.speechLang  = document.getElementById('speech-lang').value  || 'he-IL';
+  APP.settings.autoRead    = document.getElementById('auto-read').checked;
+  APP.settings.voiceSpeed  = parseFloat(document.getElementById('voice-speed').value) || 0.9;
+  APP.settings.diarization = document.getElementById('diarization-on')?.checked || false;
+  if (!getEffectiveApiKey()) {
+    if (APP.billingMode === 'school') showToast('⚠️ אין מפתח בית-ספרי. פנה למנהל.');
+    else showToast('⚠️ הכנס מפתח API לפני המשך');
+    return;
+  }
+  saveState();
+  showScreen('upload');
+}
+
+/* ============================================================
+   FILE UPLOAD
+   ============================================================ */
+function handleFileSelect(e) { handleFiles(e.target.files); }
+function handleFiles(files) {
+  if (!files || !files[0]) return;
+  const file = files[0];
+  if (!file.type.startsWith('image/')) { showToast('⚠️ יש לבחור קובץ תמונה'); return; }
+  if (file.size > 20 * 1024 * 1024) { showToast('⚠️ הקובץ גדול מדי (עד 20MB)'); return; }
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    const [header, b64] = dataUrl.split(',');
+    APP.imageB64  = b64;
+    APP.imageMime = file.type;
+
+    document.getElementById('preview-img').src = dataUrl;
+    document.getElementById('preview-name').textContent = file.name;
+    document.getElementById('preview-size').textContent = (file.size / 1024).toFixed(0) + ' KB';
+    document.getElementById('upload-preview').classList.add('show');
+    document.getElementById('drop-zone').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearFile() {
+  APP.imageB64 = null; APP.imageMime = null;
+  document.getElementById('upload-preview').classList.remove('show');
+  document.getElementById('drop-zone').style.display = 'block';
+  document.getElementById('file-input').value = '';
+}
+
+/* ============================================================
+   VISION ANALYSIS
+   ============================================================ */
+async function startAnalysis() {
+  if (!APP.imageB64) { showToast('⚠️ אין תמונה'); return; }
+  showScreen('analyzing');
+
+  // Step 1
+  setAnalysisStep(1);
+
+  const prompt = `אתה מנתח דפי עבודה חינוכיים.
+בתמונה יש דף עבודה של תלמידים. נתח אותו ב-JSON בלבד (ללא הסברים נוספים):
+
+{
+  "title": "שם הדף",
+  "subject": "מקצוע",
+  "grade": "כיתה",
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple_choice",
+      "text": "טקסט השאלה",
+      "options": ["א. ...", "ב. ...", "ג. ...", "ד. ..."],
+      "answer": "א",
+      "points": 1,
+      "explanation": "הסבר קצר"
+    },
+    {
+      "id": 2,
+      "type": "open",
+      "text": "שאלה פתוחה...",
+      "answer": "תשובה לדוגמה",
+      "points": 2,
+      "explanation": ""
+    },
+    {
+      "id": 3,
+      "type": "true_false",
+      "text": "משפט לבדיקה...",
+      "answer": "true",
+      "points": 1,
+      "explanation": ""
+    }
+  ]
+}
+
+הנחיות:
+- type: "multiple_choice" / "open" / "true_false"
+- עבור multiple_choice: options חייב להיות מערך של 4 אפשרויות עם אות (א/ב/ג/ד)
+- עבור true_false: answer הוא "true" או "false"
+- כל שאלה חייבת title ו-answer
+- החזר JSON תקני בלבד, ללא markdown`;
+
+  try {
+    await sleep(800); // visual delay
+    setAnalysisStep(2);
+
+    const rawText = await callAIVision(prompt);
+
+    await sleep(600);
+    setAnalysisStep(3);
+
+    // Extract JSON
+    const match = rawText.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('תגובת AI לא תקינה');
+    APP.worksheet = JSON.parse(match[0]);
+
+    // Ensure IDs
+    APP.worksheet.questions.forEach((q, i) => { q.id = q.id || i + 1; });
+
+    await sleep(500);
+    openEditor();
+
+  } catch (err) {
+    showScreen('upload');
+    showToast('❌ שגיאה בניתוח: ' + err.message);
+    console.error(err);
+  }
+}
+
+function setAnalysisStep(n) {
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('as-' + i);
+    if (!el) return;
+    el.className = 'analyzing-step' + (i < n ? ' done' : i === n ? ' active' : '');
+  });
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* ============================================================
+   MANUAL CREATE
+   ============================================================ */
+function createManual() {
+  APP.worksheet = {
+    title: 'דף עבודה חדש',
+    subject: APP.settings.subjectName || '',
+    grade: '',
+    questions: [
+      { id: 1, type: 'multiple_choice', text: 'שאלה ראשונה',
+        options: ['א. אפשרות א', 'ב. אפשרות ב', 'ג. אפשרות ג', 'ד. אפשרות ד'],
+        answer: 'א', points: 1, explanation: '' }
+    ]
+  };
+  openEditor();
+}
+
+/* ============================================================
+   EDITOR
+   ============================================================ */
+function openEditor() {
+  showScreen('editor');
+
+  document.getElementById('ws-title').value         = APP.worksheet.title || '';
+  document.getElementById('ws-subject').value       = APP.worksheet.subject || '';
+  document.getElementById('ws-title-display').textContent = APP.worksheet.title || 'דף עבודה';
+  document.getElementById('ws-q-count').textContent = APP.worksheet.questions.length + ' שאלות';
+
+  // Show image thumbnail if available
+  if (APP.imageB64) {
+    document.getElementById('editor-img').src = 'data:' + APP.imageMime + ';base64,' + APP.imageB64;
+    document.getElementById('editor-img-wrap').style.display = 'block';
+  }
+
+  renderQList();
+  renderQEditor();
+}
+
+function updateWSTitle() {
+  const t = document.getElementById('ws-title').value;
+  APP.worksheet.title = t;
+  document.getElementById('ws-title-display').textContent = t || 'דף עבודה';
+}
+
+function renderQList() {
+  const el = document.getElementById('q-list');
+  el.innerHTML = '';
+  APP.worksheet.questions.forEach((q, i) => {
+    const div = document.createElement('div');
+    div.className = 'q-item' + (i === 0 ? ' active' : '');
+    div.dataset.idx = i;
+    div.innerHTML = `
+      <div class="q-num">${i + 1}</div>
+      <div class="q-preview">
+        <div class="q-preview-text">${escHtml(q.text.slice(0, 40))}${q.text.length > 40 ? '...' : ''}</div>
+        <div class="q-preview-type">
+          <span class="q-type-badge badge-${q.type === 'multiple_choice' ? 'mc' : q.type === 'open' ? 'op' : 'tf'}">
+            ${q.type === 'multiple_choice' ? 'רב-בחירה' : q.type === 'open' ? 'פתוחה' : 'נכון/לא'}
+          </span>
+        </div>
+      </div>
+    `;
+    div.onclick = () => { selectQuestion(i); };
+    el.appendChild(div);
+  });
+}
+
+let currentEditQ = 0;
+function selectQuestion(idx) {
+  currentEditQ = idx;
+  document.querySelectorAll('.q-item').forEach((el, i) => el.classList.toggle('active', i === idx));
+  renderQEditor();
+}
+
+function renderQEditor() {
+  const el = document.getElementById('questions-editor');
+  el.innerHTML = '';
+  APP.worksheet.questions.forEach((q, i) => {
+    const card = document.createElement('div');
+    card.className = 'q-editor-card';
+    card.id = 'q-card-' + i;
+
+    let optionsHtml = '';
+    if (q.type === 'multiple_choice') {
+      const opts = (q.options || ['','','','']).slice(0, 4);
+      const letters = ['א', 'ב', 'ג', 'ד'];
+      optionsHtml = `<div class="form-group"><label>אפשרויות (לחץ ● לסמן נכונה)</label>
+        <div class="options-list">` +
+        opts.map((opt, oi) => `
+          <div class="option-row">
+            <div class="option-letter ${q.answer === letters[oi] ? 'option-correct' : ''}">${letters[oi]}</div>
+            <input type="text" value="${escHtml(opt)}"
+                   onchange="updateOption(${i},${oi},this.value)"
+                   placeholder="אפשרות ${letters[oi]}">
+            <input type="radio" class="correct-radio" name="correct-${i}"
+                   ${q.answer === letters[oi] ? 'checked' : ''}
+                   onchange="setCorrectAnswer(${i},'${letters[oi]}')" title="סמן כנכונה">
+          </div>`).join('') +
+        '</div></div>';
+    } else if (q.type === 'true_false') {
+      optionsHtml = `<div class="form-group"><label>תשובה נכונה</label>
+        <select onchange="APP.worksheet.questions[${i}].answer=this.value">
+          <option value="true"  ${q.answer === 'true'  ? 'selected' : ''}>✅ נכון</option>
+          <option value="false" ${q.answer === 'false' ? 'selected' : ''}>❌ לא נכון</option>
+        </select></div>`;
+    } else {
+      optionsHtml = `<div class="form-group"><label>תשובה לדוגמה (לא תוצג לתלמיד)</label>
+        <input type="text" value="${escHtml(q.answer||'')}"
+               onchange="APP.worksheet.questions[${i}].answer=this.value"
+               placeholder="תשובה מקורית..."></div>`;
+    }
+
+    card.innerHTML = `
+      <div class="q-editor-header">
+        <span class="q-editor-num">שאלה ${i + 1}</span>
+        <select class="q-type-select" onchange="changeQType(${i},this.value)">
+          <option value="multiple_choice" ${q.type === 'multiple_choice' ? 'selected' : ''}>רב-בחירה</option>
+          <option value="open"            ${q.type === 'open'            ? 'selected' : ''}>פתוחה</option>
+          <option value="true_false"      ${q.type === 'true_false'      ? 'selected' : ''}>נכון/לא נכון</option>
+        </select>
+        <div style="margin-right:auto; display:flex; gap:6px;">
+          <button class="btn btn-ghost btn-xs" onclick="moveQ(${i},-1)">↑</button>
+          <button class="btn btn-ghost btn-xs" onclick="moveQ(${i},1)">↓</button>
+          <button class="btn btn-danger btn-xs" onclick="removeQ(${i})">🗑️</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>טקסט השאלה</label>
+        <textarea rows="2" onchange="APP.worksheet.questions[${i}].text=this.value">${escHtml(q.text)}</textarea>
+      </div>
+      ${optionsHtml}
+      <div class="form-group">
+        <label>הסבר (יוצג לאחר חשיפת תשובה)</label>
+        <input type="text" value="${escHtml(q.explanation||'')}"
+               onchange="APP.worksheet.questions[${i}].explanation=this.value"
+               placeholder="הסבר קצר...">
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <label style="margin:0">נקודות:</label>
+        <input type="number" min="1" max="10" value="${q.points||1}" style="width:60px;"
+               onchange="APP.worksheet.questions[${i}].points=parseInt(this.value)||1">
+      </div>
+    `;
+    el.appendChild(card);
+  });
+}
+
+function updateOption(qi, oi, val) {
+  if (!APP.worksheet.questions[qi].options) APP.worksheet.questions[qi].options = ['','','',''];
+  APP.worksheet.questions[qi].options[oi] = val;
+}
+function setCorrectAnswer(qi, letter) {
+  APP.worksheet.questions[qi].answer = letter;
+  renderQEditor();
+}
+function changeQType(qi, type) {
+  const q = APP.worksheet.questions[qi];
+  q.type = type;
+  if (type === 'multiple_choice' && !q.options) {
+    q.options = ['א. ', 'ב. ', 'ג. ', 'ד. '];
+    q.answer  = 'א';
+  }
+  renderQList();
+  renderQEditor();
+}
+function addNewQuestion() {
+  const id = (APP.worksheet.questions.length + 1);
+  APP.worksheet.questions.push({
+    id, type: 'multiple_choice', text: 'שאלה חדשה ' + id,
+    options: ['א. ', 'ב. ', 'ג. ', 'ד. '],
+    answer: 'א', points: 1, explanation: ''
+  });
+  renderQList();
+  renderQEditor();
+  // Scroll to new question
+  setTimeout(() => {
+    const card = document.getElementById('q-card-' + (APP.worksheet.questions.length - 1));
+    if (card) card.scrollIntoView({ behavior: 'smooth' });
+  }, 100);
+}
+function removeQ(i) {
+  if (APP.worksheet.questions.length <= 1) { showToast('⚠️ יש לשמור לפחות שאלה אחת'); return; }
+  APP.worksheet.questions.splice(i, 1);
+  APP.worksheet.questions.forEach((q, idx) => q.id = idx + 1);
+  renderQList();
+  renderQEditor();
+}
+function moveQ(i, dir) {
+  const qs  = APP.worksheet.questions;
+  const ni  = i + dir;
+  if (ni < 0 || ni >= qs.length) return;
+  [qs[i], qs[ni]] = [qs[ni], qs[i]];
+  renderQList();
+  renderQEditor();
+}
+
+/* ============================================================
+   PROJECTION MODE
+   ============================================================ */
+function startProjection() {
+  if (!APP.worksheet || !APP.worksheet.questions.length) {
+    showToast('⚠️ אין שאלות להקרנה'); return;
+  }
+  APP.session.currentQ    = 0;
+  APP.session.students    = [];
+  APP.session.startTime   = Date.now();
+  APP.session.active      = true;
+
+  document.getElementById('proj-class-name').textContent = APP.settings.className;
+  showScreen('projection');
+  startTimer();
+  renderProjectionQ();
+
+  if (APP.settings.autoRead) {
+    setTimeout(() => readCurrentQuestion(), 800);
+  }
+}
+
+function exitProjection() {
+  // Stop both STT engines
+  if (APP.settings.diarization) stopListeningAll();
+  else stopListening();
+  clearInterval(APP.session.timerInterval);
+
+  // Save session duration
+  if (APP.session.startTime) {
+    APP.session.duration = Math.floor((Date.now() - APP.session.startTime) / 1000);
+  }
+
+  APP.session.active = false;
+  synth.cancel();
+
+  // Persist session for analytics
+  if (APP.worksheet && APP.session.students.length > 0) {
+    const sessionData = {
+      students:      APP.session.students,
+      questionStats: APP.session.questionStats,
+      settings:      APP.settings,
+      worksheet:     APP.worksheet,
+      duration:      APP.session.duration,
+    };
+    localStorage.setItem('koors_last_session', JSON.stringify(sessionData));
+  }
+
+  showScreen('editor');
+}
+
+function renderProjectionQ() {
+  const qs = APP.worksheet.questions;
+  const q  = qs[APP.session.currentQ];
+  if (!q) return;
+
+  document.getElementById('proj-q-number').textContent  = `שאלה ${APP.session.currentQ + 1}`;
+  document.getElementById('proj-q-text').textContent    = q.text;
+  document.getElementById('proj-q-counter').textContent = `שאלה ${APP.session.currentQ + 1} / ${qs.length}`;
+
+  // Clear AI response
+  hideAIResponse();
+
+  const optEl = document.getElementById('proj-q-options');
+  optEl.innerHTML = '';
+
+  if (q.type === 'multiple_choice') {
+    const grid = document.createElement('div');
+    grid.className = 'proj-options';
+    const letters = ['א', 'ב', 'ג', 'ד'];
+    (q.options || []).forEach((opt, i) => {
+      const btn = document.createElement('div');
+      btn.className = 'proj-option';
+      btn.dataset.letter = letters[i];
+      btn.innerHTML = `<div class="opt-letter">${letters[i]}</div>${escHtml(opt)}`;
+      btn.onclick = () => selectProjOption(btn, letters[i], q);
+      grid.appendChild(btn);
+    });
+    optEl.appendChild(grid);
+
+  } else if (q.type === 'true_false') {
+    const wrap = document.createElement('div');
+    wrap.className = 'proj-tf';
+    wrap.innerHTML = `
+      <div class="proj-tf-btn true-btn"  onclick="selectTF(this,'true',${JSON.stringify(q).replace(/"/g,"'")})">✅ נכון</div>
+      <div class="proj-tf-btn false-btn" onclick="selectTF(this,'false',${JSON.stringify(q).replace(/"/g,"'")})">❌ לא נכון</div>
+    `;
+    optEl.appendChild(wrap);
+
+  } else {
+    // Open question
+    const area = document.createElement('textarea');
+    area.className = 'proj-open-area';
+    area.placeholder = 'כתוב תשובה כאן...';
+    optEl.appendChild(area);
+  }
+}
+
+function selectProjOption(el, letter, q) {
+  document.querySelectorAll('.proj-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  APP.session.lastStudentAnswer = letter;
+}
+
+function selectTF(el, val, q) {
+  document.querySelectorAll('.proj-tf-btn').forEach(b => b.style.borderColor = '');
+  el.style.borderColor = val === 'true' ? '#22c55e' : '#ef4444';
+  APP.session.lastStudentAnswer = val;
+}
+
+function prevQuestion() {
+  if (APP.session.currentQ > 0) {
+    APP.session.currentQ--;
+    renderProjectionQ();
+    if (APP.settings.autoRead) setTimeout(readCurrentQuestion, 400);
+  }
+}
+
+function nextQuestion() {
+  const qs = APP.worksheet.questions;
+  if (APP.session.currentQ < qs.length - 1) {
+    APP.session.currentQ++;
+    renderProjectionQ();
+    if (APP.settings.autoRead) setTimeout(readCurrentQuestion, 400);
+  } else {
+    showToast('✅ הגעת לשאלה האחרונה');
+  }
+}
+
+/* ============================================================
+   TIMER
+   ============================================================ */
+function startTimer() {
+  const el = document.getElementById('proj-timer');
+  clearInterval(APP.session.timerInterval);
+  APP.session.timerInterval = setInterval(() => {
+    const s = Math.floor((Date.now() - APP.session.startTime) / 1000);
+    const m = Math.floor(s / 60).toString().padStart(2, '0');
+    const sec = (s % 60).toString().padStart(2, '0');
+    el.textContent = m + ':' + sec;
+  }, 1000);
+}
+
+/* ============================================================
+   TEXT-TO-SPEECH
+   ============================================================ */
+function speak(text, onEnd) {
+  if (!synth) return;
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang  = APP.settings.speechLang || 'he-IL';
+  u.rate  = APP.settings.voiceSpeed || 0.9;
+
+  // Try to find matching voice
+  const voices = synth.getVoices();
+  const langCode = u.lang.split('-')[0];
+  const voice = voices.find(v => v.lang === u.lang)
+             || voices.find(v => v.lang.startsWith(langCode));
+  if (voice) u.voice = voice;
+
+  if (onEnd) u.onend = onEnd;
+  synth.speak(u);
+}
+
+function readCurrentQuestion() {
+  const q = APP.worksheet?.questions[APP.session.currentQ];
+  if (!q) return;
+  let text = q.text;
+  if (q.type === 'multiple_choice') {
+    text += '... ' + (q.options || []).join('... ');
+  }
+  speak(text);
+}
+
+// Load voices on ready
+if (synth) {
+  synth.onvoiceschanged = () => {};
+  // Force voice list load
+  synth.getVoices();
+}
+
+/* ============================================================
+   SPEECH-TO-TEXT
+   ============================================================ */
+function toggleListening() {
+  if (APP.session.listening) {
+    if (APP.settings.diarization) stopListeningAll();
+    else stopListening();
+  } else {
+    startListening();
+  }
+}
+
+function startListening() {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) { showToast('⚠️ זיהוי קול אינו נתמך בדפדפן זה'); return; }
+
+  recognition = new SpeechRec();
+  recognition.lang             = APP.settings.speechLang || 'he-IL';
+  recognition.continuous       = true;
+  recognition.interimResults   = true;
+  recognition.maxAlternatives  = 1;
+
+  recognition.onstart = () => {
+    APP.session.listening = true;
+    document.getElementById('proj-listen-btn').classList.add('listening');
+    document.getElementById('listen-icon').textContent   = '⏹️';
+    document.getElementById('listen-label').textContent  = 'עצור האזנה';
+    document.getElementById('mic-waves').style.display   = 'flex';
+    synth.cancel(); // Stop any speaking
+  };
+
+  recognition.onresult = e => {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t;
+      else interim += t;
+    }
+    document.getElementById('proj-transcript').textContent = interim || final;
+    if (final.trim()) {
+      handleStudentSpeech(final.trim());
+    }
+  };
+
+  recognition.onerror = err => {
+    if (err.error !== 'aborted') showToast('⚠️ שגיאת זיהוי קול: ' + err.error);
+    stopListening();
+  };
+
+  recognition.onend = () => stopListening();
+
+  try { recognition.start(); }
+  catch(e) { showToast('⚠️ לא ניתן להפעיל מיקרופון'); stopListening(); }
+}
+
+function stopListening() {
+  APP.session.listening = false;
+  if (recognition) { try { recognition.stop(); } catch {} recognition = null; }
+  const btn = document.getElementById('proj-listen-btn');
+  if (btn) {
+    btn.classList.remove('listening');
+    document.getElementById('listen-icon').textContent  = '🎤';
+    document.getElementById('listen-label').textContent = 'הקשב לתלמיד';
+    document.getElementById('mic-waves').style.display  = 'none';
+  }
+  document.getElementById('proj-transcript').textContent = '';
+}
+
+/* ============================================================
+   STUDENT SPEECH PARSING
+   ============================================================ */
+function handleStudentSpeech(text) {
+  const parsed = parseStudentSpeech(text);
+  APP.session.lastStudentName   = parsed.name;
+  APP.session.lastStudentAnswer = parsed.answer;
+
+  // Auto-check if MC or T/F
+  const q = APP.worksheet.questions[APP.session.currentQ];
+  if (q.type === 'multiple_choice' || q.type === 'true_false') {
+    const isCorrect = checkAnswer(q, parsed.answer);
+    respondToStudent(parsed.name, parsed.answer, isCorrect);
+  } else {
+    // Open question — just acknowledge
+    respondToStudentOpen(parsed.name, parsed.answer);
+  }
+
+  // Track in students panel
+  trackStudentAnswer(parsed.name, parsed.answer, q);
+}
+
+function parseStudentSpeech(text) {
+  const t = text.trim();
+
+  // Hebrew name-detection patterns
+  const patterns = [
+    /^אני\s+([א-ת]{1,10})[,،:\s]+(.+)$/,
+    /^שמי\s+([א-ת]{1,10})[,،:\s]+(.+)$/,
+    /^([א-ת]{2,10})\s+אומר[ת]?\s+(.+)$/,
+    /^([א-ת]{2,10})[,:]\s*(.+)$/,
+  ];
+
+  for (const re of patterns) {
+    const m = t.match(re);
+    if (m) return { name: m[1].trim(), answer: m[2].trim() };
+  }
+
+  // No name pattern — just answer
+  return { name: null, answer: t };
+}
+
+function checkAnswer(q, spokenAnswer) {
+  const clean   = spokenAnswer.trim().replace(/[.'"׳״]/g, '').toLowerCase();
+  const correct = (q.answer || '').trim().replace(/[.'"׳״]/g, '').toLowerCase();
+
+  if (q.type === 'true_false') {
+    const isTrueSpoken = ['נכון','כן','true','אמת'].some(w => clean.includes(w));
+    const correctBool  = correct === 'true';
+    return isTrueSpoken === correctBool;
+  }
+
+  // MC: spoken letter matches
+  const letters = { 'א': 'א', 'ב': 'ב', 'ג': 'ג', 'ד': 'ד', 'aleph':'א', 'a':'א', 'b':'ב' };
+  const letter  = clean.charAt(0);
+  if (letters[letter]) return letters[letter] === correct;
+
+  // Try matching option text
+  const opts = q.options || [];
+  const matchIdx = opts.findIndex(o => clean && o.toLowerCase().includes(clean));
+  if (matchIdx >= 0) {
+    const optLetter = ['א','ב','ג','ד'][matchIdx];
+    return optLetter === correct;
+  }
+
+  return null; // unknown
+}
+
+async function respondToStudent(name, answer, isCorrect) {
+  const nameStr = name ? name : 'תלמיד';
+  const q       = APP.worksheet.questions[APP.session.currentQ];
+  stopListening();
+
+  let prompt;
+  if (isCorrect === true) {
+    prompt = `תלמיד בשם ${nameStr} ענה תשובה נכונה על השאלה "${q.text}" (תשובה: ${answer}).
+תגיב בעברית בצורה מעודדת ושמחה, באופן אישי. משפט אחד קצר.`;
+  } else if (isCorrect === false) {
+    prompt = `תלמיד בשם ${nameStr} ענה "${answer}" על השאלה "${q.text}". התשובה שגויה.
+תגיב בצורה מעודדת ועדינה, בלי לגלות את התשובה הנכונה. משפט אחד קצר בעברית.`;
+  } else {
+    prompt = `תלמיד בשם ${nameStr} אמר "${answer}". תאשר שקיבלת ובקש הבהרה קצרה. עברית, משפט אחד.`;
+  }
+
+  try {
+    const response = await callAISimple(prompt);
+    showAIResponse(nameStr, response, isCorrect);
+    speak(response);
+
+    // Highlight correct option if right
+    if (isCorrect === true && q.type === 'multiple_choice') {
+      highlightCorrectOption(q.answer);
+    }
+  } catch(e) {
+    const fallback = isCorrect
+      ? `כל הכבוד ${nameStr}! תשובה נכונה!`
+      : `תודה ${nameStr}. נסה שוב!`;
+    showAIResponse(nameStr, fallback, isCorrect);
+    speak(fallback);
+  }
+}
+
+async function respondToStudentOpen(name, answer) {
+  const nameStr = name || 'תלמיד';
+  const q       = APP.worksheet.questions[APP.session.currentQ];
+  stopListening();
+  const prompt  = `תלמיד בשם ${nameStr} ענה על שאלה פתוחה: "${q.text}". תשובתו: "${answer}".
+תגיב בצורה מעניינת ומעודדת, בלי לגלות את התשובה הנכונה. עברית, שתי משפטים קצרים.`;
+  try {
+    const response = await callAISimple(prompt);
+    showAIResponse(nameStr, response, null);
+    speak(response);
+  } catch(e) {
+    const fb = `תשובה מעניינת ${nameStr}! תוכל לפרט יותר?`;
+    showAIResponse(nameStr, fb, null);
+    speak(fb);
+  }
+}
+
+/* ============================================================
+   AI RESPONSE DISPLAY
+   ============================================================ */
+function showAIResponse(studentName, text, isCorrect) {
+  const wrap  = document.getElementById('proj-ai-response');
+  const nameEl = document.getElementById('ai-student-name');
+  const textEl = document.getElementById('ai-response-text');
+
+  nameEl.textContent = studentName ? '👤 ' + studentName : '';
+  textEl.textContent = text;
+  textEl.className = 'proj-ai-text' +
+    (isCorrect === true ? ' correct-fb' : isCorrect === false ? ' wrong-fb' : '');
+  wrap.className = 'proj-ai-response show';
+}
+
+function hideAIResponse() {
+  document.getElementById('proj-ai-response').className = 'proj-ai-response';
+  document.getElementById('proj-transcript').textContent = '';
+}
+
+/* ============================================================
+   TEACHER ACTION BUTTONS
+   ============================================================ */
+async function teacherAction(action) {
+  const q = APP.worksheet.questions[APP.session.currentQ];
+  stopListening();
+  synth.cancel();
+
+  const lastName   = APP.session.lastStudentName || null;
+  const lastAnswer = APP.session.lastStudentAnswer || null;
+
+  const prompts = {
+    hint: `אתה מורה ב${APP.settings.className}.
+שאלה: "${q.text}"${q.type === 'multiple_choice' ? '\nאפשרויות: ' + (q.options||[]).join(', ') : ''}
+תן לכיתה רמז עדין ומחשיל שיעזור להם לחשוב בלי לגלות את התשובה.
+ענה בעברית, משפט אחד עד שניים בלבד.`,
+
+    correct: `אתה מורה ב${APP.settings.className}.
+שאלה: "${q.text}"
+${lastName ? `התלמיד/ה ${lastName} ענה/תה: "${lastAnswer || '?'}".` : lastAnswer ? `תלמיד ענה: "${lastAnswer}".` : 'תלמיד ענה תשובה שגויה.'}
+התשובה הנכונה היא "${q.answer}" אך אל תגלה אותה עדיין.
+כוון את התלמיד/ה לחשוב שוב בדרך מעודדת. עברית, שניים-שלושה משפטים קצרים.`,
+
+    reveal: `אתה מורה ב${APP.settings.className}.
+שאלה: "${q.text}"
+התשובה הנכונה: "${q.answer}".${q.explanation ? '\nהסבר: ' + q.explanation : ''}
+הצג את התשובה לכיתה בצורה ברורה, מעודדת ומשמחת.
+ענה בעברית, שניים-שלושה משפטים. לאחר מכן הוסף הסבר קצר.`,
+  };
+
+  showAIResponse(lastName, '⏳ מכין תשובה...', null);
+
+  try {
+    const response = await callAISimple(prompts[action]);
+    showAIResponse(lastName, response, action === 'reveal' ? true : null);
+    speak(response);
+
+    // On reveal: highlight correct answer
+    if (action === 'reveal' && q.type === 'multiple_choice') {
+      highlightCorrectOption(q.answer);
+    }
+  } catch(e) {
+    const fallbacks = {
+      hint:    'חשבו — מה הקשר לנושא שלמדנו?',
+      correct: 'כמעט! נסו לחשוב שוב על המושג הראשי.',
+      reveal:  `התשובה הנכונה היא: ${q.answer}. ${q.explanation || ''}`,
+    };
+    showAIResponse(lastName, fallbacks[action], action === 'reveal');
+    speak(fallbacks[action]);
+  }
+}
+
+function highlightCorrectOption(correctLetter) {
+  document.querySelectorAll('.proj-option').forEach(el => {
+    if (el.dataset.letter === correctLetter) {
+      el.classList.add('correct');
+    } else {
+      el.classList.add('wrong');
+    }
+  });
+}
+
+/* ============================================================
+   PROVIDER SELECTION
+   ============================================================ */
+function selectProvider(p, silent) {
+  APP.provider = p;
+  if (!silent) {
+    document.querySelectorAll('.prov-tab').forEach(b => b.classList.toggle('active', b.dataset.p === p));
+    document.querySelectorAll('.prov-guide').forEach(g => g.style.display = 'none');
+    const guide = document.getElementById('guide-' + p);
+    if (guide) guide.style.display = 'block';
+    const labels = { gemini: 'מפתח API (Gemini)', claude: 'מפתח API (Claude)', openai: 'מפתח API (OpenAI / GPT)' };
+    document.getElementById('api-key-label').textContent = labels[p] || 'מפתח API';
+  }
+  saveState();
+}
+
+function saveApiKey(val) {
+  APP.apiKey = val;
+  saveState();
+}
+
+function toggleKeyVis() {
+  const inp = document.getElementById('api-key-input');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+/* ============================================================
+   MULTI-PROVIDER API CALLS
+   ============================================================ */
+async function callAIVision(prompt) {
+  const apiKey = getEffectiveApiKey();
+  if (!apiKey) throw new Error('הכנס מפתח API בהגדרות');
+
+  if (APP.provider === 'gemini') {
+    const model = 'gemini-2.0-flash-exp';
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [
+        { inline_data: { mime_type: APP.imageMime, data: APP.imageB64 } },
+        { text: prompt }
+      ]}]})
+    });
+    if (!res.ok) throw new Error('Gemini: HTTP ' + res.status);
+    const d = await res.json();
+    return d.candidates[0].content.parts[0].text;
+  }
+
+  if (APP.provider === 'claude') {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-7',
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: APP.imageMime, data: APP.imageB64 } },
+          { type: 'text', text: prompt }
+        ]}]
+      })
+    });
+    if (!res.ok) throw new Error('Claude: HTTP ' + res.status);
+    const d = await res.json();
+    return d.content[0].text;
+  }
+
+  if (APP.provider === 'openai') {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: [
+          { type: 'image_url', image_url: { url: `data:${APP.imageMime};base64,${APP.imageB64}` } },
+          { type: 'text', text: prompt }
+        ]}]
+      })
+    });
+    if (!res.ok) throw new Error('OpenAI: HTTP ' + res.status);
+    const d = await res.json();
+    return d.choices[0].message.content;
+  }
+
+  throw new Error('ספק לא מוכר: ' + APP.provider);
+}
+
+async function callAISimple(prompt) {
+  const apiKey = getEffectiveApiKey();
+  if (!apiKey) throw new Error('הכנס מפתח API בהגדרות');
+
+  if (APP.provider === 'gemini') {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+    if (!res.ok) throw new Error('Gemini: HTTP ' + res.status);
+    const d = await res.json();
+    return d.candidates[0].content.parts[0].text.trim();
+  }
+
+  if (APP.provider === 'claude') {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 256,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if (!res.ok) throw new Error('Claude: HTTP ' + res.status);
+    const d = await res.json();
+    return d.content[0].text.trim();
+  }
+
+  if (APP.provider === 'openai') {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        max_tokens: 256,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if (!res.ok) throw new Error('OpenAI: HTTP ' + res.status);
+    const d = await res.json();
+    return d.choices[0].message.content.trim();
+  }
+
+  throw new Error('ספק לא מוכר');
+}
+
+/* ============================================================
+   STUDENT TRACKING PANEL
+   ============================================================ */
+function trackStudentAnswer(name, answer, q) {
+  // Route through enhanced tracker so questionStats are always populated
+  trackStudentAnswerEnhanced(name, answer, q, null);
+}
+
+function renderStudentsPanel() {
+  const el = document.getElementById('students-list');
+  el.innerHTML = '';
+  APP.session.students.forEach(s => {
+    const last = s.answers[s.answers.length - 1];
+    const cls  = last?.correct === true ? 'correct' : last?.correct === false ? 'wrong' : '';
+    const div  = document.createElement('div');
+    div.className = 'student-row ' + cls;
+    div.innerHTML = `
+      <span class="student-icon">${last?.correct === true ? '✅' : last?.correct === false ? '❌' : '🎤'}</span>
+      <span class="student-name">${escHtml(s.name)}</span>
+      <span class="student-ans">${escHtml(String(last?.answer || ''))}</span>
+    `;
+    el.appendChild(div);
+  });
+}
+
+function toggleStudentsPanel() {
+  const p = document.getElementById('students-panel');
+  p.classList.toggle('show');
+}
+
+/* ============================================================
+   FULLSCREEN
+   ============================================================ */
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => showToast('⚠️ לא ניתן להיכנס למסך מלא'));
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+/* ============================================================
+   UTILS
+   ============================================================ */
+function saveState() {
+  localStorage.setItem('teacher_engine', JSON.stringify({
+    settings:      APP.settings,
+    provider:      APP.provider,
+    apiKey:        APP.apiKey,
+    billingMode:   APP.billingMode,
+    schoolApiKey:  APP.schoolApiKey,
+    googleClientId: APP.googleClientId,
+  }));
+}
+
+/* ============================================================
+   BILLING MODE
+   ============================================================ */
+function selectBillingMode(mode, silent) {
+  APP.billingMode = mode;
+  if (!silent) saveState();
+  document.querySelectorAll('.billing-tab').forEach(b => b.classList.toggle('active', b.dataset.b === mode));
+  const info     = document.getElementById('billing-school-info');
+  const keyGroup = document.getElementById('api-key-group');
+  if (mode === 'school') {
+    info.classList.add('show');
+    if (keyGroup) keyGroup.style.display = 'none';
+    // Use school key for API calls
+    if (!APP.schoolApiKey) {
+      info.textContent = '⚠️ אין מפתח בית-ספרי. בקש מהמנהל להגדיר אחד.';
+    } else {
+      info.textContent = '✅ משתמש במפתח הבית-ספרי. אין צורך במפתח אישי.';
+    }
+  } else {
+    info.classList.remove('show');
+    if (keyGroup) keyGroup.style.display = 'block';
+  }
+}
+
+function getEffectiveApiKey() {
+  return APP.billingMode === 'school' ? APP.schoolApiKey : APP.apiKey;
+}
+
+/* ============================================================
+   GOOGLE OAUTH 2.0 (Google Identity Services)
+   ============================================================ */
+function saveGoogleClientId(val) {
+  APP.googleClientId = val.trim();
+  saveState();
+  if (APP.googleClientId) initGoogleAuth(APP.googleClientId);
+}
+
+function initGoogleAuth(clientId) {
+  if (!window.google?.accounts?.id) return;  // GIS not loaded yet
+  google.accounts.id.initialize({
+    client_id: clientId,
+    callback:  handleGoogleCredential,
+    auto_select: false,
+  });
+}
+
+function triggerGoogleSignIn() {
+  if (!APP.googleClientId) {
+    showToast('⚠️ הכנס Google OAuth Client ID בשדה ההגדרות');
+    return;
+  }
+  if (!window.google?.accounts?.id) {
+    showToast('⚠️ ספריית Google Identity Services לא נטענה');
+    return;
+  }
+  google.accounts.id.prompt(notification => {
+    if (notification.isNotDisplayed()) {
+      // Fallback: show One Tap button manually
+      google.accounts.id.renderButton(
+        document.getElementById('auth-area'),
+        { theme: 'filled_blue', size: 'medium', text: 'signin_with', locale: 'iw' }
+      );
+    }
+  });
+}
+
+function handleGoogleCredential(response) {
+  try {
+    // Decode JWT payload (no verification needed for display)
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const user = {
+      name:    payload.name    || payload.email,
+      email:   payload.email   || '',
+      picture: payload.picture || '',
+      sub:     payload.sub     || '',
+    };
+    APP.auth.user = user;
+    localStorage.setItem('koors_google_auth', JSON.stringify(user));
+    updateAuthUI(user);
+    showToast('✅ כניסה בוצעה: ' + user.name);
+  } catch(e) {
+    showToast('❌ שגיאה בכניסה עם Google');
+  }
+}
+
+function updateAuthUI(user) {
+  APP.auth.user = user;
+  document.getElementById('auth-signin-btn').style.display = 'none';
+  const chip = document.getElementById('auth-chip');
+  chip.style.display = 'flex';
+  document.getElementById('auth-name-display').textContent  = user.name  || user.email;
+  document.getElementById('auth-email-display').textContent = user.email || '';
+  const avatar = document.getElementById('auth-avatar');
+  if (user.picture) {
+    avatar.src = user.picture;
+    avatar.style.display = 'block';
+  } else {
+    avatar.style.display = 'none';
+  }
+}
+
+function toggleAuthDropdown() {
+  document.getElementById('auth-dropdown').classList.toggle('show');
+}
+
+function openBillingSettings() {
+  document.getElementById('auth-dropdown').classList.remove('show');
+  showScreen('setup');
+  setTimeout(() => {
+    document.querySelector('.billing-tabs')?.scrollIntoView({ behavior: 'smooth' });
+  }, 200);
+}
+
+function signOutGoogle() {
+  APP.auth.user = null;
+  localStorage.removeItem('koors_google_auth');
+  document.getElementById('auth-chip').style.display   = 'none';
+  document.getElementById('auth-signin-btn').style.display = 'flex';
+  document.getElementById('auth-dropdown').classList.remove('show');
+  if (window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
+  showToast('התנתקת מ-Google');
+}
+
+// GIS ready callback
+window.addEventListener('load', () => {
+  if (APP.googleClientId) initGoogleAuth(APP.googleClientId);
+});
+
+/* ============================================================
+   SPEAKER DIARIZATION — integration with STT pipeline
+   ============================================================ */
+let _diarMicStream = null;   // MediaStream from getUserMedia (for diarization audio)
+
+async function startListeningWithDiarization() {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) { showToast('⚠️ זיהוי קול אינו נתמך בדפדפן זה'); return; }
+
+  // If diarization enabled, get mic stream separately for audio analysis
+  if (APP.settings.diarization && typeof SpeakerDiarization !== 'undefined') {
+    try {
+      _diarMicStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      SpeakerDiarization.start(_diarMicStream);
+    } catch(e) {
+      console.warn('[Diarization] Mic access denied:', e.message);
+    }
+  }
+
+  recognition = new SpeechRec();
+  recognition.lang             = APP.settings.speechLang || 'he-IL';
+  recognition.continuous       = true;
+  recognition.interimResults   = true;
+  recognition.maxAlternatives  = 1;
+
+  recognition.onstart = () => {
+    APP.session.listening = true;
+    document.getElementById('proj-listen-btn').classList.add('listening');
+    document.getElementById('listen-icon').textContent   = '⏹️';
+    document.getElementById('listen-label').textContent  = 'עצור האזנה';
+    document.getElementById('mic-waves').style.display   = 'flex';
+    synth.cancel();
+  };
+
+  recognition.onresult = e => {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t;
+      else interim += t;
+    }
+    document.getElementById('proj-transcript').textContent = interim || final;
+    if (final.trim()) {
+      handleStudentSpeechWithDiarization(final.trim());
+    }
+  };
+
+  recognition.onerror = err => {
+    if (err.error !== 'aborted') showToast('⚠️ שגיאת זיהוי קול: ' + err.error);
+    stopListeningAll();
+  };
+
+  recognition.onend = () => stopListeningAll();
+
+  try { recognition.start(); }
+  catch(e) { showToast('⚠️ לא ניתן להפעיל מיקרופון'); stopListeningAll(); }
+}
+
+function stopListeningAll() {
+  APP.session.listening = false;
+  if (recognition) { try { recognition.stop(); } catch {} recognition = null; }
+  if (typeof SpeakerDiarization !== 'undefined') SpeakerDiarization.stop();
+  if (_diarMicStream) { _diarMicStream.getTracks().forEach(t => t.stop()); _diarMicStream = null; }
+
+  const btn = document.getElementById('proj-listen-btn');
+  if (btn) {
+    btn.classList.remove('listening');
+    document.getElementById('listen-icon').textContent  = '🎤';
+    document.getElementById('listen-label').textContent = 'הקשב לתלמיד';
+    document.getElementById('mic-waves').style.display  = 'none';
+  }
+  document.getElementById('proj-transcript').textContent = '';
+}
+
+function handleStudentSpeechWithDiarization(text) {
+  const parsed = parseStudentSpeech(text);
+
+  let resolvedName = parsed.name;
+  let speakerColor = null;
+
+  // If diarization is active, identify speaker by voice
+  if (APP.settings.diarization && typeof SpeakerDiarization !== 'undefined' && SpeakerDiarization.isActive()) {
+    const spk = SpeakerDiarization.identifySpeaker(parsed.name);
+    resolvedName = spk.name;
+    speakerColor = spk.color;
+    if (spk.isNew && !parsed.name) {
+      showToast('🎙️ זוהה דובר חדש: ' + spk.name);
+    }
+    // If parsed name matches auto-ID, register it
+    if (parsed.name && spk.id) {
+      SpeakerDiarization.registerName(spk.id, parsed.name);
+      resolvedName = parsed.name;
+    }
+  }
+
+  APP.session.lastStudentName   = resolvedName;
+  APP.session.lastStudentAnswer = parsed.answer;
+
+  const q = APP.worksheet.questions[APP.session.currentQ];
+  if (q.type === 'multiple_choice' || q.type === 'true_false') {
+    const isCorrect = checkAnswer(q, parsed.answer);
+    trackStudentAnswerEnhanced(resolvedName, parsed.answer, q, speakerColor);
+    respondToStudent(resolvedName, parsed.answer, isCorrect);
+  } else {
+    trackStudentAnswerEnhanced(resolvedName, parsed.answer, q, speakerColor);
+    respondToStudentOpen(resolvedName, parsed.answer);
+  }
+}
+
+/* ─ Patch original startListening to route through diarization ─ */
+function startListening() {
+  if (APP.settings.diarization) {
+    startListeningWithDiarization();
+  } else {
+    _startListeningOriginal();
+  }
+}
+
+function _startListeningOriginal() {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) { showToast('⚠️ זיהוי קול אינו נתמך בדפדפן זה'); return; }
+
+  recognition = new SpeechRec();
+  recognition.lang             = APP.settings.speechLang || 'he-IL';
+  recognition.continuous       = true;
+  recognition.interimResults   = true;
+  recognition.maxAlternatives  = 1;
+
+  recognition.onstart = () => {
+    APP.session.listening = true;
+    document.getElementById('proj-listen-btn').classList.add('listening');
+    document.getElementById('listen-icon').textContent   = '⏹️';
+    document.getElementById('listen-label').textContent  = 'עצור האזנה';
+    document.getElementById('mic-waves').style.display   = 'flex';
+    synth.cancel();
+  };
+
+  recognition.onresult = e => {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t;
+      else interim += t;
+    }
+    document.getElementById('proj-transcript').textContent = interim || final;
+    if (final.trim()) handleStudentSpeech(final.trim());
+  };
+
+  recognition.onerror = err => {
+    if (err.error !== 'aborted') showToast('⚠️ שגיאת זיהוי קול: ' + err.error);
+    stopListening();
+  };
+
+  recognition.onend = () => stopListening();
+
+  try { recognition.start(); }
+  catch(e) { showToast('⚠️ לא ניתן להפעיל מיקרופון'); stopListening(); }
+}
+
+/* ============================================================
+   ENHANCED STUDENT TRACKING (for analytics)
+   ============================================================ */
+function trackStudentAnswerEnhanced(name, answer, q, color) {
+  if (!name) name = 'תלמיד אנונימי';
+  const isCorrect = checkAnswer(q, answer);
+  const qIdx      = APP.session.currentQ;
+
+  // Update per-student record
+  let student = APP.session.students.find(s => s.name === name);
+  if (!student) {
+    student = { name, answers: [], color: color || '#3b82f6' };
+    APP.session.students.push(student);
+  }
+  student.answers.push({ q: qIdx, answer, correct: isCorrect });
+
+  // Update per-question stats
+  let stat = APP.session.questionStats[qIdx];
+  if (!stat) {
+    stat = { qIdx, correct: 0, wrong: 0, unknown: 0, answers: [] };
+    APP.session.questionStats[qIdx] = stat;
+  }
+  if (isCorrect === true)       stat.correct++;
+  else if (isCorrect === false) stat.wrong++;
+  else                          stat.unknown++;
+  stat.answers.push({ name, answer, correct: isCorrect });
+
+  renderStudentsPanel();
+}
+
+/* ============================================================
+   PDF / PRINT WORKSHEET
+   ============================================================ */
+function printWorksheet() {
+  if (!APP.worksheet) { showToast('⚠️ אין דף עבודה לייצוא'); return; }
+  const ws = APP.worksheet;
+
+  // Populate print overlay
+  document.getElementById('print-title').textContent = ws.title || 'דף עבודה';
+  document.getElementById('print-meta').textContent  =
+    [APP.settings.className, ws.subject || APP.settings.subjectName, new Date().toLocaleDateString('he-IL')]
+      .filter(Boolean).join(' · ');
+
+  const container = document.getElementById('print-questions');
+  container.innerHTML = '';
+
+  ws.questions.forEach((q, i) => {
+    const div = document.createElement('div');
+    div.className = 'print-q-card';
+
+    let bodyHtml = '';
+    if (q.type === 'multiple_choice') {
+      bodyHtml = (q.options || []).map((opt, oi) =>
+        `<div class="print-option">${['א','ב','ג','ד'][oi]}. ${escHtml(opt)}</div>`
+      ).join('');
+    } else if (q.type === 'true_false') {
+      bodyHtml = '<div class="print-option">☐ נכון &nbsp;&nbsp; ☐ לא נכון</div>';
+    } else {
+      bodyHtml = '<div style="border-bottom:1px solid #ccc;margin-top:20px;"></div>'
+               + '<div style="border-bottom:1px solid #ccc;margin-top:20px;"></div>';
+    }
+
+    div.innerHTML = `
+      <div class="print-q-num">שאלה ${i + 1} (${q.points || 1} נק׳)</div>
+      <div class="print-q-text">${escHtml(q.text)}</div>
+      ${bodyHtml}
+    `;
+    container.appendChild(div);
+  });
+
+  window.print();
+}
+
+/* ============================================================
+   ANALYTICS DASHBOARD
+   ============================================================ */
+function openAnalytics() {
+  document.getElementById('auth-dropdown')?.classList.remove('show');
+
+  // Save current session to localStorage for the analytics page
+  if (APP.worksheet && APP.session.students.length > 0) {
+    const sessionData = {
+      students:      APP.session.students,
+      questionStats: APP.session.questionStats,
+      settings:      APP.settings,
+      worksheet:     APP.worksheet,
+      duration:      APP.session.startTime
+        ? Math.floor((Date.now() - APP.session.startTime) / 1000) : 0,
+    };
+    localStorage.setItem('koors_last_session', JSON.stringify(sessionData));
+  }
+
+  // Open analytics in a new window and pass APP reference
+  const win = window.open('analytics-dashboard.html', '_blank',
+    'width=1100,height=800,scrollbars=yes,resizable=yes');
+  // Note: win.APP will be accessible from analytics-dashboard.html via window.opener.APP
+}
+
+/* ─ Also save session when exiting projection ─ */
+const _origExitProjection = typeof exitProjection === 'function' ? exitProjection : null;
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+init();
+</script>
+</body>
+</html>

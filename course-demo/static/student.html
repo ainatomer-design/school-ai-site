@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>פורטל תלמיד</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root { --primary:#1a73e8; --accent:#34a853; --bg:#f0f4f8; --card:#fff; --text:#202124; --muted:#5f6368; --border:#e8ecf0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Heebo, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .topbar { background: #0f172a; color: #fff; height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+    .brand { font-weight: 800; font-size: 1.05rem; }
+    .class-badge { background: #1e40af; color: #bfdbfe; padding: 4px 12px; border-radius: 999px; font-size: .8rem; font-weight: 700; }
+    main { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+    h2 { font-size: 1.15rem; margin-bottom: 14px; color: var(--muted); }
+    .card { background: var(--card); border-radius: 14px; padding: 18px; margin-bottom: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.05); }
+    .card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; }
+    .card-meta { font-size: .78rem; color: var(--muted); margin-bottom: 10px; }
+    .empty { text-align: center; color: var(--muted); padding: 48px 0; font-size: 1.1rem; }
+
+    /* Quiz */
+    .quiz-q { margin-bottom: 16px; }
+    .quiz-q .q-text { font-weight: 700; margin-bottom: 8px; }
+    .quiz-q label { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 10px; margin-bottom: 6px; cursor: pointer; font-size: .9rem; }
+    .quiz-q label:hover { border-color: var(--primary); background: #e8f0fe; }
+    .quiz-q input[type=radio] { accent-color: var(--primary); }
+    .quiz-result { font-weight: 700; margin-top: 10px; }
+    .quiz-result.ok { color: #166534; } .quiz-result.bad { color: #991b1b; }
+    .btn { border: 0; border-radius: 10px; padding: 10px 18px; font-family: inherit; font-weight: 700; cursor: pointer; font-size: .9rem; }
+    .btn-primary { background: var(--primary); color: #fff; margin-top: 8px; }
+    .btn-ok { background: var(--accent); color: #fff; }
+
+    /* Task board */
+    .task-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .task-item:last-child { border-bottom: 0; }
+    .task-item input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); }
+    .task-done { text-decoration: line-through; color: var(--muted); }
+    .task-due { font-size: .75rem; color: var(--muted); margin-right: auto; }
+
+    /* Links */
+    .link-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 10px; }
+    .link-btn { display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: var(--bg); border-radius: 12px; text-decoration: none; color: var(--text); font-weight: 700; gap: 6px; font-size: .9rem; border: 1.5px solid var(--border); transition: .15s; }
+    .link-btn:hover { border-color: var(--primary); background: #e8f0fe; }
+    .link-btn .icon { font-size: 1.8rem; }
+
+    /* Announcement */
+    .ann-card { border-right: 4px solid var(--primary); }
+
+    /* Grade tracker */
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    th, td { padding: 8px 10px; border: 1px solid var(--border); text-align: right; }
+    th { background: #f8fafc; font-weight: 700; }
+
+    /* Lock overlay */
+    .lock-overlay { background: #f8fafc; border: 2px dashed var(--border); border-radius: 14px; padding: 32px; text-align: center; margin-bottom: 14px; }
+    .lock-icon { font-size: 2.5rem; margin-bottom: 8px; }
+    .lock-title { font-weight: 700; margin-bottom: 6px; }
+    .lock-sub { color: var(--muted); font-size: .85rem; margin-bottom: 14px; }
+    .lock-input { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .lock-input input { max-width: 220px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-family: inherit; font-size: .95rem; text-align: center; }
+    .lock-input input:focus { outline: none; border-color: var(--primary); }
+    .lock-err { color: #991b1b; font-size: .82rem; margin-top: 6px; display: none; }
+
+    /* Form */
+    .form-field { margin-bottom: 12px; }
+    .form-field label { display: block; font-size: .78rem; font-weight: 700; margin-bottom: 6px; color: var(--muted); }
+    .form-field input, .form-field textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: .9rem; }
+    .form-success { color: #166534; background: #dcfce7; border-radius: 10px; padding: 10px; margin-top: 8px; font-weight: 700; display: none; }
+
+    /* Login for class code */
+    #code-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .code-card { background: var(--card); border-radius: 20px; padding: 40px 36px; width: 100%; max-width: 360px; box-shadow: 0 8px 40px rgba(0,0,0,.1); text-align: center; }
+    .code-card .logo { font-size: 3rem; margin-bottom: 12px; }
+    .code-card h1 { font-size: 1.3rem; font-weight: 900; margin-bottom: 6px; }
+    .code-card .sub { color: var(--muted); font-size: .85rem; margin-bottom: 20px; }
+    .code-card input { width: 100%; padding: 12px; border: 1.5px solid var(--border); border-radius: 12px; font-family: inherit; font-size: 1rem; text-align: center; margin-bottom: 10px; letter-spacing: .1em; }
+    .code-card button { width: 100%; padding: 13px; background: var(--accent); color: #fff; border: 0; border-radius: 12px; font-family: inherit; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    .code-error { background: #fee2e2; color: #991b1b; border-radius: 10px; padding: 10px; font-size: .85rem; margin-bottom: 10px; display: none; }
+  </style>
+</head>
+<body>
+
+<!-- מסך הזנת קוד (אם נכנסים ישירות, ללא קוד ב-URL) -->
+<div id="code-screen" style="display:none">
+  <div class="code-card">
+    <div class="logo">🎓</div>
+    <h1>כניסה לכיתה</h1>
+    <p class="sub">הזן את קוד הכיתה שקיבלת מהמחנך</p>
+    <div class="code-error" id="code-error"></div>
+    <input type="text" id="manual-code" placeholder="קוד גישה" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter') enterByCode()">
+    <button onclick="enterByCode()">כניסה לכיתה &rarr;</button>
+  </div>
+</div>
+
+<!-- פורטל כיתה -->
+<div id="class-screen" style="display:none">
+  <header class="topbar">
+    <div class="brand">🎓 פורטל תלמיד</div>
+    <span class="class-badge" id="class-label"></span>
+  </header>
+  <main>
+    <h2 id="features-heading">פיצ'רים פעילים בכיתה</h2>
+    <div id="features-container"><div class="card" style="color:var(--muted)">טוען...</div></div>
+  </main>
+</div>
+
+<script>
+let classId = null;
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function init() {
+  const pathParts = location.pathname.split('/');
+  const codeFromUrl = pathParts[pathParts.indexOf('class') + 1] || '';
+  if (codeFromUrl) {
+    await enterClass(codeFromUrl);
+  } else {
+    document.getElementById('code-screen').style.display = 'flex';
+  }
+}
+
+async function enterByCode() {
+  const code = document.getElementById('manual-code').value.trim().toUpperCase();
+  if (!code) return;
+  const err = await enterClass(code);
+  if (err) {
+    const el = document.getElementById('code-error');
+    el.textContent = err;
+    el.style.display = 'block';
+  }
+}
+
+async function enterClass(code) {
+  try {
+    const r = await fetch('/api/auth/class', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({code})
+    });
+    const d = await r.json();
+    if (!r.ok) return d.error?.message || 'קוד שגוי';
+    classId = d.class_id || code;
+    document.getElementById('code-screen').style.display = 'none';
+    document.getElementById('class-screen').style.display = 'block';
+    document.getElementById('class-label').textContent = 'כיתה: ' + classId;
+    loadFeatures();
+    return null;
+  } catch { return 'שגיאת חיבור'; }
+}
+
+async function loadFeatures() {
+  const el = document.getElementById('features-container');
+  try {
+    const r = await fetch(`/api/features?status=active&class=${encodeURIComponent(classId)}`);
+    const d = await r.json();
+    const features = d.features || [];
+    if (!features.length) {
+      el.innerHTML = '<div class="empty">📭 אין פיצ'רים פעילים בכיתה זו כרגע.</div>';
+      return;
+    }
+    el.innerHTML = features.map((f, i) => renderFeature(f, i)).join('');
+    attachQuizHandlers();
+    attachFormHandlers();
+  } catch(e) { el.innerHTML = `<div class="card" style="color:#991b1b">שגיאה: ${esc(e.message)}</div>`; }
+}
+
+const _unlocked = new Set();
+
+function renderFeature(f, idx) {
+  if (f.access_level === 'protected' && !_unlocked.has(f.id)) {
+    return renderLock(f, idx);
+  }
+  const cfg = f.config || {};
+  switch (f.feature_type) {
+    case 'quiz': return renderQuiz(f, cfg, idx);
+    case 'task_board': return renderTaskBoard(f, cfg, idx);
+    case 'link_set': return renderLinkSet(f, cfg);
+    case 'announcement_card': return renderAnnouncement(f, cfg);
+    case 'grade_tracker': return renderGradeTracker(f, cfg);
+    case 'custom_form': return renderForm(f, cfg, idx);
+    default: return `<div class="card"><div class="card-title">${esc(f.title)}</div><div class="card-meta">${esc(f.description)}</div></div>`;
+  }
+}
+
+function renderQuiz(f, cfg, idx) {
+  const qs = cfg.questions || [];
+  const qHtml = qs.map((q, qi) => `
+    <div class="quiz-q">
+      <div class="q-text">${qi+1}. ${esc(q.text)}</div>
+      ${(q.options||[]).map((o, oi) => `
+        <label><input type="radio" name="q${idx}_${qi}" value="${oi}"> ${esc(o)}</label>`).join('')}
+    </div>`).join('');
+  return `<div class="card" data-quiz="${idx}" data-cfg='${JSON.stringify(cfg).replace(/'/g,"&#39;")}'>
+    <div class="card-title">📝 ${esc(f.title)}</div>
+    <div class="card-meta">${esc(f.description)}</div>
+    ${qHtml}
+    <button class="btn btn-primary" onclick="submitQuiz(${idx}, this)">בדוק תשובות</button>
+    <div class="quiz-result" id="quiz-result-${idx}"></div>
+  </div>`;
+}
+
+function renderLock(f, idx) {
+  return `<div class="lock-overlay" id="lock-${esc(f.id)}">
+    <div class="lock-icon">🔒</div>
+    <div class="lock-title">${esc(f.title)}</div>
+    <div class="lock-sub">פיצ'ר זה מוגן. הזן קוד גישה כדי לפתוח אותו.</div>
+    <div class="lock-input">
+      <input type="text" id="lock-code-${esc(f.id)}" placeholder="קוד גישה" onkeydown="if(event.key==='Enter') unlockFeature('${esc(f.id)}', ${idx})">
+      <button class="btn btn-primary" onclick="unlockFeature('${esc(f.id)}', ${idx})">פתח 🔓</button>
+    </div>
+    <div class="lock-err" id="lock-err-${esc(f.id)}">קוד שגוי — נסה שנית</div>
+  </div>`;
+}
+
+async function unlockFeature(fid, idx) {
+  const code = document.getElementById('lock-code-' + fid).value.trim();
+  const errEl = document.getElementById('lock-err-' + fid);
+  errEl.style.display = 'none';
+  const r = await fetch(`/api/features/${fid}/verify`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({code})
+  });
+  if (r.ok) {
+    _unlocked.add(fid);
+    await loadFeatures();
+  } else {
+    errEl.style.display = 'block';
+  }
+}
+
+function attachQuizHandlers() {}
+function submitQuiz(idx, btn) {
+  const card = document.querySelector(`[data-quiz="${idx}"]`);
+  const cfg = JSON.parse(card.dataset.cfg);
+  const qs = cfg.questions || [];
+  let correct = 0;
+  qs.forEach((q, qi) => {
+    const sel = card.querySelector(`input[name="q${idx}_${qi}"]:checked`);
+    if (sel && parseInt(sel.value) === q.correct) correct++;
+  });
+  const res = document.getElementById('quiz-result-' + idx);
+  res.textContent = `קיבלת ${correct} מתוך ${qs.length} נכון`;
+  res.className = 'quiz-result ' + (correct === qs.length ? 'ok' : 'bad');
+  btn.disabled = true;
+}
+
+function renderTaskBoard(f, cfg) {
+  const tasks = cfg.tasks || [];
+  return `<div class="card">
+    <div class="card-title">✅ ${esc(f.title)}</div>
+    ${tasks.map((t, i) => `
+      <div class="task-item">
+        <input type="checkbox" onchange="this.nextElementSibling.classList.toggle('task-done',this.checked)">
+        <span>${esc(t.text)}</span>
+        ${t.due ? `<span class="task-due">עד: ${esc(t.due)}</span>` : ''}
+      </div>`).join('')}
+  </div>`;
+}
+
+function renderLinkSet(f, cfg) {
+  const links = cfg.links || [];
+  return `<div class="card">
+    <div class="card-title">🔗 ${esc(f.title)}</div>
+    <div class="link-grid" style="margin-top:10px">
+      ${links.map(l => `<a href="${esc(l.url||'#')}" target="_blank" class="link-btn"><span class="icon">${esc(l.icon||'🔗')}</span>${esc(l.text)}</a>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderAnnouncement(f, cfg) {
+  return `<div class="card ann-card">
+    <div class="card-title">${esc(cfg.icon||'📢')} ${esc(f.title)}</div>
+    <div style="font-size:.95rem;line-height:1.6">${esc(cfg.text||f.description)}</div>
+  </div>`;
+}
+
+function renderGradeTracker(f, cfg) {
+  const cols = cfg.columns || ['שם','ציון'];
+  const rows = cfg.rows || [];
+  return `<div class="card">
+    <div class="card-title">📊 ${esc(f.title)}</div>
+    <table style="margin-top:10px">
+      <thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead>
+      <tbody>${rows.length ? rows.map(row => `<tr>${(Array.isArray(row)?row:[]).map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${cols.length}" style="text-align:center;color:var(--muted)">אין נתונים עדיין</td></tr>`}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderForm(f, cfg, idx) {
+  const fields = cfg.fields || [];
+  return `<div class="card" data-form="${idx}">
+    <div class="card-title">📋 ${esc(f.title)}</div>
+    ${fields.map(field => `
+      <div class="form-field">
+        <label>${esc(field.label)}</label>
+        <input type="${esc(field.type||'text')}" placeholder="${esc(field.label)}" name="field_${idx}">
+      </div>`).join('')}
+    <button class="btn btn-ok" onclick="submitForm(${idx}, this)">שלח</button>
+    <div class="form-success" id="form-success-${idx}">✅ נשלח בהצלחה! תודה.</div>
+  </div>`;
+}
+
+function attachFormHandlers() {}
+function submitForm(idx, btn) {
+  btn.disabled = true;
+  document.getElementById('form-success-' + idx).style.display = 'block';
+}
+
+init();
+</script>
+</body>
+</html>

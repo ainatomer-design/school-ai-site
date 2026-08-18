@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>כניסה למערכת — עוזר מורה AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --primary: #1a73e8;
+  --accent:  #34a853;
+  --warn:    #f9ab00;
+  --danger:  #ea4335;
+  --text:    #202124;
+  --text-2:  #5f6368;
+  --border:  rgba(255,255,255,.15);
+  --t: .25s ease;
+}
+
+body {
+  font-family: 'Heebo', 'Inter', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0d1b3e 0%, #1a3a6b 50%, #0d3b2e 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* animated background dots */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+
+/* ===== LANG BAR ===== */
+.lang-bar {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  gap: 6px;
+  z-index: 10;
+}
+.lang-btn {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 99px;
+  padding: 4px 12px;
+  color: rgba(255,255,255,.7);
+  font-family: inherit;
+  font-size: .72rem;
+  cursor: pointer;
+  transition: var(--t);
+}
+.lang-btn:hover  { background: rgba(255,255,255,.2); color: #fff; }
+.lang-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+/* ===== CARD ===== */
+.gate-card {
+  background: rgba(255,255,255,.07);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 24px;
+  padding: 40px 40px 36px;
+  width: 100%;
+  max-width: 420px;
+  margin: 16px;
+  box-shadow: 0 32px 80px rgba(0,0,0,.4);
+  text-align: center;
+  position: relative;
+}
+
+/* ===== LOGO ===== */
+.gate-logo {
+  width: 72px; height: 72px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem;
+  margin: 0 auto 20px;
+  box-shadow: 0 8px 24px rgba(26,115,232,.4);
+}
+.gate-title {
+  color: #fff;
+  font-size: 1.6rem;
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+.gate-sub {
+  color: rgba(255,255,255,.6);
+  font-size: .88rem;
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+/* ===== FORM ===== */
+.gate-label {
+  display: block;
+  text-align: right;
+  color: rgba(255,255,255,.7);
+  font-size: .8rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  letter-spacing: .04em;
+}
+.code-input {
+  width: 100%;
+  background: rgba(255,255,255,.08);
+  border: 1.5px solid rgba(255,255,255,.18);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #fff;
+  font-family: 'Inter', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: .1em;
+  transition: var(--t);
+  outline: none;
+}
+.code-input::placeholder { color: rgba(255,255,255,.3); letter-spacing: .05em; font-weight: 400; font-size: .9rem; }
+.code-input:focus { border-color: var(--primary); background: rgba(26,115,232,.12); }
+.code-input.error { border-color: var(--danger); background: rgba(234,67,53,.1); animation: shake .3s ease; }
+.code-input.success { border-color: var(--accent); background: rgba(52,168,83,.12); }
+
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+/* ===== SUBMIT ===== */
+.gate-btn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--primary), #1557b0);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--t);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 4px 20px rgba(26,115,232,.4);
+}
+.gate-btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 8px 28px rgba(26,115,232,.5); }
+.gate-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+/* ===== MESSAGES ===== */
+.gate-msg {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: .82rem;
+  display: none;
+  text-align: right;
+}
+.gate-msg.error   { background: rgba(234,67,53,.15); border: 1px solid rgba(234,67,53,.3); color: #ff9090; display: block; }
+.gate-msg.success { background: rgba(52,168,83,.15);  border: 1px solid rgba(52,168,83,.3);  color: #81e89b; display: block; }
+
+/* ===== DIVIDER ===== */
+.gate-divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,.1);
+  margin: 24px 0 18px;
+}
+
+/* ===== BUY SECTION ===== */
+.gate-buy {
+  color: rgba(255,255,255,.5);
+  font-size: .78rem;
+  line-height: 1.6;
+}
+.gate-buy a {
+  color: var(--warn);
+  text-decoration: none;
+  font-weight: 700;
+}
+.gate-buy a:hover { text-decoration: underline; }
+
+/* ===== SUCCESS SCREEN ===== */
+.success-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.success-screen.show { display: flex; }
+.gate-form.hide { display: none; }
+
+.success-icon {
+  font-size: 3.5rem;
+  animation: pop .4s ease;
+}
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.success-title { color: #fff; font-size: 1.4rem; font-weight: 900; }
+.success-sub   { color: rgba(255,255,255,.6); font-size: .85rem; }
+.success-expiry { color: var(--warn); font-size: .78rem; font-weight: 600; }
+.redirect-btn {
+  padding: 12px 28px;
+  background: var(--accent);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-family: inherit;
+  font-size: .95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  transition: var(--t);
+  margin-top: 4px;
+}
+.redirect-btn:hover { background: #2d8f47; transform: translateY(-1px); }
+
+/* ===== SPINNER ===== */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2.5px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== GOOGLE SIGN-IN ===== */
+.google-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 20px 0;
+  color: rgba(255,255,255,.3);
+  font-size: .75rem;
+}
+.google-divider::before,
+.google-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,.12);
+}
+
+.google-btn {
+  width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 12px 20px;
+  background: #fff;
+  border: none;
+  border-radius: 12px;
+  color: #202124;
+  font-family: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--t);
+  box-shadow: 0 2px 12px rgba(0,0,0,.2);
+}
+.google-btn:hover { box-shadow: 0 4px 20px rgba(0,0,0,.3); transform: translateY(-1px); }
+.google-btn:active { transform: translateY(0); }
+.google-btn svg { flex-shrink: 0; }
+
+.google-note {
+  margin-top: 8px;
+  font-size: .72rem;
+  color: rgba(255,255,255,.35);
+  text-align: center;
+  line-height: 1.5;
+}
+  </style>
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+<!-- LANG BAR -->
+<div class="lang-bar" id="lang-bar">
+  <button class="lang-btn active" data-lang="he" onclick="setLang('he')">🇮🇱 עב</button>
+  <button class="lang-btn" data-lang="ar" onclick="setLang('ar')">🇸🇦 عر</button>
+  <button class="lang-btn" data-lang="en" onclick="setLang('en')">🇺🇸 EN</button>
+  <button class="lang-btn" data-lang="ru" onclick="setLang('ru')">🇷🇺 RU</button>
+  <button class="lang-btn" data-lang="fr" onclick="setLang('fr')">🇫🇷 FR</button>
+</div>
+
+<div class="gate-card">
+  <div class="gate-logo">🎓</div>
+
+  <!-- FORM -->
+  <div class="gate-form" id="gate-form">
+    <div class="gate-title" id="t-title">עוזר מורה AI</div>
+    <div class="gate-sub"   id="t-sub">מערכת הוראה חכמה המופעלת על ידי בינה מלאכותית</div>
+
+    <label class="gate-label" id="t-label">קוד גישה</label>
+    <input class="code-input" id="code-input" type="text"
+           placeholder="KOORS-XXXXX-XXXXX-XXXX"
+           maxlength="24"
+           oninput="formatCode(this)"
+           onkeydown="if(event.key==='Enter') submitCode()">
+
+    <div class="gate-msg" id="gate-msg"></div>
+
+    <button class="gate-btn" id="gate-btn" onclick="submitCode()">
+      <div class="spinner" id="btn-spinner"></div>
+      <span id="t-btn">כניסה למערכת ←</span>
+    </button>
+
+    <!-- Google Sign-In alternative -->
+    <div class="google-divider">או</div>
+    <button class="google-btn" id="google-signin-btn" onclick="triggerGoogleSignIn()">
+      <svg width="18" height="18" viewBox="0 0 18 18">
+        <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.86-1.6 2.43v2h2.6c1.52-1.4 2.4-3.46 2.4-5.9 0-.58-.05-1.14-.17-1.53z"/>
+        <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2c-.72.48-1.63.77-2.7.77-2.08 0-3.84-1.4-4.46-3.29H1.86v2.07C3.18 15.07 5.89 17 8.98 17z"/>
+        <path fill="#FBBC05" d="M4.52 10.54c-.16-.48-.25-.99-.25-1.54s.09-1.06.25-1.54V5.39H1.86A8 8 0 0 0 1 9c0 1.29.31 2.51.86 3.61l2.66-2.07z"/>
+        <path fill="#EA4335" d="M8.98 3.58c1.17 0 2.23.4 3.06 1.2l2.3-2.3C12.95.9 11.14 0 8.98 0 5.89 0 3.18 1.93 1.86 4.77l2.66 2.07c.62-1.89 2.38-3.26 4.46-3.26z"/>
+      </svg>
+      <span id="t-google-btn">כניסה עם Google</span>
+    </button>
+    <div class="google-note" id="t-google-note">
+      כניסה עם חשבון Google בית-ספרי / אישי — גישה לשנה אחת
+    </div>
+
+    <hr class="gate-divider">
+    <div class="gate-buy" id="t-buy">
+      אין לך קוד גישה?<br>
+      <a href="mailto:ainatomer@betelbanim.org.il" id="buy-link">לרכישת רישיון צור קשר →</a>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="success-screen" id="success-screen">
+    <div class="success-icon">✅</div>
+    <div class="success-title" id="t-welcome">ברוך הבא!</div>
+    <div class="success-sub"   id="t-welcome-sub">הרישיון אומת בהצלחה</div>
+    <div class="success-expiry" id="t-expiry"></div>
+    <button class="redirect-btn" id="redirect-btn" onclick="goToApp()">
+      🚀 <span id="t-enter">כניסה למערכת</span>
+    </button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   i18n
+   ============================================================ */
+const LANG = {
+  he: {
+    title:      'עוזר מורה AI',
+    sub:        'מערכת הוראה חכמה המופעלת על ידי בינה מלאכותית',
+    label:      'קוד גישה',
+    btn:        'כניסה למערכת ←',
+    buy:        'אין לך קוד גישה?<br><a href="mailto:ainatomer@betelbanim.org.il" id="buy-link">לרכישת רישיון צור קשר →</a>',
+    errInvalid: '❌ קוד לא תקין. בדוק שהעתקת נכון.',
+    errExpired: '⏰ קוד זה פג תוקף. צור קשר לחידוש.',
+    welcome:    'ברוך הבא!',
+    welcomeSub: 'הרישיון אומת בהצלחה',
+    enter:      'כניסה למערכת',
+    expiresOn:  'תוקף עד: ',
+    dir:        'rtl',
+  },
+  ar: {
+    title:      'مساعد المعلم الذكي',
+    sub:        'نظام تعليمي ذكي مدعوم بالذكاء الاصطناعي',
+    label:      'رمز الوصول',
+    btn:        '← الدخول إلى النظام',
+    buy:        'ليس لديك رمز وصول؟<br><a href="mailto:ainatomer@betelbanim.org.il">اتصل بنا للحصول على ترخيص ←</a>',
+    errInvalid: '❌ الرمز غير صحيح. تحقق من النسخ.',
+    errExpired: '⏰ انتهت صلاحية هذا الرمز. تواصل معنا للتجديد.',
+    welcome:    'أهلاً وسهلاً!',
+    welcomeSub: 'تم التحقق من الترخيص بنجاح',
+    enter:      'الدخول إلى النظام',
+    expiresOn:  'صالح حتى: ',
+    dir:        'rtl',
+  },
+  en: {
+    title:      'AI Teacher Assistant',
+    sub:        'Smart classroom system powered by Artificial Intelligence',
+    label:      'Access Code',
+    btn:        'Enter System →',
+    buy:        'No access code?<br><a href="mailto:ainatomer@betelbanim.org.il">Contact us for a license →</a>',
+    errInvalid: '❌ Invalid code. Please check and try again.',
+    errExpired: '⏰ This code has expired. Contact us to renew.',
+    welcome:    'Welcome!',
+    welcomeSub: 'License verified successfully',
+    enter:      'Enter System',
+    expiresOn:  'Valid until: ',
+    dir:        'ltr',
+  },
+  ru: {
+    title:      'AI Помощник учителя',
+    sub:        'Умная система обучения на основе ИИ',
+    label:      'Код доступа',
+    btn:        'Войти в систему →',
+    buy:        'Нет кода доступа?<br><a href="mailto:ainatomer@betelbanim.org.il">Свяжитесь с нами →</a>',
+    errInvalid: '❌ Неверный код. Проверьте и попробуйте снова.',
+    errExpired: '⏰ Срок действия кода истёк. Свяжитесь для продления.',
+    welcome:    'Добро пожаловать!',
+    welcomeSub: 'Лицензия подтверждена',
+    enter:      'Войти в систему',
+    expiresOn:  'Действителен до: ',
+    dir:        'ltr',
+  },
+  fr: {
+    title:      'Assistant Enseignant IA',
+    sub:        'Système pédagogique intelligent alimenté par IA',
+    label:      'Code d\'accès',
+    btn:        'Entrer dans le système →',
+    buy:        'Pas de code d\'accès?<br><a href="mailto:ainatomer@betelbanim.org.il">Contactez-nous pour une licence →</a>',
+    errInvalid: '❌ Code invalide. Vérifiez et réessayez.',
+    errExpired: '⏰ Ce code a expiré. Contactez-nous pour renouveler.',
+    welcome:    'Bienvenue!',
+    welcomeSub: 'Licence vérifiée avec succès',
+    enter:      'Entrer dans le système',
+    expiresOn:  'Valable jusqu\'au: ',
+    dir:        'ltr',
+  }
+};
+
+let currentLang = 'he';
+
+function setLang(lang) {
+  currentLang = lang;
+  const L = LANG[lang];
+  document.documentElement.lang = lang;
+  document.documentElement.dir  = L.dir;
+
+  document.getElementById('t-title').textContent    = L.title;
+  document.getElementById('t-sub').textContent      = L.sub;
+  document.getElementById('t-label').textContent    = L.label;
+  document.getElementById('t-btn').textContent      = L.btn;
+  document.getElementById('t-buy').innerHTML        = L.buy;
+  document.getElementById('t-welcome').textContent  = L.welcome;
+  document.getElementById('t-welcome-sub').textContent = L.welcomeSub;
+  document.getElementById('t-enter').textContent    = L.enter;
+
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  document.getElementById('gate-msg').className = 'gate-msg';
+}
+
+/* ============================================================
+   LICENSE VALIDATION
+   ============================================================ */
+const SECRET = 'KOORS2024EDU_AINATOMER';
+const EPOCH  = new Date('2024-01-01').getTime();
+
+function todayDay() {
+  return Math.floor((Date.now() - EPOCH) / 86400000);
+}
+
+function base36(n, pad) {
+  return n.toString(36).toUpperCase().padStart(pad, '0');
+}
+
+function simpleHash(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) + h) ^ str.charCodeAt(i);
+    h = h >>> 0;
+  }
+  return h;
+}
+
+function validateCode(raw) {
+  const code = raw.replace(/-/g, '').toUpperCase();
+  if (code.length !== 19) return { ok: false };  // KOORS(5) + CUST(5) + EXP(5) + CHK(4)
+  if (!code.startsWith('KOORS')) return { ok: false };
+
+  const custPart = code.slice(5, 10);
+  const expPart  = code.slice(10, 15);
+  const chkPart  = code.slice(15, 19);
+
+  const expectedChk = base36(simpleHash(custPart + expPart + SECRET) % (36 ** 4), 4);
+  if (chkPart !== expectedChk) return { ok: false };
+
+  const expiryDay = parseInt(expPart, 36);
+  if (todayDay() > expiryDay) return { ok: false, expired: true };
+
+  const expiryDate = new Date(EPOCH + expiryDay * 86400000);
+  const custId = parseInt(custPart, 36);
+
+  return { ok: true, custId, expiryDate };
+}
+
+/* ============================================================
+   ACTIONS
+   ============================================================ */
+function formatCode(input) {
+  let v = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 19);
+  // Insert dashes: KOORS-XXXXX-XXXXX-XXXX
+  if (v.length > 15) v = v.slice(0,5) + '-' + v.slice(5,10) + '-' + v.slice(10,15) + '-' + v.slice(15);
+  else if (v.length > 10) v = v.slice(0,5) + '-' + v.slice(5,10) + '-' + v.slice(10);
+  else if (v.length > 5)  v = v.slice(0,5) + '-' + v.slice(5);
+  input.value = v;
+  document.getElementById('gate-msg').className = 'gate-msg';
+  input.classList.remove('error', 'success');
+}
+
+function showMsg(text, type) {
+  const el = document.getElementById('gate-msg');
+  el.textContent = text;
+  el.className   = 'gate-msg ' + type;
+}
+
+function setLoading(on) {
+  document.getElementById('gate-btn').disabled    = on;
+  document.getElementById('btn-spinner').style.display = on ? 'block' : 'none';
+}
+
+function submitCode() {
+  const raw = document.getElementById('code-input').value.trim();
+  if (!raw) return;
+
+  setLoading(true);
+
+  // Simulate brief check
+  setTimeout(() => {
+    const result = validateCode(raw);
+    setLoading(false);
+
+    const L = LANG[currentLang];
+
+    if (result.expired) {
+      document.getElementById('code-input').classList.add('error');
+      showMsg(L.errExpired, 'error');
+      return;
+    }
+    if (!result.ok) {
+      document.getElementById('code-input').classList.add('error');
+      showMsg(L.errInvalid, 'error');
+      return;
+    }
+
+    // Valid — save license token
+    const token = btoa(JSON.stringify({
+      code:        raw.replace(/-/g,'').toUpperCase(),
+      custId:      result.custId,
+      expiry:      result.expiryDate.getTime(),
+      activatedAt: Date.now(),
+      lang:        currentLang,
+    }));
+    localStorage.setItem('koors_license', token);
+
+    document.getElementById('code-input').classList.add('success');
+
+    // Show success screen
+    document.getElementById('gate-form').classList.add('hide');
+    const ss = document.getElementById('success-screen');
+    ss.classList.add('show');
+
+    const fmt = result.expiryDate.toLocaleDateString(
+      currentLang === 'he' ? 'he-IL' : currentLang === 'ar' ? 'ar-SA' : 'en-GB'
+    );
+    document.getElementById('t-expiry').textContent = L.expiresOn + fmt;
+
+    // Auto redirect after 2.5s
+    setTimeout(goToApp, 2500);
+  }, 600);
+}
+
+function goToApp() {
+  const params   = new URLSearchParams(window.location.search);
+  const redirect = params.get('redirect');
+  window.location.href = redirect || '../teacher-engine/interactive-teacher.html';
+}
+
+/* ============================================================
+   GOOGLE SIGN-IN (GIS)
+   ============================================================ */
+// Google OAuth Client ID — teachers can replace with their school's Client ID
+const GOOGLE_CLIENT_ID = localStorage.getItem('koors_gci') || '';
+
+function initGoogleSignIn() {
+  if (!window.google?.accounts?.id || !GOOGLE_CLIENT_ID) return;
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback:  handleGoogleToken,
+    auto_select: false,
+  });
+}
+
+function triggerGoogleSignIn() {
+  if (!GOOGLE_CLIENT_ID) {
+    // Fallback: create a time-limited demo license for Google users
+    if (!window.google?.accounts?.id) {
+      showMsg('⚠️ ספריית Google Identity Services לא נטענה. נסה רענון.', 'error');
+      return;
+    }
+    // Use a minimal public demo flow — creates anonymous license for 90 days
+    createGoogleDemoLicense();
+    return;
+  }
+  if (!window.google?.accounts?.id) {
+    showMsg('⚠️ Google Identity Services לא נטען', 'error');
+    return;
+  }
+  google.accounts.id.prompt(note => {
+    if (note.isNotDisplayed() || note.isSkippedMoment()) {
+      google.accounts.id.renderButton(
+        document.getElementById('google-signin-btn').parentNode,
+        { theme: 'filled_blue', size: 'large', locale: 'iw', width: 340 }
+      );
+    }
+  });
+}
+
+function handleGoogleToken(response) {
+  try {
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    completeGoogleLogin({
+      name:    payload.name  || payload.email,
+      email:   payload.email || '',
+      picture: payload.picture || '',
+      sub:     payload.sub || '',
+    });
+  } catch(e) {
+    showMsg('❌ שגיאה בכניסה עם Google: ' + e.message, 'error');
+  }
+}
+
+function completeGoogleLogin(user) {
+  // Store Google user profile for the main app
+  localStorage.setItem('koors_google_auth', JSON.stringify(user));
+
+  // Create a 1-year license token based on Google identity
+  const oneYear = Date.now() + 365 * 24 * 60 * 60 * 1000;
+  const token = btoa(JSON.stringify({
+    googleAuth:  true,
+    email:       user.email,
+    name:        user.name,
+    custId:      simpleHash(user.sub || user.email) % 99999,
+    expiry:      oneYear,
+    activatedAt: Date.now(),
+    lang:        currentLang,
+  }));
+  localStorage.setItem('koors_license', token);
+
+  // Show success
+  document.getElementById('gate-form').classList.add('hide');
+  const ss = document.getElementById('success-screen');
+  ss.classList.add('show');
+  document.getElementById('success-screen').querySelector('.success-icon').textContent = '🔐';
+  document.getElementById('t-welcome').textContent     = 'ברוך הבא, ' + (user.name.split(' ')[0] || '');
+  document.getElementById('t-welcome-sub').textContent = 'כניסה עם ' + user.email;
+  document.getElementById('t-expiry').textContent      = '';
+
+  setTimeout(goToApp, 2000);
+}
+
+function createGoogleDemoLicense() {
+  // No Client ID configured — create anonymous demo license valid 90 days
+  // This lets teachers try the system immediately
+  const ninetyDays = Date.now() + 90 * 24 * 60 * 60 * 1000;
+  const token = btoa(JSON.stringify({
+    googleAuth:  true,
+    email:       'demo@google',
+    name:        'מורה Demo',
+    custId:      99999,
+    expiry:      ninetyDays,
+    activatedAt: Date.now(),
+    lang:        currentLang,
+  }));
+  localStorage.setItem('koors_license', token);
+  document.getElementById('gate-form').classList.add('hide');
+  const ss = document.getElementById('success-screen');
+  ss.classList.add('show');
+  document.getElementById('success-screen').querySelector('.success-icon').textContent = '🚀';
+  document.getElementById('t-welcome').textContent     = 'כניסה Demo';
+  document.getElementById('t-welcome-sub').textContent = 'גישה לתקופת ניסיון (90 יום)';
+  setTimeout(goToApp, 2000);
+}
+
+// Wire up GIS once loaded
+window.addEventListener('load', () => { setTimeout(initGoogleSignIn, 500); });
+
+/* ============================================================
+   INIT — check if already licensed
+   ============================================================ */
+(function checkExistingLicense() {
+  try {
+    const raw = localStorage.getItem('koors_license');
+    if (!raw) return;
+    const data = JSON.parse(atob(raw));
+    if (data.expiry > Date.now()) {
+      // Already have valid license, skip gate
+      goToApp();
+    } else {
+      localStorage.removeItem('koors_license');
+    }
+  } catch {
+    localStorage.removeItem('koors_license');
+  }
+})();
+</script>
+</body>
+</html>

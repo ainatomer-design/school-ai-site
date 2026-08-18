@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>כרטיסיית הודעות חשובות</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Heebo', sans-serif; direction: rtl; background: transparent; }
+
+    /* ============================================
+       כרטיסיית הודעות ראשית
+       ============================================ */
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.09);
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    /* כותרת הכרטיסייה */
+    .card-header {
+      /* ✏️ שנה כאן את צבע כותרת הכרטיסייה */
+      background: linear-gradient(135deg, #d32f2f, #e53935);
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pin-icon {
+      font-size: 1.6rem;
+      transform: rotate(-30deg);
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+
+    .header-text {
+      flex: 1;
+    }
+
+    .header-title {
+      color: #ffffff;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .header-subtitle {
+      color: rgba(255,255,255,0.78);
+      font-size: 0.8rem;
+      font-weight: 300;
+    }
+
+    /* מונה הודעות */
+    .badge-count {
+      background: rgba(255,255,255,0.25);
+      color: #ffffff;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 9999px;
+    }
+
+    /* גוף הכרטיסייה */
+    .card-body {
+      padding: 4px 0;
+    }
+
+    /* שורת הודעה בודדת */
+    .announcement {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 16px 24px;
+      border-bottom: 1px solid #f5f5f5;
+      transition: background 0.2s ease;
+      cursor: default;
+      position: relative;
+    }
+
+    .announcement:last-child {
+      border-bottom: none;
+    }
+
+    .announcement:hover {
+      background: #fef7f7;
+    }
+
+    /* אייקון סוג ההודעה */
+    .ann-icon {
+      font-size: 1.4rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ann-icon.urgent  { background: #fce8e6; }
+    .ann-icon.info    { background: #e8f0fe; }
+    .ann-icon.event   { background: #e6f4ea; }
+    .ann-icon.homework{ background: #fef3e2; }
+
+    /* תוכן ההודעה */
+    .ann-content {
+      flex: 1;
+    }
+
+    .ann-title {
+      color: #202124;
+      font-size: 0.97rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+
+    .ann-body {
+      color: #5f6368;
+      font-size: 0.87rem;
+      font-weight: 400;
+      line-height: 1.6;
+    }
+
+    /* תאריך */
+    .ann-date {
+      color: #9aa0a6;
+      font-size: 0.78rem;
+      font-weight: 400;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* תגית "חשוב" */
+    .ann-urgent-tag {
+      display: inline-block;
+      background: #fce8e6;
+      color: #c62828;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-right: 8px;
+    }
+
+    /* הודעה ריקה (אם אין הודעות) */
+    .empty-state {
+      text-align: center;
+      padding: 40px 24px;
+      color: #9aa0a6;
+      font-size: 0.9rem;
+    }
+
+    .empty-state-icon {
+      font-size: 2.5rem;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    /* כפתור "כל ההודעות" */
+    .card-footer {
+      padding: 14px 24px;
+      border-top: 1px solid #f0f0f0;
+      text-align: center;
+    }
+
+    .btn-all {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #d32f2f;
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 8px 20px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-all:hover {
+      background: #fce8e6;
+      text-decoration: none;
+    }
+
+    /* רספונסיביות */
+    @media (max-width: 480px) {
+      .announcement { padding: 14px 16px; gap: 10px; }
+      .ann-date { display: none; }
+      .card-header { padding: 14px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!--
+  ==============================================================
+  📌 כרטיסיית הודעות חשובות — עם אייקון נעיצה מובלט
+  ==============================================================
+  הוראות:
+  1. העתק קוד זה ל-Google Sites > Embed Code
+  2. ערוך כל הודעה בחלק ה-HTML למטה (מסומן ✏️)
+  3. כדי להוסיף הודעה: העתק בלוק <div class="announcement">
+     והדבק לפני </div> של card-body
+  4. כדי למחוק: מחק בלוק שלם של <div class="announcement">
+  ==============================================================
+-->
+
+<div class="card">
+
+  <!-- כותרת הכרטיסייה -->
+  <div class="card-header">
+    <span class="pin-icon">📌</span>
+    <div class="header-text">
+      <!-- ✏️ שנה כאן: כותרת הכרטיסייה -->
+      <div class="header-title">הודעות חשובות</div>
+      <!-- ✏️ שנה כאן: תת-כותרת (מחק אם לא צריך) -->
+      <div class="header-subtitle">כיתה ד'2 · שנת תשפ"ה</div>
+    </div>
+    <!-- מספר ההודעות - עדכן ידנית -->
+    <span class="badge-count">3 הודעות</span>
+  </div>
+
+  <!-- גוף הכרטיסייה - רשימת ההודעות -->
+  <div class="card-body">
+
+    <!--
+      ==========================================
+      ✏️ הודעה 1 - הודעה דחופה (אדום)
+      שנה: ann-icon class, כותרת, גוף, תאריך
+      סוגי אייקון: urgent / info / event / homework
+      ==========================================
+    -->
+    <div class="announcement">
+      <div class="ann-icon urgent">🚨</div>
+      <div class="ann-content">
+        <div class="ann-title">
+          <span class="ann-urgent-tag">דחוף</span>
+          מחר אין לימודים — יום עיון מורים
+        </div>
+        <div class="ann-body">
+          בשל יום עיון בית ספרי, למחר (יום חמישי) לא יתקיימו לימודים. נתראה ביום ראשון!
+        </div>
+      </div>
+      <!-- ✏️ שנה כאן: תאריך ההודעה -->
+      <div class="ann-date">י"ד תשרי</div>
+    </div>
+
+    <!--
+      ==========================================
+      ✏️ הודעה 2 - מידע (כחול)
+      ==========================================
+    -->
+    <div class="announcement">
+      <div class="ann-icon info">📋</div>
+      <div class="ann-content">
+        <!-- ✏️ שנה כאן: כותרת ההודעה -->
+        <div class="ann-title">הגשת עבודת מחקר — מדעים</div>
+        <!-- ✏️ שנה כאן: פירוט ההודעה -->
+        <div class="ann-body">
+          יש להגיש את עבודת המחקר על בעלי החיים עד יום ראשון הקרוב.
+          העבודה אמורה להיות לפחות 3 עמודים.
+        </div>
+      </div>
+      <div class="ann-date">ט"ז תשרי</div>
+    </div>
+
+    <!--
+      ==========================================
+      ✏️ הודעה 3 - אירוע (ירוק)
+      ==========================================
+    -->
+    <div class="announcement">
+      <div class="ann-icon event">🎉</div>
+      <div class="ann-content">
+        <div class="ann-title">טיול שנתי — ביום ראשון כ' תשרי</div>
+        <div class="ann-body">
+          הטיול השנתי יתקיים ביום ראשון. יש להביא אוכל מהבית, כובע ומים.
+          נאספים בשעה 7:30 בכניסה לבית הספר.
+        </div>
+      </div>
+      <div class="ann-date">כ' תשרי</div>
+    </div>
+
+    <!--
+      ==========================================
+      ✏️ להוספת הודעה: העתק מכאן:
+
+      <div class="announcement">
+        <div class="ann-icon homework">📝</div>
+        <div class="ann-content">
+          <div class="ann-title">כותרת ההודעה</div>
+          <div class="ann-body">פירוט ההודעה...</div>
+        </div>
+        <div class="ann-date">תאריך</div>
+      </div>
+
+      ==========================================
+    -->
+
+  </div>
+
+  <!-- כפתור תחתון (מחק אם לא רוצים) -->
+  <div class="card-footer">
+    <!-- ✏️ שנה כאן: הקישור לדף הודעות מלא אם יש -->
+    <a href="#" class="btn-all">
+      ← לכל ההודעות
+    </a>
+  </div>
+
+</div>
+
+</body>
+</html>

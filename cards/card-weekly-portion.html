@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>פרשת השבוע / ערך החודש</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Heebo', sans-serif; direction: rtl; background: transparent; }
+
+    /* ============================================
+       כרטיסייה כפולה: פרשת השבוע + ערך החודש
+       ============================================ */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    /* ===== כרטיסיית פרשת השבוע ===== */
+    .card-parasha {
+      /* ✏️ שנה כאן את הצבעים */
+      background: linear-gradient(145deg, #1a3a6b 0%, #2a5298 100%);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 6px 24px rgba(26, 58, 107, 0.3);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-parasha .card-top {
+      padding: 22px 22px 18px;
+      flex: 1;
+      position: relative;
+    }
+
+    /* עיטור עדין ברקע */
+    .card-parasha .card-top::before {
+      content: '';
+      position: absolute;
+      top: -20px; left: -20px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: rgba(201, 162, 39, 0.08);
+      pointer-events: none;
+    }
+
+    .parasha-label {
+      color: #c9a227;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .parasha-name {
+      color: #ffffff;
+      font-size: 2.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+
+    .parasha-book {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.85rem;
+      font-weight: 300;
+      margin-bottom: 16px;
+    }
+
+    /* קו זהב */
+    .gold-sep {
+      height: 2px;
+      background: linear-gradient(90deg, #c9a227, transparent);
+      margin-bottom: 14px;
+    }
+
+    /* פסוק קצר */
+    .parasha-verse {
+      color: rgba(255,255,255,0.82);
+      font-size: 0.88rem;
+      font-style: italic;
+      line-height: 1.8;
+    }
+
+    /* תחתית: תאריך */
+    .card-parasha .card-bottom {
+      background: rgba(0,0,0,0.2);
+      padding: 12px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .date-label {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.78rem;
+    }
+
+    .date-value {
+      color: #c9a227;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    /* ===== כרטיסיית ערך החודש ===== */
+    .card-value {
+      background: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.09);
+      display: flex;
+      flex-direction: column;
+      border-top: 5px solid;
+      /* ✏️ שנה כאן את הצבע העליון */
+      border-top-color: #34a853;
+    }
+
+    .card-value .card-top {
+      padding: 22px 22px 18px;
+      flex: 1;
+    }
+
+    .value-label {
+      color: #34a853;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .value-icon {
+      font-size: 2.8rem;
+      margin-bottom: 10px;
+    }
+
+    .value-name {
+      color: #1a1a2e;
+      font-size: 1.9rem;
+      font-weight: 900;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+
+    .value-month {
+      color: #9aa0a6;
+      font-size: 0.82rem;
+      margin-bottom: 14px;
+    }
+
+    .value-desc {
+      color: #5f6368;
+      font-size: 0.87rem;
+      line-height: 1.7;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      border-right: 3px solid #34a853;
+    }
+
+    .card-value .card-bottom {
+      padding: 12px 22px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .value-quote {
+      color: #9aa0a6;
+      font-size: 0.8rem;
+      font-style: italic;
+    }
+
+    /* רספונסיביות */
+    @media (max-width: 580px) {
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 380px) {
+      .parasha-name { font-size: 1.7rem; }
+      .value-name { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!--
+  ==============================================================
+  📌 כרטיסיית פרשת השבוע + ערך החודש
+  ==============================================================
+  הוראות:
+  1. העתק קוד זה ל-Google Sites > Embed Code
+  2. עדכן שבועית את שם הפרשה ואת הפסוק
+  3. עדכן חודשית את ערך החודש
+  ==============================================================
+-->
+
+<div class="cards-grid">
+
+  <!-- ===========================
+       כרטיסיית פרשת השבוע
+       =========================== -->
+  <div class="card-parasha">
+    <div class="card-top">
+      <!-- כותרת סגנון -->
+      <div class="parasha-label">📜 פרשת השבוע</div>
+
+      <!-- ✏️ שנה כאן: שם הפרשה -->
+      <div class="parasha-name">בְּרֵאשִׁית</div>
+
+      <!-- ✏️ שנה כאן: שם הספר ומספרי הפסוקים -->
+      <div class="parasha-book">בראשית א', א' — ו', ח'</div>
+
+      <div class="gold-sep"></div>
+
+      <!-- ✏️ שנה כאן: פסוק קצר מהפרשה -->
+      <div class="parasha-verse">
+        "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ"
+        <br>(בראשית א', א')
+      </div>
+    </div>
+
+    <div class="card-bottom">
+      <!-- ✏️ שנה כאן: תאריך שבת זו -->
+      <span class="date-label">שבת קודש</span>
+      <span class="date-value">כ"ב תשרי תשפ"ה</span>
+    </div>
+  </div>
+
+  <!-- ===========================
+       כרטיסיית ערך החודש
+       =========================== -->
+  <div class="card-value">
+    <div class="card-top">
+      <!-- ✏️ שנה כאן: שנה ירוק לצבע המתאים (CSS: border-top-color + value-label color) -->
+      <div class="value-label">🌟 ערך החודש</div>
+
+      <!-- ✏️ שנה כאן: אמוג'י המייצג את הערך -->
+      <div class="value-icon">🤝</div>
+
+      <!-- ✏️ שנה כאן: שם הערך -->
+      <div class="value-name">כבוד הבריות</div>
+
+      <!-- ✏️ שנה כאן: שם החודש -->
+      <div class="value-month">חודש תשרי · תשפ"ה</div>
+
+      <!-- ✏️ שנה כאן: הסבר קצר על הערך -->
+      <div class="value-desc">
+        כבוד הבריות הוא עקרון יסוד ביהדות — לראות בכל אדם את הצלם האלוקי שבו,
+        ולנהוג בו בכבוד ובאדיבות בכל עת.
+      </div>
+    </div>
+
+    <div class="card-bottom">
+      <!-- ✏️ שנה כאן: ציטוט / משנה / פסוק קצר -->
+      <div class="value-quote">"גָּדוֹל כְּבוֹד הַבְּרִיּוֹת" — ברכות יט:</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

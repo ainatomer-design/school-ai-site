@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>באנר תורני</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Heebo', sans-serif;
+      direction: rtl;
+      background: transparent;
+      overflow-x: hidden;
+    }
+
+    /* ============================================
+       קונטיינר הבאנר הראשי
+       ============================================ */
+    .banner {
+      background: linear-gradient(145deg, #1a3a6b 0%, #0d2148 50%, #1f4080 100%);
+      padding: 44px 32px;
+      position: relative;
+      overflow: hidden;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-radius: 16px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    /* שורות זהב עליונה ותחתונה */
+    .banner::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, transparent 0%, #c9a227 30%, #f0d98a 50%, #c9a227 70%, transparent 100%);
+    }
+    .banner::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, transparent 0%, #c9a227 30%, #f0d98a 50%, #c9a227 70%, transparent 100%);
+    }
+
+    /* עיטור גיאומטרי ברקע */
+    .bg-pattern {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      opacity: 0.04;
+      background-image:
+        repeating-linear-gradient(45deg, #c9a227 0px, #c9a227 1px, transparent 1px, transparent 30px),
+        repeating-linear-gradient(-45deg, #c9a227 0px, #c9a227 1px, transparent 1px, transparent 30px);
+      pointer-events: none;
+    }
+
+    /* עיטורי פינות SVG */
+    .corner {
+      position: absolute;
+      width: 90px;
+      height: 90px;
+      opacity: 0.25;
+    }
+    .corner-tr { top: 8px; left: 8px; transform: rotate(0deg); }
+    .corner-tl { top: 8px; right: 8px; transform: rotate(90deg); }
+    .corner-br { bottom: 8px; left: 8px; transform: rotate(270deg); }
+    .corner-bl { bottom: 8px; right: 8px; transform: rotate(180deg); }
+
+    /* ============================================
+       תוכן הבאנר
+       ============================================ */
+
+    /* אמוג'י / סמל עליון */
+    .banner-emblem {
+      font-size: 2.8rem;
+      margin-bottom: 10px;
+      line-height: 1;
+      filter: drop-shadow(0 0 12px rgba(201, 162, 39, 0.6));
+    }
+
+    /* שם בית הספר ושנת הלימודים */
+    .banner-school {
+      color: #c9a227;
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      opacity: 0.9;
+      margin-bottom: 6px;
+    }
+
+    /* שם הכיתה / המקצוע - כותרת ראשית */
+    .banner-title {
+      color: #ffffff;
+      font-size: 2.8rem;
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 8px;
+      text-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+      letter-spacing: -0.5px;
+    }
+
+    /* שם המורה / תת-כותרת */
+    .banner-subtitle {
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 1.1rem;
+      font-weight: 300;
+      letter-spacing: 1px;
+    }
+
+    /* קו זהב מפריד */
+    .gold-line {
+      width: 220px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #c9a227, #f0d98a, #c9a227, transparent);
+      margin: 18px auto;
+    }
+
+    /* פסוק / חזון / ערך */
+    .banner-verse {
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 1rem;
+      font-style: italic;
+      font-weight: 300;
+      line-height: 1.9;
+      max-width: 580px;
+      padding-right: 18px;
+      border-right: 3px solid #c9a227;
+      text-align: right;
+    }
+
+    /* ============================================
+       רספונסיביות
+       ============================================ */
+    @media (max-width: 640px) {
+      .banner { padding: 32px 20px; min-height: 180px; }
+      .banner-title { font-size: 2rem; }
+      .banner-emblem { font-size: 2.2rem; }
+      .banner-verse { font-size: 0.9rem; }
+      .corner { width: 60px; height: 60px; }
+    }
+
+    @media (max-width: 400px) {
+      .banner-title { font-size: 1.6rem; }
+      .banner-subtitle { font-size: 0.95rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!--
+  ==============================================================
+  📌 באנר תורני / חמ"ד — גווני כחול כהה וזהב
+  ==============================================================
+  הוראות שימוש ב-Google Sites:
+  1. בחר ב"הטמע קוד" (Embed Code) בדף Google Sites
+  2. העתק את כל הקוד הזה והדבק
+  3. ערוך את הטקסטים שמסומנים ב-✏️ למטה
+  ==============================================================
+-->
+
+<div class="banner">
+
+  <!-- עיטור רקע (אוטומטי - אל תשנה) -->
+  <div class="bg-pattern"></div>
+
+  <!-- עיטורי פינות (SVG - אוטומטי) -->
+  <svg class="corner corner-tr" viewBox="0 0 100 100" fill="none">
+    <path d="M5 5 L95 5 L95 50" stroke="#c9a227" stroke-width="2.5" fill="none"/>
+    <path d="M5 5 L5 95" stroke="#c9a227" stroke-width="2.5" fill="none"/>
+    <circle cx="5" cy="5" r="5" fill="#c9a227"/>
+  </svg>
+  <svg class="corner corner-tl" viewBox="0 0 100 100" fill="none">
+    <path d="M5 5 L95 5 L95 50" stroke="#c9a227" stroke-width="2.5" fill="none"/>
+    <path d="M5 5 L5 95" stroke="#c9a227" stroke-width="2.5" fill="none"/>
+    <circle cx="5" cy="5" r="5" fill="#c9a227"/>
+  </svg>
+  <svg class="corner corner-br" viewBox="0 0 100 100" fill="none">
+    <path d="M5 5 L95 5 L95 50" stroke="#c9a227" stroke-width="2.5" fill="none"/>
+    <path d="M5 5 L5 95" stroke="#c9a227" stroke-width="2.5" fill="none"/>
+    <circle cx="5" cy="5" r="5" fill="#c9a227"/>
+  </svg>
+  <svg class="corner corner-bl" viewBox="0 0 100 100" fill="none">
+    <path d="M5 5 L95 5 L95 50" stroke="#c9a227" stroke-width="2.5" fill="none"/>
+    <path d="M5 5 L5 95" stroke="#c9a227" stroke-width="2.5" fill="none"/>
+    <circle cx="5" cy="5" r="5" fill="#c9a227"/>
+  </svg>
+
+  <!-- ✏️ שנה כאן: אמוג'י או סמל מרכזי (מחק את השורה אם לא רוצים) -->
+  <div class="banner-emblem">✡️</div>
+
+  <!-- ✏️ שנה כאן: שם בית הספר ושנת הלימודים -->
+  <div class="banner-school">בית ספר "אור תורה" · תשפ"ה</div>
+
+  <!-- ✏️ שנה כאן: שם הכיתה, המקצוע, או הנושא הראשי -->
+  <h1 class="banner-title">כיתה ה׳ | לימודי קודש</h1>
+
+  <!-- ✏️ שנה כאן: שם המורה ומידע נוסף (מחק אם לא צריך) -->
+  <p class="banner-subtitle">מורה: [שם המורה] · שנת תשפ"ה</p>
+
+  <!-- קו מפריד (אוטומטי) -->
+  <div class="gold-line"></div>
+
+  <!-- ✏️ שנה כאן: פסוק תורני, חזון, או ערך חינוכי (מחק את כל הבלוק אם לא רוצים) -->
+  <blockquote class="banner-verse">
+    "וְשִׁנַּנְתָּם לְבָנֶיךָ וְדִבַּרְתָּ בָּם" — דברים ו', ז'
+  </blockquote>
+
+</div>
+
+</body>
+</html>

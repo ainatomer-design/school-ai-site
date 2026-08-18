@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>גלריית קישורים מהירים</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Heebo', sans-serif; direction: rtl; background: transparent; }
+
+    /* ============================================
+       עטיפה כללית
+       ============================================ */
+    .section {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* ===== כותרת הסקשן ===== */
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .section-title h2 {
+      /* ✏️ שנה כאן את צבע כותרת הסקשן */
+      color: #1a73e8;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .section-title-line {
+      flex: 1;
+      height: 2px;
+      background: linear-gradient(90deg, #1a73e8, transparent);
+      opacity: 0.3;
+    }
+
+    /* ===== גריד הכפתורים ===== */
+    .links-grid {
+      display: grid;
+      /* ✏️ שנה כאן את מספר העמודות:
+         4 כפתורים בשורה: repeat(4, 1fr)
+         3 כפתורים בשורה: repeat(3, 1fr)
+         2 כפתורים בשורה: repeat(2, 1fr) */
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    /* ===== כפתור בודד ===== */
+    .link-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 22px 12px;
+      border-radius: 16px;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      min-height: 110px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+    }
+
+    .link-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      text-decoration: none;
+    }
+
+    .link-card:active {
+      transform: translateY(-1px);
+    }
+
+    /* אפקט גל בלחיצה */
+    .link-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.12);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .link-card:hover::after { opacity: 1; }
+
+    /* אייקון */
+    .link-icon {
+      font-size: 2.2rem;
+      line-height: 1;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15));
+    }
+
+    /* טקסט */
+    .link-text {
+      color: #ffffff;
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.3;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    /* חץ קטן */
+    .link-arrow {
+      position: absolute;
+      bottom: 8px;
+      left: 10px;
+      color: rgba(255,255,255,0.4);
+      font-size: 0.75rem;
+    }
+
+    /* ===== צבעים לכפתורים ===== */
+    /* ✏️ שנה את הצבעים של כל כפתור כאן */
+    .color-blue   { background: linear-gradient(145deg, #1a73e8, #1557b0); }
+    .color-green  { background: linear-gradient(145deg, #34a853, #1e7e34); }
+    .color-purple { background: linear-gradient(145deg, #9c27b0, #6a1b9a); }
+    .color-red    { background: linear-gradient(145deg, #ea4335, #b71c1c); }
+    .color-orange { background: linear-gradient(145deg, #ff9800, #e65100); }
+    .color-teal   { background: linear-gradient(145deg, #00acc1, #006064); }
+    .color-pink   { background: linear-gradient(145deg, #e91e63, #880e4f); }
+    .color-dark   { background: linear-gradient(145deg, #455a64, #263238); }
+    .color-gold   { background: linear-gradient(145deg, #c9a227, #a07c10); }
+    .color-indigo { background: linear-gradient(145deg, #3949ab, #1a237e); }
+
+    /* ===== רספונסיביות ===== */
+    @media (max-width: 640px) {
+      .links-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+      .link-card { padding: 18px 10px; min-height: 95px; }
+      .link-icon { font-size: 1.9rem; }
+      .link-text { font-size: 0.8rem; }
+    }
+
+    @media (max-width: 400px) {
+      .links-grid { grid-template-columns: repeat(2, 1fr); }
+      .link-card { min-height: 85px; padding: 16px 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<!--
+  ==============================================================
+  📌 גלריית כפתורי קישור מהירים
+  ==============================================================
+  הוראות:
+  1. העתק קוד זה ל-Google Sites > Embed Code
+  2. שנה את href="#" לקישור האמיתי
+  3. שנה את האמוג'י והטקסט
+  4. שנה את הצבע (color-blue, color-green, וכו')
+  5. להוספת כפתור: העתק <a class="link-card"> שלם
+  6. למחיקת כפתור: מחק <a class="link-card"> שלם
+  ==============================================================
+-->
+
+<div class="section">
+
+  <!-- ✏️ שנה כאן: כותרת הסקשן (מחק את כל section-title אם לא רוצים) -->
+  <div class="section-title">
+    <h2>⚡ קישורים מהירים</h2>
+    <div class="section-title-line"></div>
+  </div>
+
+  <div class="links-grid">
+
+    <!--
+      ✏️ כפתור 1 - שנה href, אמוג'י, טקסט, וצבע (color-???)
+    -->
+    <a class="link-card color-blue" href="#" target="_blank">
+      <span class="link-icon">📅</span>
+      <span class="link-text">מערכת<br>שעות</span>
+      <span class="link-arrow">↗</span>
+    </a>
+
+    <!--
+      ✏️ כפתור 2
+    -->
+    <a class="link-card color-green" href="#" target="_blank">
+      <span class="link-icon">📚</span>
+      <span class="link-text">חומרי<br>למידה</span>
+      <span class="link-arrow">↗</span>
+    </a>
+
+    <!--
+      ✏️ כפתור 3
+    -->
+    <a class="link-card color-purple" href="#" target="_blank">
+      <span class="link-icon">🎮</span>
+      <span class="link-text">משחקים<br>חינוכיים</span>
+      <span class="link-arrow">↗</span>
+    </a>
+
+    <!--
+      ✏️ כפתור 4
+    -->
+    <a class="link-card color-red" href="#" target="_blank">
+      <span class="link-icon">📧</span>
+      <span class="link-text">יצירת<br>קשר</span>
+      <span class="link-arrow">↗</span>
+    </a>
+
+    <!--
+      ✏️ כפתור 5
+    -->
+    <a class="link-card color-orange" href="#" target="_blank">
+      <span class="link-icon">📝</span>
+      <span class="link-text">הגשת<br>עבודות</span>
+      <span class="link-arrow">↗</span>
+    </a>
+
+    <!--
+      ✏️ כפתור 6
+    -->
+    <a class="link-card color-teal" href="#" target="_blank">
+      <span class="link-icon">🎥</span>
+      <span class="link-text">סרטוני<br>הסבר</span>
+      <span class="link-arrow">↗</span>
+    </a>
+
+    <!--
+      ✏️ כפתור 7
+    -->
+    <a class="link-card color-gold" href="#" target="_blank">
+      <span class="link-icon">✡️</span>
+      <span class="link-text">לימוד<br>תורה</span>
+      <span class="link-arrow">↗</span>
+    </a>
+
+    <!--
+      ✏️ כפתור 8
+    -->
+    <a class="link-card color-dark" href="#" target="_blank">
+      <span class="link-icon">📞</span>
+      <span class="link-text">מזכירות<br>בית הספר</span>
+      <span class="link-arrow">↗</span>
+    </a>
+
+    <!--
+      ✏️ להוספת כפתור נוסף, העתק מכאן:
+
+      <a class="link-card color-indigo" href="הכנס-קישור" target="_blank">
+        <span class="link-icon">🌟</span>
+        <span class="link-text">שם<br>הכפתור</span>
+        <span class="link-arrow">↗</span>
+      </a>
+    -->
+
+  </div>
+</div>
+
+</body>
+</html>

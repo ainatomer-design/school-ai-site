@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>דמו — עוזר מורה AI | Interactive Teacher Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --primary:  #1a73e8;
+  --pri-dk:   #1557b0;
+  --pri-lt:   #e8f0fe;
+  --accent:   #34a853;
+  --acc-lt:   #e6f4ea;
+  --danger:   #ea4335;
+  --warn:     #f9ab00;
+  --warn-lt:  #fef7e0;
+  --purple:   #9c27b0;
+  --pur-lt:   #f3e5f5;
+  --teal:     #00897b;
+  --teal-lt:  #e0f2f1;
+  --bg:       #f0f4f8;
+  --card:     #ffffff;
+  --text:     #202124;
+  --text-2:   #5f6368;
+  --text-3:   #9aa0a6;
+  --border:   #e8ecf0;
+  --proj-bg:  #070c18;
+  --proj-card:#0f172a;
+  --proj-card2:#1e293b;
+  --proj-text:#f1f5f9;
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 24px;
+  --sh-md: 0 4px 16px rgba(0,0,0,.10);
+  --sh-lg: 0 8px 32px rgba(0,0,0,.14);
+  --t: .2s ease;
+}
+
+body {
+  font-family: 'Heebo', sans-serif;
+  direction: rtl;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ===== TOPBAR ===== */
+.topbar {
+  background: #1a1a2e;
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,.3);
+}
+.topbar-brand { display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 700; font-size: 1rem; }
+.topbar-logo {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: var(--r-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.topbar-badge { background: var(--warn); color: #1a1a2e; font-size: .65rem; font-weight: 800; padding: 2px 7px; border-radius: 99px; letter-spacing: .04em; }
+.topbar-actions { display: flex; gap: 10px; }
+.topbar-btn {
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-md);
+  padding: 7px 14px;
+  font-family: inherit;
+  font-size: .82rem;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: var(--t);
+  text-decoration: none;
+}
+.topbar-btn:hover { background: rgba(255,255,255,.22); }
+.topbar-btn.primary { background: var(--primary); }
+.topbar-btn.primary:hover { background: var(--pri-dk); }
+
+/* ===== HERO ===== */
+.hero {
+  background: linear-gradient(135deg, #1a1a2e 0%, #1a3a6b 60%, #0d5c3a 100%);
+  padding: 48px 24px 40px;
+  text-align: center;
+  color: #fff;
+}
+.hero-title { font-size: 2rem; font-weight: 900; margin-bottom: 10px; }
+.hero-title span { color: var(--warn); }
+.hero-sub { font-size: 1rem; opacity: .8; max-width: 560px; margin: 0 auto 28px; line-height: 1.6; }
+.hero-badges { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.hero-badge {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 99px;
+  padding: 5px 14px;
+  font-size: .78rem;
+  display: flex; align-items: center; gap: 6px;
+}
+
+/* ===== CONTENT ===== */
+.content { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+
+/* ===== SECTION ===== */
+.section { margin-bottom: 48px; }
+.section-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--border);
+}
+.section-num {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: .9rem; flex-shrink: 0;
+  color: #fff;
+}
+.section-header h2 { font-size: 1.2rem; font-weight: 700; }
+.section-header p { font-size: .82rem; color: var(--text-2); margin-top: 2px; }
+
+/* ===== CARD ===== */
+.card {
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+  overflow: hidden;
+}
+.card-body { padding: 20px 24px; }
+.card-header {
+  padding: 14px 20px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+  font-size: .9rem;
+}
+.card-header .chip {
+  font-size: .7rem; font-weight: 800; padding: 3px 9px; border-radius: 99px; letter-spacing: .04em;
+}
+
+/* ===== FEATURE 1: UPLOAD ===== */
+.upload-zone {
+  border: 2.5px dashed #b0bec5;
+  border-radius: var(--r-lg);
+  background: #f8fafc;
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--t);
+  position: relative;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--primary);
+  background: var(--pri-lt);
+}
+.upload-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
+.upload-title { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+.upload-sub { font-size: .82rem; color: var(--text-2); }
+.upload-or { margin: 16px 0; color: var(--text-3); font-size: .82rem; }
+.upload-input { display: none; }
+.upload-preview {
+  display: none;
+  margin-top: 20px;
+  padding: 14px 18px;
+  background: var(--acc-lt);
+  border-radius: var(--r-md);
+  border: 1px solid #b7dfbd;
+  text-align: right;
+  font-size: .85rem;
+  color: #1b5e20;
+  font-weight: 600;
+}
+.upload-preview.show { display: block; }
+
+/* ===== FEATURE 2: DIGITAL FORM ===== */
+.form-questions { display: flex; flex-direction: column; gap: 14px; }
+.form-q {
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  transition: var(--t);
+}
+.form-q:hover { border-color: var(--primary); }
+.form-q-header {
+  background: #f8fafc;
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: .82rem;
+}
+.form-q-num { font-weight: 800; color: var(--primary); }
+.form-q-type { font-size: .7rem; padding: 2px 8px; border-radius: 99px; font-weight: 700; }
+.type-mc   { background: var(--pri-lt); color: var(--primary); }
+.type-tf   { background: var(--acc-lt); color: var(--accent); }
+.type-open { background: var(--warn-lt); color: #c56a00; }
+.form-q-body { padding: 12px 14px; }
+.form-q-text { font-size: .88rem; font-weight: 600; margin-bottom: 10px; }
+.form-q-input {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: .85rem;
+  color: var(--text);
+  background: #fff;
+  transition: var(--t);
+  resize: none;
+}
+.form-q-input:focus { outline: none; border-color: var(--primary); }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.option-btn {
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: .82rem;
+  cursor: pointer;
+  background: #fff;
+  text-align: right;
+  transition: var(--t);
+  display: flex; align-items: center; gap: 8px;
+}
+.option-btn:hover { border-color: var(--primary); background: var(--pri-lt); }
+.option-btn.selected { border-color: var(--primary); background: var(--primary); color: #fff; }
+.option-btn.correct { border-color: var(--accent); background: var(--accent); color: #fff; }
+.option-btn.wrong   { border-color: var(--danger); background: #fce8e6; color: var(--danger); }
+.option-letter { font-weight: 800; min-width: 18px; }
+
+/* ===== FEATURE 3: AUDIO ===== */
+.audio-player {
+  background: linear-gradient(135deg, #1a1a2e, #1a3a6b);
+  border-radius: var(--r-lg);
+  padding: 20px 24px;
+  color: #fff;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.audio-question { font-size: 1rem; font-weight: 600; line-height: 1.5; }
+.audio-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.audio-btn {
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-md);
+  padding: 9px 18px;
+  font-family: inherit;
+  font-size: .85rem;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 7px;
+  transition: var(--t);
+}
+.audio-btn:hover { background: rgba(255,255,255,.25); }
+.audio-btn.active { background: var(--accent); }
+.audio-status {
+  font-size: .78rem;
+  opacity: .7;
+  display: flex; align-items: center; gap: 6px;
+}
+.audio-wave {
+  display: flex; align-items: center; gap: 2px;
+  height: 20px;
+}
+.audio-wave span {
+  display: block;
+  width: 3px;
+  background: var(--warn);
+  border-radius: 99px;
+  animation: wave 1.2s ease infinite;
+}
+.audio-wave span:nth-child(2) { animation-delay: .15s; }
+.audio-wave span:nth-child(3) { animation-delay: .3s; }
+.audio-wave span:nth-child(4) { animation-delay: .45s; }
+.audio-wave span:nth-child(5) { animation-delay: .6s; }
+@keyframes wave {
+  0%, 100% { height: 4px; }
+  50% { height: 18px; }
+}
+.voice-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.voice-chip {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 99px;
+  padding: 4px 12px;
+  font-size: .75rem;
+  cursor: pointer;
+  transition: var(--t);
+}
+.voice-chip:hover { background: rgba(255,255,255,.2); }
+.voice-chip.selected { background: var(--warn); color: #1a1a2e; border-color: var(--warn); font-weight: 700; }
+
+/* ===== FEATURE 4: STT ===== */
+.stt-area {
+  display: flex; flex-direction: column; gap: 14px;
+}
+.stt-input-row {
+  display: flex; gap: 10px; align-items: stretch;
+}
+.stt-text {
+  flex: 1;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: .9rem;
+  resize: none;
+  min-height: 60px;
+  transition: var(--t);
+  direction: rtl;
+}
+.stt-text:focus { outline: none; border-color: var(--primary); }
+.stt-text.listening { border-color: var(--danger); animation: pulse-border .8s ease infinite; }
+@keyframes pulse-border { 0%,100% { border-color: var(--danger); } 50% { border-color: #ff9800; } }
+.mic-btn {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 1.5rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--t);
+  flex-shrink: 0;
+  background: var(--border);
+}
+.mic-btn.listening { background: var(--danger); animation: pulse-mic .8s ease infinite; }
+@keyframes pulse-mic { 0%,100% { box-shadow: 0 0 0 0 rgba(234,67,53,.4); } 50% { box-shadow: 0 0 0 12px rgba(234,67,53,0); } }
+.stt-parse-result {
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  font-size: .85rem;
+  min-height: 52px;
+  background: #f8fafc;
+}
+.stt-parse-result.detected {
+  border-color: var(--accent);
+  background: var(--acc-lt);
+}
+.parse-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.parse-label { font-size: .73rem; color: var(--text-2); min-width: 60px; }
+.parse-val { font-weight: 700; color: var(--text); }
+.parse-badge { font-size: .7rem; padding: 2px 8px; border-radius: 99px; }
+.parse-badge.correct { background: var(--acc-lt); color: var(--accent); font-weight: 700; }
+.parse-badge.wrong   { background: #fce8e6; color: var(--danger); font-weight: 700; }
+.stt-examples { display: flex; flex-direction: column; gap: 6px; }
+.stt-example {
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  font-size: .82rem;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  transition: var(--t);
+  background: #fff;
+}
+.stt-example:hover { border-color: var(--primary); background: var(--pri-lt); }
+.stt-example-tag { font-size: .68rem; padding: 2px 7px; border-radius: 99px; background: #f0f0f0; color: var(--text-2); }
+
+/* ===== FEATURE 5: TEACHER BAR ===== */
+.teacher-bar {
+  background: rgba(7,12,24,.93);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: var(--r-lg);
+  padding: 16px 20px;
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.teacher-bar-label { color: rgba(255,255,255,.5); font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.teacher-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+.ctrl-btn {
+  border: none;
+  border-radius: var(--r-md);
+  padding: 10px 18px;
+  font-family: inherit;
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 7px;
+  transition: var(--t);
+}
+.ctrl-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.ctrl-btn:active { transform: translateY(0); }
+.ctrl-btn.hint    { background: #1e293b; color: #94a3b8; }
+.ctrl-btn.correct { background: #14532d; color: #4ade80; }
+.ctrl-btn.reveal  { background: #7c3aed; color: #c4b5fd; }
+.ai-response-bubble {
+  margin-top: 14px;
+  background: #0f172a;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  color: #f1f5f9;
+  font-size: .88rem;
+  line-height: 1.6;
+  min-height: 60px;
+  position: relative;
+}
+.bubble-tag {
+  display: inline-block;
+  font-size: .68rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 99px;
+  margin-bottom: 8px;
+  letter-spacing: .05em;
+}
+.bubble-tag.hint    { background: #1e3a5f; color: #60a5fa; }
+.bubble-tag.correct { background: #14532d; color: #4ade80; }
+.bubble-tag.reveal  { background: #3b1a6b; color: #c4b5fd; }
+.bubble-loading { display: flex; gap: 5px; align-items: center; padding: 8px 0; }
+.bubble-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #94a3b8;
+  animation: dot-bounce .9s ease infinite;
+}
+.bubble-dot:nth-child(2) { animation-delay: .15s; }
+.bubble-dot:nth-child(3) { animation-delay: .3s; }
+@keyframes dot-bounce { 0%,100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(-6px); opacity: 1; } }
+
+/* ===== FEATURE 6: PROJECTION ===== */
+.proj-preview {
+  background: var(--proj-bg);
+  border-radius: var(--r-lg);
+  padding: 24px;
+  color: var(--proj-text);
+  box-shadow: 0 16px 48px rgba(0,0,0,.5);
+  position: relative;
+  overflow: hidden;
+}
+.proj-preview::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(59,130,246,.15), transparent);
+  pointer-events: none;
+}
+.proj-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.proj-class { font-size: .78rem; color: rgba(255,255,255,.4); }
+.proj-qnum { font-size: .78rem; color: rgba(255,255,255,.4); }
+.proj-question-text {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.4;
+  margin-bottom: 22px;
+  color: #f1f5f9;
+}
+.proj-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.proj-option {
+  background: var(--proj-card2);
+  border: 1.5px solid rgba(255,255,255,.07);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  transition: var(--t);
+  font-size: .95rem;
+}
+.proj-option:hover { border-color: rgba(59,130,246,.5); background: rgba(59,130,246,.08); }
+.proj-option.correct { background: rgba(34,197,94,.12); border-color: #22c55e; }
+.proj-option.highlight { background: rgba(59,130,246,.15); border-color: var(--proj-primary); }
+.proj-option-letter {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: .88rem; flex-shrink: 0;
+}
+.proj-controls {
+  display: flex; justify-content: center; gap: 12px; margin-top: 20px;
+}
+.proj-ctrl {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: var(--r-md);
+  padding: 8px 16px;
+  color: #fff;
+  font-family: inherit;
+  font-size: .82rem;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: var(--t);
+}
+.proj-ctrl:hover { background: rgba(255,255,255,.14); }
+.proj-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: var(--proj-primary);
+  color: #fff;
+  font-size: .65rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 99px;
+  letter-spacing: .06em;
+}
+
+/* ===== 2-COL GRID ===== */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ===== STATUS BAR ===== */
+.status-bar {
+  background: #1a1a2e;
+  padding: 10px 24px;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  font-size: .78rem; color: rgba(255,255,255,.6);
+}
+.status-item { display: flex; align-items: center; gap: 6px; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.status-dot.warn { background: var(--warn); }
+.status-dot.err  { background: var(--danger); }
+
+/* ===== BTN ===== */
+.btn {
+  border: none; border-radius: var(--r-md);
+  padding: 9px 20px;
+  font-family: inherit; font-size: .85rem; font-weight: 600;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+  transition: var(--t); text-decoration: none;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--pri-dk); }
+.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text-2); }
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+.btn-success { background: var(--accent); color: #fff; }
+.btn-success:hover { background: #2d8f47; }
+
+/* ===== TOAST ===== */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: #202124; color: #fff; border-radius: var(--r-full);
+  padding: 10px 24px; font-size: .85rem; z-index: 9999;
+  transition: transform .3s ease, opacity .3s ease;
+  opacity: 0; pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* ===== SUPPORT CHECK ===== */
+.support-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.support-item {
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: .82rem; font-weight: 600;
+}
+.support-item.ok { border-color: #b7dfbd; background: var(--acc-lt); color: #1b5e20; }
+.support-item.warn { border-color: #ffe082; background: var(--warn-lt); color: #c56a00; }
+.support-item.err { border-color: #f8bbd0; background: #fce4ec; color: #b71c1c; }
+
+/* ===== OPEN FULLSCREEN ===== */
+.open-full-btn {
+  display: block;
+  width: 100%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  border: none;
+  border-radius: var(--r-lg);
+  padding: 18px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: var(--t);
+  box-shadow: 0 4px 20px rgba(26,115,232,.4);
+}
+.open-full-btn:hover { filter: brightness(1.08); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(26,115,232,.5); }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">🎓</div>
+    <span>עוזר מורה AI</span>
+    <span class="topbar-badge">DEMO</span>
+  </div>
+  <div class="topbar-actions">
+    <a href="../admin-cms/admin-panel.html" class="topbar-btn">← לוח בקרה</a>
+    <a href="interactive-teacher.html" target="_blank" class="topbar-btn primary">🚀 פתח כלי מלא</a>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar" id="status-bar">
+  <div class="status-item"><div class="status-dot" id="dot-tts"></div><span id="lbl-tts">TTS...</span></div>
+  <div class="status-item"><div class="status-dot warn" id="dot-stt"></div><span id="lbl-stt">STT...</span></div>
+  <div class="status-item"><div class="status-dot warn" id="dot-api"></div><span id="lbl-api">Gemini API — לא בודק בדמו</span></div>
+  <div class="status-item"><div class="status-dot ok"></div><span>ממשק מלא — עם נתוני דוגמה</span></div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-title">דמו ובדיקה — <span>עוזר מורה AI</span></div>
+  <div class="hero-sub">בדוק את ששת הפיצ'רים המרכזיים עם נתוני דוגמה, ללא צורך ב-API Key. לכלי המלא לחץ "פתח כלי מלא".</div>
+  <div class="hero-badges">
+    <div class="hero-badge">📄 העלאת דף עבודה</div>
+    <div class="hero-badge">📝 טופס דיגיטלי</div>
+    <div class="hero-badge">🔊 נגן שאלות (TTS)</div>
+    <div class="hero-badge">🎤 זיהוי קול (STT)</div>
+    <div class="hero-badge">🎛️ סרגל שליטה</div>
+    <div class="hero-badge">📡 מצב הקרנה</div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ==================== FEATURE 1: UPLOAD ==================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background:var(--primary)">1</div>
+      <div>
+        <h2>📄 העלאת דף עבודה — Upload &amp; Scan</h2>
+        <p>גרור תמונה של דף עבודה, צלם, או בחר קובץ. Gemini Vision מנתח ומחלץ שאלות אוטומטית.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span>העלאת דף עבודה</span>
+        <span class="chip" style="background:var(--pri-lt);color:var(--primary)">Vision API</span>
+        <span style="margin-right:auto;font-size:.78rem;color:var(--text-2)">gemini-3.6-flash</span>
+      </div>
+      <div class="card-body">
+        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="this.classList.remove('drag-over')">
+          <span class="upload-icon">📄</span>
+          <div class="upload-title">גרור לכאן דף עבודה או לחץ לבחירה</div>
+          <div class="upload-sub">תומך: JPG, PNG, PDF • עד 10MB</div>
+          <div class="upload-or">— או —</div>
+          <button class="btn btn-outline" onclick="event.stopPropagation(); simulateUpload()">🧪 טען דמו (ללא קובץ)</button>
+        </div>
+        <input type="file" id="file-input" class="upload-input" accept="image/*,application/pdf" onchange="handleFileSelect(this)">
+        <div class="upload-preview" id="upload-preview">
+          ✅ <span id="upload-filename">קובץ נטען</span> — מוכן לניתוח. לחץ "המר לטופס דיגיטלי" למטה.
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="simulateAnalysis()">🤖 המר לטופס דיגיטלי (דמו)</button>
+          <button class="btn btn-outline" onclick="showToast('בכלי המלא: שולח ל-Gemini Vision...')">📷 צלם עם המצלמה</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== FEATURE 2: DIGITAL FORM ==================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background:var(--purple)">2</div>
+      <div>
+        <h2>📝 טופס דיגיטלי — Digital Form Editor</h2>
+        <p>השאלות שחולצו מוצגות לעריכה. שנה טקסט, הוסף/הסר שאלות, קבע תשובות נכונות.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span>שאלות שחולצו — "מבחן בחשבון כיתה ד'"</span>
+        <span class="chip" style="background:var(--pur-lt);color:var(--purple)">3 שאלות</span>
+        <button class="btn btn-outline" style="margin-right:auto;padding:5px 12px;font-size:.78rem" onclick="showToast('מצב עריכה — שנה כל שדה')">✏️ ערוך הכל</button>
+      </div>
+      <div class="card-body">
+        <div class="form-questions" id="form-questions">
+
+          <!-- Q1: Multiple Choice -->
+          <div class="form-q">
+            <div class="form-q-header">
+              <span class="form-q-num">שאלה 1</span>
+              <span class="form-q-type type-mc">רב-ברירה</span>
+              <span style="margin-right:auto;font-size:.75rem;color:var(--text-3)">1 נקודה</span>
+            </div>
+            <div class="form-q-body">
+              <div class="form-q-text">כמה זה 7 × 8?</div>
+              <div class="options-grid" id="q1-options">
+                <button class="option-btn" data-q="1" data-letter="א" onclick="selectOption(this,'1')"><span class="option-letter">א.</span>48</button>
+                <button class="option-btn" data-q="1" data-letter="ב" onclick="selectOption(this,'1')"><span class="option-letter">ב.</span>54</button>
+                <button class="option-btn" data-q="1" data-letter="ג" onclick="selectOption(this,'1')"><span class="option-letter">ג.</span>56</button>
+                <button class="option-btn" data-q="1" data-letter="ד" onclick="selectOption(this,'1')"><span class="option-letter">ד.</span>63</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Q2: True/False -->
+          <div class="form-q">
+            <div class="form-q-header">
+              <span class="form-q-num">שאלה 2</span>
+              <span class="form-q-type type-tf">נכון/לא נכון</span>
+              <span style="margin-right:auto;font-size:.75rem;color:var(--text-3)">1 נקודה</span>
+            </div>
+            <div class="form-q-body">
+              <div class="form-q-text">המספר 144 הוא ריבוע של 12.</div>
+              <div style="display:flex;gap:10px">
+                <button class="option-btn" data-q="2" data-letter="נכון" onclick="selectOption(this,'2')" style="flex:1"><span class="option-letter">✓</span>נכון</button>
+                <button class="option-btn" data-q="2" data-letter="לא נכון" onclick="selectOption(this,'2')" style="flex:1"><span class="option-letter">✗</span>לא נכון</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Q3: Open -->
+          <div class="form-q">
+            <div class="form-q-header">
+              <span class="form-q-num">שאלה 3</span>
+              <span class="form-q-type type-open">פתוחה</span>
+              <span style="margin-right:auto;font-size:.75rem;color:var(--text-3)">2 נקודות</span>
+            </div>
+            <div class="form-q-body">
+              <div class="form-q-text">חשב: (15 + 9) ÷ 3 × 4 = ?</div>
+              <textarea class="form-q-input" rows="2" placeholder="הכנס את תשובתך כאן..."></textarea>
+            </div>
+          </div>
+
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-success" onclick="showToast('✅ הטופס נשמר! עובר למצב הקרנה...')">💾 שמור והמשך להקרנה</button>
+          <button class="btn btn-outline" onclick="addDemoQuestion()">+ הוסף שאלה</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== FEATURE 3: TTS ==================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background:var(--teal)">3</div>
+      <div>
+        <h2>🔊 נגן שאלות — Text-to-Speech (TTS)</h2>
+        <p>השאלות נקראות בקול רם בעברית. בחר קול, מהירות, ובדוק את ההשמעה כאן.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="audio-player">
+          <div class="audio-question" id="audio-q-text">כמה זה 7 × 8? אפשרויות: א. 48, ב. 54, ג. 56, ד. 63</div>
+          <div class="audio-controls">
+            <button class="audio-btn" id="tts-play-btn" onclick="ttsPlay()">▶ השמע שאלה</button>
+            <button class="audio-btn" onclick="ttsStop()">■ עצור</button>
+            <button class="audio-btn" onclick="ttsPrev()">⏮ קודם</button>
+            <button class="audio-btn" onclick="ttsNext()">⏭ הבא</button>
+            <div class="audio-status" id="audio-status">
+              <div class="audio-wave" id="audio-wave" style="display:none">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+              <span id="audio-status-text">לחץ להשמעה</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:.72rem;opacity:.6;margin-bottom:8px">קול נבחר:</div>
+            <div class="voice-chips" id="voice-chips">
+              <div class="voice-chip selected" data-idx="0">קול ראשון</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <label style="font-size:.82rem;color:var(--text-2)">מהירות דיבור:</label>
+          <input type="range" id="tts-rate" min="0.5" max="2" step="0.1" value="1" style="width:120px" oninput="document.getElementById('rate-val').textContent=this.value+'x'">
+          <span id="rate-val" style="font-size:.82rem;font-weight:700;min-width:30px">1x</span>
+          <label style="font-size:.82rem;color:var(--text-2);margin-right:10px">גובה קול:</label>
+          <input type="range" id="tts-pitch" min="0.5" max="2" step="0.1" value="1" style="width:100px" oninput="document.getElementById('pitch-val').textContent=this.value">
+          <span id="pitch-val" style="font-size:.82rem;font-weight:700;min-width:20px">1</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== FEATURE 4: STT ==================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background:var(--danger)">4</div>
+      <div>
+        <h2>🎤 זיהוי קול תלמיד — Speech-to-Text (STT)</h2>
+        <p>התלמיד אומר "אני [שם], התשובה [א/ב/ג/ד]" — המערכת מזהה שם ותשובה אוטומטית.</p>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header">
+          <span>בדיקת זיהוי קול</span>
+          <span class="chip" id="stt-support-badge" style="background:#f0f0f0;color:var(--text-2)">בודק...</span>
+        </div>
+        <div class="card-body">
+          <div class="stt-area">
+            <div class="stt-input-row">
+              <textarea class="stt-text" id="stt-text" rows="3" placeholder="דבר אל המיקרופון, או הקלד ידנית..."></textarea>
+              <button class="mic-btn" id="mic-btn" onclick="toggleMic()">🎤</button>
+            </div>
+            <div class="stt-parse-result" id="stt-result">
+              <span style="color:var(--text-3);font-size:.82rem">תוצאת ניתוח תופיע כאן...</span>
+            </div>
+            <button class="btn btn-primary" onclick="parseInput()">🔍 נתח טקסט</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span>דוגמאות לניסוי</span></div>
+        <div class="card-body">
+          <p style="font-size:.78rem;color:var(--text-2);margin-bottom:10px">לחץ על דוגמה להכנסה אוטומטית:</p>
+          <div class="stt-examples">
+            <div class="stt-example" onclick="loadExample(this,'אני דני, התשובה ג')">
+              <span class="stt-example-tag">שם + תשובה</span>
+              "אני דני, התשובה ג"
+            </div>
+            <div class="stt-example" onclick="loadExample(this,'שמי רחל התשובה שלי היא א')">
+              <span class="stt-example-tag">שם מלא</span>
+              "שמי רחל התשובה שלי היא א"
+            </div>
+            <div class="stt-example" onclick="loadExample(this,'יוסי אומר נכון')">
+              <span class="stt-example-tag">שם בגוף שלישי</span>
+              "יוסי אומר נכון"
+            </div>
+            <div class="stt-example" onclick="loadExample(this,'מיכל: ב')">
+              <span class="stt-example-tag">קצר</span>
+              "מיכל: ב"
+            </div>
+            <div class="stt-example" onclick="loadExample(this,'אני חושב שהתשובה היא ג כי זה 7 כפול 8')">
+              <span class="stt-example-tag">ללא שם</span>
+              "אני חושב שהתשובה היא ג..."
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== FEATURE 5: TEACHER BAR ==================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background:var(--warn);color:#1a1a2e">5</div>
+      <div>
+        <h2>🎛️ סרגל שליטה מורה — Teacher Control Bar</h2>
+        <p>שלושה כפתורי AI בזמן אמת: רמז, תיקון עדין, חשיפת תשובה. מגיב תוך שנייה (Haiku).</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="margin-bottom:14px;font-size:.85rem;color:var(--text-2)">
+          <strong>שאלה פעילה:</strong> כמה זה 7 × 8? <span style="margin-right:10px"><strong>תלמיד:</strong> דני ענה "ב" (54) — שגוי</span>
+        </div>
+        <div class="teacher-bar">
+          <span class="teacher-bar-label">פעולת מורה:</span>
+          <div class="teacher-controls">
+            <button class="ctrl-btn hint" onclick="teacherAction('hint')">💡 תן רמז</button>
+            <button class="ctrl-btn correct" onclick="teacherAction('correct')">✨ תקן בעדינות</button>
+            <button class="ctrl-btn reveal" onclick="teacherAction('reveal')">✅ חשוף תשובה</button>
+          </div>
+        </div>
+        <div class="ai-response-bubble" id="ai-bubble">
+          <span style="color:rgba(255,255,255,.3);font-size:.82rem">לחץ על אחד הכפתורים למעלה לקבלת תגובת AI...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== FEATURE 6: PROJECTION ==================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background:#1e293b;border:2px solid #3b82f6;color:#3b82f6">6</div>
+      <div>
+        <h2>📡 מצב הקרנה — Classroom Projection</h2>
+        <p>תצוגת לילה לכיתה: שאלה גדולה, כפתורי ניווט, ומד תשובות תלמידים בצד.</p>
+      </div>
+    </div>
+    <div class="proj-preview">
+      <div class="proj-badge">LIVE • שאלה 1/3</div>
+      <div class="proj-header">
+        <div class="proj-class">כיתה ד'1 — חשבון</div>
+        <div class="proj-qnum">3 תלמידים ענו</div>
+      </div>
+      <div class="proj-question-text">כמה זה 7 × 8?</div>
+      <div class="proj-options">
+        <div class="proj-option" onclick="highlightProj(this,'א')">
+          <div class="proj-option-letter">א</div>
+          <span>48</span>
+        </div>
+        <div class="proj-option" onclick="highlightProj(this,'ב')">
+          <div class="proj-option-letter">ב</div>
+          <span>54</span>
+        </div>
+        <div class="proj-option correct" onclick="highlightProj(this,'ג')">
+          <div class="proj-option-letter" style="background:rgba(34,197,94,.2);color:#22c55e">ג</div>
+          <span>56 ✓</span>
+        </div>
+        <div class="proj-option" onclick="highlightProj(this,'ד')">
+          <div class="proj-option-letter">ד</div>
+          <span>63</span>
+        </div>
+      </div>
+      <div class="proj-controls">
+        <button class="proj-ctrl" onclick="showToast('⏮ שאלה קודמת')">⏮ קודמת</button>
+        <button class="proj-ctrl" onclick="showToast('⏭ שאלה הבאה')">⏭ הבאה</button>
+        <button class="proj-ctrl" onclick="showToast('🔊 קורא בקול...')">🔊 קרא</button>
+        <button class="proj-ctrl" onclick="showToast('🎤 מאזין...')">🎤 האזן</button>
+        <button class="proj-ctrl" onclick="showToast('⛶ מסך מלא')">⛶ מסך מלא</button>
+      </div>
+    </div>
+    <div style="margin-top:14px;text-align:center">
+      <a href="interactive-teacher.html" target="_blank" class="open-full-btn">
+        🚀 פתח מצב הקרנה מלא — עם API Key ונתונים אמיתיים
+      </a>
+    </div>
+  </div>
+
+  <!-- ==================== SUPPORT CHECK ==================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background:var(--text-2)">✓</div>
+      <div>
+        <h2>בדיקת תמיכת דפדפן</h2>
+        <p>הדפדפן שלך תומך בכל הרכיבים הנדרשים?</p>
+      </div>
+    </div>
+    <div class="support-grid" id="support-grid">
+      <!-- filled by JS -->
+    </div>
+    <div style="margin-top:14px;padding:14px 16px;background:var(--pri-lt);border-radius:var(--r-md);font-size:.82rem;color:var(--primary)">
+      <strong>מומלץ:</strong> Chrome 95+ או Edge 95+ לתמיכה מלאה ב-STT ו-TTS. Firefox תומך ב-TTS בלבד.
+    </div>
+  </div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ============================================================
+   DEMO DATA
+   ============================================================ */
+const DEMO_QUESTIONS = [
+  {
+    id: 1, type: 'multiple_choice',
+    text: 'כמה זה 7 × 8?',
+    options: ['א. 48', 'ב. 54', 'ג. 56', 'ד. 63'],
+    answer: 'ג', points: 1,
+    tts: 'כמה זה 7 כפול 8? אפשרויות: א, 48; ב, 54; ג, 56; ד, 63'
+  },
+  {
+    id: 2, type: 'true_false',
+    text: 'המספר 144 הוא ריבוע של 12.',
+    options: ['נכון', 'לא נכון'],
+    answer: 'נכון', points: 1,
+    tts: 'שאלה 2: האם המספר 144 הוא ריבוע של 12? ענה נכון או לא נכון.'
+  },
+  {
+    id: 3, type: 'open',
+    text: 'חשב: (15 + 9) ÷ 3 × 4 = ?',
+    answer: '32', points: 2,
+    tts: 'שאלה 3: חשב את הביטוי: 15 ועוד 9, חלקי 3, כפול 4.'
+  }
+];
+
+let currentTTSIdx = 0;
+let utterance = null;
+let recognition = null;
+let isListening = false;
+
+/* ============================================================
+   FEATURE 1: UPLOAD
+   ============================================================ */
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.add('drag-over');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  const zone = document.getElementById('upload-zone');
+  zone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) showUploadPreview(file.name);
+}
+
+function handleFileSelect(input) {
+  if (input.files[0]) showUploadPreview(input.files[0].name);
+}
+
+function showUploadPreview(name) {
+  document.getElementById('upload-filename').textContent = name;
+  document.getElementById('upload-preview').classList.add('show');
+  showToast('✅ קובץ נטען: ' + name);
+}
+
+function simulateUpload() {
+  showUploadPreview('דף_עבודה_חשבון_ד1.jpg');
+}
+
+function simulateAnalysis() {
+  showToast('🤖 מנתח עם Gemini Vision... (דמו — תוצאה מוכנה)');
+  setTimeout(() => {
+    showToast('✅ נמצאו 3 שאלות! הטופס הדיגיטלי מוצג למטה.');
+  }, 1800);
+}
+
+/* ============================================================
+   FEATURE 2: DIGITAL FORM
+   ============================================================ */
+const CORRECT = { '1': 'ג', '2': 'נכון' };
+
+function selectOption(btn, qId) {
+  const siblings = btn.closest('.form-q-body').querySelectorAll('.option-btn');
+  siblings.forEach(b => b.classList.remove('selected', 'correct', 'wrong'));
+  const chosen = btn.dataset.letter;
+  const isCorrect = chosen === CORRECT[qId];
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  if (!isCorrect) {
+    siblings.forEach(b => { if (b.dataset.letter === CORRECT[qId]) b.classList.add('correct'); });
+  }
+  showToast(isCorrect ? '✅ נכון! ' + chosen : '❌ לא נכון. התשובה הנכונה מסומנת');
+}
+
+function addDemoQuestion() {
+  const container = document.getElementById('form-questions');
+  const div = document.createElement('div');
+  div.className = 'form-q';
+  const num = container.children.length + 1;
+  div.innerHTML = `
+    <div class="form-q-header">
+      <span class="form-q-num">שאלה ${num}</span>
+      <span class="form-q-type type-open">פתוחה</span>
+      <span style="margin-right:auto;font-size:.75rem;color:var(--text-3)">1 נקודה</span>
+    </div>
+    <div class="form-q-body">
+      <input type="text" class="form-q-input" placeholder="כתב כאן את טקסט השאלה..." style="margin-bottom:8px">
+      <textarea class="form-q-input" rows="2" placeholder="תשובת תלמיד..."></textarea>
+    </div>`;
+  container.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  showToast('✅ שאלה ' + num + ' נוספה');
+}
+
+/* ============================================================
+   FEATURE 3: TTS
+   ============================================================ */
+function initVoices() {
+  const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('he') || v.lang === 'iw');
+  const container = document.getElementById('voice-chips');
+  if (voices.length === 0) {
+    container.innerHTML = '<div class="voice-chip selected">קול ברירת מחדל</div>';
+    return;
+  }
+  container.innerHTML = '';
+  voices.forEach((v, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'voice-chip' + (i === 0 ? ' selected' : '');
+    chip.dataset.idx = i;
+    chip.textContent = v.name.replace(/Microsoft |Google /, '');
+    chip.onclick = () => {
+      container.querySelectorAll('.voice-chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+    };
+    container.appendChild(chip);
+  });
+}
+
+if (typeof speechSynthesis !== 'undefined') {
+  speechSynthesis.addEventListener('voiceschanged', initVoices);
+  setTimeout(initVoices, 500);
+}
+
+function getSelectedVoice() {
+  const idx = parseInt(document.querySelector('.voice-chip.selected')?.dataset.idx || '0');
+  const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('he') || v.lang === 'iw');
+  return voices[idx] || null;
+}
+
+function ttsPlay() {
+  if (!('speechSynthesis' in window)) { showToast('⚠️ דפדפן זה אינו תומך ב-TTS'); return; }
+  ttsStop();
+  const q = DEMO_QUESTIONS[currentTTSIdx];
+  utterance = new SpeechSynthesisUtterance(q.tts);
+  utterance.lang = 'he-IL';
+  utterance.rate = parseFloat(document.getElementById('tts-rate').value);
+  utterance.pitch = parseFloat(document.getElementById('tts-pitch').value);
+  const voice = getSelectedVoice();
+  if (voice) utterance.voice = voice;
+  utterance.onstart = () => {
+    document.getElementById('audio-wave').style.display = 'flex';
+    document.getElementById('audio-status-text').textContent = 'מדבר...';
+    document.getElementById('tts-play-btn').classList.add('active');
+  };
+  utterance.onend = () => {
+    document.getElementById('audio-wave').style.display = 'none';
+    document.getElementById('audio-status-text').textContent = 'סיים';
+    document.getElementById('tts-play-btn').classList.remove('active');
+  };
+  speechSynthesis.speak(utterance);
+}
+
+function ttsStop() {
+  speechSynthesis.cancel();
+  document.getElementById('audio-wave').style.display = 'none';
+  document.getElementById('audio-status-text').textContent = 'עצר';
+  document.getElementById('tts-play-btn').classList.remove('active');
+}
+
+function ttsPrev() {
+  ttsStop();
+  currentTTSIdx = Math.max(0, currentTTSIdx - 1);
+  document.getElementById('audio-q-text').textContent = DEMO_QUESTIONS[currentTTSIdx].tts;
+  showToast('שאלה ' + (currentTTSIdx + 1));
+}
+
+function ttsNext() {
+  ttsStop();
+  currentTTSIdx = Math.min(DEMO_QUESTIONS.length - 1, currentTTSIdx + 1);
+  document.getElementById('audio-q-text').textContent = DEMO_QUESTIONS[currentTTSIdx].tts;
+  showToast('שאלה ' + (currentTTSIdx + 1));
+}
+
+/* ============================================================
+   FEATURE 4: STT
+   ============================================================ */
+const NAME_PATTERNS = [
+  /^אני\s+([א-ת]{1,10})[,،:\s]+(.+)$/,
+  /^שמי\s+([א-ת]{1,10})[,،:\s]+(.+)$/,
+  /^([א-ת]{2,10})\s+אומר[ת]?\s+(.+)$/,
+  /^([א-ת]{2,10})[,:]\s*(.+)$/,
+  /^אני\s+חושב[ת]?\s+(?:ש)?(?:התשובה\s+(?:היא\s+)?)?([אבגדנכ])/i,
+];
+
+const ANSWER_PATTERNS = [
+  /(?:התשובה|הבחירה|הפתרון)\s+(?:שלי\s+)?(?:היא\s+)?([אבגדנכ])/i,
+  /(?:אני\s+(?:בוחר|עונה|אומר)\s+)([אבגדנכ])/i,
+  /^([אבגדנכ])$/i,
+  /\b([אבגד])\b/,
+  /\b(נכון|לא\s+נכון)\b/i,
+];
+
+function parseInput() {
+  const text = document.getElementById('stt-text').value.trim();
+  if (!text) { showToast('הכנס טקסט לניתוח'); return; }
+  const result = parseStudentSpeech(text);
+  const el = document.getElementById('stt-result');
+  if (result.name || result.answer) {
+    el.classList.add('detected');
+    el.innerHTML = `
+      ${result.name ? `<div class="parse-row"><span class="parse-label">שם:</span><span class="parse-val">${result.name}</span></div>` : ''}
+      ${result.answer ? `<div class="parse-row">
+        <span class="parse-label">תשובה:</span>
+        <span class="parse-val">${result.answer}</span>
+        <span class="parse-badge ${result.answer === 'ג' || result.answer === 'נכון' ? 'correct' : 'wrong'}">
+          ${result.answer === 'ג' || result.answer === 'נכון' ? '✓ נכון' : '✗ שגוי'}
+        </span>
+      </div>` : ''}
+      <div style="font-size:.72rem;color:var(--text-3);margin-top:8px">דפוס: ${result.pattern}</div>`;
+  } else {
+    el.classList.remove('detected');
+    el.innerHTML = '<span style="color:var(--warn)">⚠️ לא זוהה שם או תשובה — נסה דפוס אחר</span>';
+  }
+}
+
+function parseStudentSpeech(text) {
+  for (const p of NAME_PATTERNS) {
+    const m = text.match(p);
+    if (m) {
+      if (m.length === 2) return { name: null, answer: m[1], pattern: p.toString().slice(1, 30) + '...' };
+      return { name: m[1], answer: extractAnswer(m[2]), pattern: p.toString().slice(1, 30) + '...' };
+    }
+  }
+  const ans = extractAnswer(text);
+  return { name: null, answer: ans, pattern: ans ? 'תשובה ישירה' : 'לא זוהה' };
+}
+
+function extractAnswer(text) {
+  for (const p of ANSWER_PATTERNS) {
+    const m = text.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function loadExample(el, text) {
+  document.getElementById('stt-text').value = text;
+  parseInput();
+}
+
+function toggleMic() {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    showToast('⚠️ STT לא נתמך בדפדפן זה — נסה Chrome');
+    return;
+  }
+  if (isListening) { stopMic(); return; }
+  startMic();
+}
+
+function startMic() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'he-IL';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.onresult = e => {
+    const txt = Array.from(e.results).map(r => r[0].transcript).join('');
+    document.getElementById('stt-text').value = txt;
+    if (e.results[e.results.length - 1].isFinal) { parseInput(); stopMic(); }
+  };
+  recognition.onerror = () => stopMic();
+  recognition.onend   = () => stopMic();
+  recognition.start();
+  isListening = true;
+  document.getElementById('mic-btn').classList.add('listening');
+  document.getElementById('stt-text').classList.add('listening');
+  document.getElementById('stt-text').placeholder = '🎤 מאזין...';
+}
+
+function stopMic() {
+  if (recognition) { try { recognition.stop(); } catch {} recognition = null; }
+  isListening = false;
+  document.getElementById('mic-btn').classList.remove('listening');
+  document.getElementById('stt-text').classList.remove('listening');
+  document.getElementById('stt-text').placeholder = 'דבר אל המיקרופון, או הקלד ידנית...';
+}
+
+/* ============================================================
+   FEATURE 5: TEACHER CONTROL BAR
+   ============================================================ */
+const TEACHER_RESPONSES = {
+  hint: {
+    tag: 'hint', tagText: 'רמז',
+    texts: [
+      'נסו לחשוב: מה זה 7 × 7? ועכשיו הוסיפו עוד 7. כמה יצא?',
+      'דניה, 7 × 8 זה כמו 7 × 4 כפול שניים. 7 × 4 זה 28... המשיכו משם!',
+      'חשבו על טבלת הכפל של 8: 8, 16, 24, 32, 40, 48... המשיכו לספור!',
+    ]
+  },
+  correct: {
+    tag: 'correct', tagText: 'תיקון עדין',
+    texts: [
+      'כמעט! 54 זה 6 × 9. עבור 7 × 8 נסו שוב — הפרש של 2 מהתשובה שנתתם.',
+      'דני, היית קרוב מאוד! ניסית 54, אבל 7 × 8 גדול ב-2 מהתשובה שלך. תחשוב שוב.',
+      'טעות קטנה! אתה בטח חישבת 7 × 7 = 49 ואז הוספת 5 במקום 7. נסה שוב.',
+    ]
+  },
+  reveal: {
+    tag: 'reveal', tagText: 'חשיפת תשובה',
+    texts: [
+      'התשובה הנכונה היא ג — 56. 7 × 8 = 56. זוכרים: 7 × 7 = 49, ועוד 7 שווה 56.',
+      'כיתה, התשובה היא 56! הדרך הכי קלה: 8 × 7 = 8 × 5 + 8 × 2 = 40 + 16 = 56.',
+      'ג — 56. זהו אחד ממכפלות הזהב שחשוב לזכור: 7 × 8 = 56.',
+    ]
+  }
+};
+
+function teacherAction(type) {
+  const resp = TEACHER_RESPONSES[type];
+  const text = resp.texts[Math.floor(Math.random() * resp.texts.length)];
+  const bubble = document.getElementById('ai-bubble');
+  bubble.innerHTML = `<div class="bubble-loading"><div class="bubble-dot"></div><div class="bubble-dot"></div><div class="bubble-dot"></div></div>`;
+  setTimeout(() => {
+    bubble.innerHTML = `<div class="bubble-tag ${resp.tag}">${resp.tagText}</div><div>${text}</div>`;
+    showToast('תגובת AI הוצגה');
+    if (type === 'reveal') highlightProjAnswer();
+  }, 900);
+}
+
+/* ============================================================
+   FEATURE 6: PROJECTION
+   ============================================================ */
+function highlightProj(el, letter) {
+  document.querySelectorAll('.proj-option').forEach(o => {
+    o.classList.remove('highlight');
+    if (!o.classList.contains('correct')) o.style.opacity = '0.5';
+  });
+  el.classList.add('highlight');
+  el.style.opacity = '1';
+  showToast('נבחרה אפשרות ' + letter);
+}
+
+function highlightProjAnswer() {
+  document.querySelectorAll('.proj-option').forEach(o => {
+    if (o.querySelector('.proj-option-letter')?.textContent === 'ג') {
+      o.classList.add('correct');
+      o.style.opacity = '1';
+    }
+  });
+}
+
+/* ============================================================
+   SUPPORT CHECK
+   ============================================================ */
+function checkSupport() {
+  const checks = [
+    { label: 'Web Speech API (TTS)', ok: 'speechSynthesis' in window, needed: true },
+    { label: 'Speech Recognition (STT)', ok: 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window, needed: false },
+    { label: 'Fetch API', ok: 'fetch' in window, needed: true },
+    { label: 'File API', ok: 'FileReader' in window, needed: true },
+    { label: 'Fullscreen API', ok: 'requestFullscreen' in document.documentElement, needed: false },
+    { label: 'LocalStorage', ok: (() => { try { localStorage.setItem('t','1'); localStorage.removeItem('t'); return true; } catch { return false; } })(), needed: true },
+    { label: 'Hebrew Intl Calendar', ok: (() => { try { new Intl.DateTimeFormat('he-IL-u-ca-hebrew').format(new Date()); return true; } catch { return false; } })(), needed: false },
+    { label: 'Crypto UUID', ok: 'randomUUID' in (window.crypto || {}), needed: false },
+  ];
+
+  const grid = document.getElementById('support-grid');
+  grid.innerHTML = '';
+  checks.forEach(c => {
+    const cls = c.ok ? 'ok' : (c.needed ? 'err' : 'warn');
+    const icon = c.ok ? '✅' : (c.needed ? '❌' : '⚠️');
+    const div = document.createElement('div');
+    div.className = 'support-item ' + cls;
+    div.innerHTML = `<span>${icon}</span><span>${c.label}</span>`;
+    grid.appendChild(div);
+  });
+
+  // update status bar
+  const ttsOk = 'speechSynthesis' in window;
+  const sttOk = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+  updateDot('dot-tts', 'lbl-tts', ttsOk, 'TTS — נתמך', 'TTS — לא נתמך');
+  updateDot('dot-stt', 'lbl-stt', sttOk, 'STT — נתמך', 'STT — דפדפן לא תומך');
+
+  const sttBadge = document.getElementById('stt-support-badge');
+  if (sttOk) {
+    sttBadge.textContent = '✅ STT נתמך';
+    sttBadge.style.cssText = 'background:var(--acc-lt);color:var(--accent)';
+  } else {
+    sttBadge.textContent = '⚠️ STT לא נתמך';
+    sttBadge.style.cssText = 'background:var(--warn-lt);color:#c56a00';
+  }
+}
+
+function updateDot(dotId, lblId, ok, okTxt, errTxt) {
+  const dot = document.getElementById(dotId);
+  const lbl = document.getElementById(lblId);
+  dot.className = 'status-dot' + (ok ? '' : ' warn');
+  lbl.textContent = ok ? okTxt : errTxt;
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+checkSupport();
+</script>
+</body>
+</html>

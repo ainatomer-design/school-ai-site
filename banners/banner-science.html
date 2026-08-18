@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>באנר מדעים וטכנולוגיה</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Heebo', sans-serif;
+      direction: rtl;
+      background: transparent;
+      overflow-x: hidden;
+    }
+
+    /* ============================================
+       באנר - עיצוב מדעי טכנולוגי
+       ============================================ */
+    .banner {
+      /* ✏️ שנה כאן את צבעי הרקע */
+      background: linear-gradient(160deg, #006064 0%, #00838f 40%, #0097a7 100%);
+      padding: 40px 32px;
+      position: relative;
+      overflow: hidden;
+      min-height: 210px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      border-radius: 16px;
+      box-shadow: 0 12px 40px rgba(0, 96, 100, 0.4);
+    }
+
+    /* ===== רשת נקודות ברקע (אפקט מדעי) ===== */
+    .grid-bg {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      opacity: 0.07;
+      background-image:
+        radial-gradient(circle, #ffffff 1.5px, transparent 1.5px);
+      background-size: 28px 28px;
+      pointer-events: none;
+    }
+
+    /* ===== קו אורכי מבטא מימין ===== */
+    .accent-bar {
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 6px;
+      background: linear-gradient(180deg, #80deea, #00bcd4, #80deea);
+    }
+
+    /* צד ימין - תוכן ראשי */
+    .content-main {
+      position: relative;
+      flex: 1;
+      text-align: right;
+    }
+
+    /* תגית "מקצוע" */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 9999px;
+      padding: 4px 14px;
+      color: #80deea;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 2px;
+      margin-bottom: 14px;
+    }
+
+    /* כותרת ראשית */
+    .banner-title {
+      color: #ffffff;
+      font-size: 2.8rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    /* שם המורה */
+    .banner-subtitle {
+      color: rgba(255,255,255,0.75);
+      font-size: 1rem;
+      font-weight: 300;
+      margin-bottom: 20px;
+    }
+
+    /* ===== פסי פרוגרס / נושאי הלמידה ===== */
+    .topics {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .topic-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(255,255,255,0.85);
+      font-size: 0.88rem;
+    }
+
+    .topic-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #80deea;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px #80deea;
+    }
+
+    /* צד שמאל - אייקון גדול */
+    .content-icon {
+      position: relative;
+      flex-shrink: 0;
+      width: 120px;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon-circle {
+      position: absolute;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.15);
+    }
+    .icon-circle-1 { width: 120px; height: 120px; animation: pulse 3s ease-in-out infinite; }
+    .icon-circle-2 { width: 90px;  height: 90px;  animation: pulse 3s ease-in-out infinite 0.5s; }
+    .icon-circle-3 { width: 60px;  height: 60px;  animation: pulse 3s ease-in-out infinite 1s; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50%       { opacity: 0.6; transform: scale(1.05); }
+    }
+
+    .icon-emoji {
+      font-size: 3rem;
+      position: relative;
+      z-index: 2;
+      filter: drop-shadow(0 0 16px rgba(128,222,234,0.5));
+    }
+
+    /* ============================================
+       רספונסיביות
+       ============================================ */
+    @media (max-width: 640px) {
+      .banner {
+        flex-direction: column;
+        padding: 32px 20px;
+        text-align: center;
+      }
+      .content-main { text-align: center; }
+      .banner-title { font-size: 2rem; }
+      .topics { align-items: center; }
+      .content-icon { width: 90px; height: 90px; }
+      .icon-circle-1 { width: 90px; height: 90px; }
+      .icon-circle-2 { width: 68px; height: 68px; }
+      .icon-circle-3 { width: 46px; height: 46px; }
+    }
+  </style>
+</head>
+<body>
+
+<!--
+  ==============================================================
+  📌 באנר מדעים / טכנולוגיה — עיצוב מודרני בטורקיז ואפור
+  ==============================================================
+  מתאים למקצועות: מדעים, מחשבים, מתמטיקה, פיזיקה, ביולוגיה
+  הוראות: העתק קוד זה ל-Google Sites > Embed Code
+  ==============================================================
+-->
+
+<div class="banner">
+  <!-- אפקטים ברקע (אוטומטי) -->
+  <div class="grid-bg"></div>
+  <div class="accent-bar"></div>
+
+  <!-- תוכן ראשי (ימין) -->
+  <div class="content-main">
+
+    <!-- ✏️ שנה כאן: שם המקצוע בתגית (קצר) -->
+    <div class="badge">🔬 מדעי הטבע</div>
+
+    <!-- ✏️ שנה כאן: שם הכיתה / שם הקורס הראשי -->
+    <h1 class="banner-title">כיתה ח'2<br>מדעים</h1>
+
+    <!-- ✏️ שנה כאן: שם המורה ומידע נוסף -->
+    <p class="banner-subtitle">מורה: [שם המורה] · שנת תשפ"ה</p>
+
+    <!-- ✏️ שנה כאן: נושאי הלמידה (הוסף/מחק שורות לפי הצורך) -->
+    <div class="topics">
+      <div class="topic-item"><div class="topic-dot"></div>יחידה א' — מבנה התא</div>
+      <div class="topic-item"><div class="topic-dot"></div>יחידה ב' — גנטיקה ותורשה</div>
+      <div class="topic-item"><div class="topic-dot"></div>יחידה ג' — מערכות הגוף</div>
+    </div>
+
+  </div>
+
+  <!-- אייקון מרכזי (שמאל) -->
+  <div class="content-icon">
+    <div class="icon-circle icon-circle-1"></div>
+    <div class="icon-circle icon-circle-2"></div>
+    <div class="icon-circle icon-circle-3"></div>
+    <!-- ✏️ שנה כאן: אמוג'י מייצג (מדעים: 🔬, מחשבים: 💻, מתמטיקה: 📐, פיזיקה: ⚛️) -->
+    <span class="icon-emoji">🔬</span>
+  </div>
+
+</div>
+
+</body>
+</html>

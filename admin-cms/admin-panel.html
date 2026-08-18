@@ -1,0 +1,2274 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>לוח בקרה v2 — ניהול אתר בית הספר</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --sidebar-w:     240px;
+  --topbar-h:      60px;
+  --mobnav-h:      64px;
+
+  /* ===== צבעים דינמיים (מעודכנים ע"י JS) ===== */
+  --primary:       #1a73e8;
+  --primary-dark:  #1557b0;
+  --primary-light: #e8f0fe;
+  --secondary:     #fbbc04;
+  --accent:        #34a853;
+  --bg-page:       #f0f4f8;
+
+  /* ===== צבעים סטטיים ===== */
+  --text:          #202124;
+  --text-2:        #5f6368;
+  --text-3:        #9aa0a6;
+  --border:        #e8ecf0;
+  --card:          #ffffff;
+  --sidebar:       #ffffff;
+  --topbar:        #1a1a2e;
+  --danger:        #ea4335;
+  --danger-bg:     #fce8e6;
+  --success:       #34a853;
+  --warn:          #f9ab00;
+
+  /* ===== עיצוב ===== */
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 24px; --r-full: 9999px;
+  --sh-sm: 0 1px 4px rgba(0,0,0,.07);
+  --sh-md: 0 4px 16px rgba(0,0,0,.09);
+  --sh-lg: 0 8px 32px rgba(0,0,0,.13);
+  --t: .2s ease;
+}
+
+body {
+  font-family: 'Heebo', sans-serif;
+  direction: rtl;
+  background: var(--bg-page);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   TOPBAR
+   ============================================================ */
+.topbar {
+  background: var(--topbar);
+  height: var(--topbar-h);
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  box-shadow: 0 2px 16px rgba(0,0,0,.3);
+}
+.topbar-brand { display: flex; align-items: center; gap: 10px; }
+.topbar-logo {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: var(--r-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+.topbar-title { color: #fff; font-size: .95rem; font-weight: 700; }
+.topbar-sub   { color: rgba(255,255,255,.5); font-size: .7rem; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.topbar-date  { color: rgba(255,255,255,.55); font-size: .72rem; text-align: left; }
+.save-indicator {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: rgba(255,255,255,.55); font-size: .72rem;
+  transition: color var(--t);
+}
+.save-indicator.saved  { color: #69f0ae; }
+.save-indicator.saving { color: #ffb74d; }
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  min-height: calc(100vh - var(--topbar-h));
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+.sidebar {
+  background: var(--sidebar);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: var(--topbar-h);
+  height: calc(100vh - var(--topbar-h));
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.sidebar-section  { padding: 14px 0 6px; }
+.sidebar-label    { padding: 2px 16px 6px; font-size: .68rem; font-weight: 700; letter-spacing: 2px; color: var(--text-3); text-transform: uppercase; }
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 16px;
+  cursor: pointer;
+  border-right: 3px solid transparent;
+  transition: all var(--t);
+  color: var(--text-2);
+  font-size: .88rem;
+  user-select: none;
+}
+.nav-item:hover { background: #f8f9fa; color: var(--text); }
+.nav-item.active { background: var(--primary-light); color: var(--primary); border-right-color: var(--primary); font-weight: 700; }
+.nav-item.nav-external { cursor: pointer; }
+.nav-item.nav-external:hover { background: #f0fdf4; color: var(--accent); border-right-color: var(--accent); }
+.nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+.nav-badge {
+  margin-right: auto; margin-left: 0;
+  background: var(--danger); color: #fff;
+  font-size: .65rem; font-weight: 700;
+  padding: 2px 7px; border-radius: var(--r-full);
+  min-width: 20px; text-align: center;
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+.main { padding: 24px; overflow-y: auto; padding-bottom: 80px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fadeIn .15s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.sec-header { margin-bottom: 20px; }
+.sec-header h1 { font-size: 1.5rem; font-weight: 900; color: #1a1a2e; margin-bottom: 3px; }
+.sec-header p  { color: var(--text-2); font-size: .85rem; }
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.card {
+  background: var(--card);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  box-shadow: var(--sh-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.card-title {
+  font-size: .92rem; font-weight: 700; color: var(--text);
+  padding-bottom: 12px; margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 7px;
+}
+
+/* ============================================================
+   GRID HELPERS
+   ============================================================ */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+/* ============================================================
+   STATS BAR
+   ============================================================ */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+.stat-card {
+  background: var(--card); border-radius: var(--r-md);
+  padding: 16px; display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--sh-sm); border: 1px solid var(--border);
+}
+.stat-icon { font-size: 1.7rem; flex-shrink: 0; }
+.stat-val  { font-size: 1.6rem; font-weight: 900; color: var(--primary); line-height: 1; }
+.stat-lbl  { font-size: .72rem; color: var(--text-3); margin-top: 2px; }
+
+/* ============================================================
+   FORMS
+   ============================================================ */
+.form-group { margin-bottom: 14px; }
+label { display: block; font-size: .8rem; font-weight: 600; color: #3c4043; margin-bottom: 5px; }
+input[type=text], input[type=url], input[type=email],
+input[type=number], input[type=password], textarea, select {
+  width: 100%; padding: 9px 12px;
+  border: 1.5px solid var(--border); border-radius: var(--r-sm);
+  font-family: 'Heebo', sans-serif; font-size: .88rem;
+  color: var(--text); direction: rtl;
+  background: #fafbfc; transition: all var(--t);
+}
+input:focus, textarea:focus, select:focus {
+  outline: none; border-color: var(--primary);
+  background: #fff; box-shadow: 0 0 0 3px rgba(26,115,232,.1);
+}
+textarea { resize: vertical; min-height: 80px; }
+input[type=color] {
+  width: 48px; height: 40px; padding: 2px; cursor: pointer;
+  border: 2px solid var(--border); border-radius: var(--r-sm); background: #fafbfc;
+}
+.color-row { display: flex; align-items: center; gap: 8px; }
+.color-row input[type=text] { flex: 1; }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 18px; border-radius: var(--r-sm);
+  font-family: 'Heebo', sans-serif; font-size: .88rem; font-weight: 700;
+  cursor: pointer; border: none; transition: all var(--t);
+  white-space: nowrap; user-select: none;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(26,115,232,.3); }
+.btn-primary:hover { filter: brightness(1.08); box-shadow: 0 4px 14px rgba(26,115,232,.4); }
+.btn-success { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(52,168,83,.3); }
+.btn-success:hover { filter: brightness(1.08); }
+.btn-danger  { background: var(--danger); color: #fff; }
+.btn-danger:hover { filter: brightness(1.1); }
+.btn-warn    { background: var(--warn); color: #333; }
+.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text-2); }
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+.btn-ghost   { background: transparent; color: var(--text-2); }
+.btn-ghost:hover { background: #f1f3f4; color: var(--text); }
+.btn-sm { padding: 5px 12px; font-size: .78rem; border-radius: 6px; }
+.btn-xs { padding: 3px 8px;  font-size: .72rem; border-radius: 5px; }
+.btn-icon { padding: 7px; border-radius: var(--r-sm); font-size: 1rem; }
+.btn-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+
+/* ============================================================
+   TOGGLE SWITCH
+   ============================================================ */
+.toggle-wrap { display: flex; align-items: center; gap: 10px; }
+.toggle { position: relative; width: 42px; height: 22px; flex-shrink: 0; }
+.toggle input { display: none; }
+.toggle-slider {
+  position: absolute; inset: 0; background: #ccc; border-radius: var(--r-full);
+  cursor: pointer; transition: background var(--t);
+}
+.toggle-slider::before {
+  content: ''; position: absolute; width: 16px; height: 16px;
+  right: 3px; top: 3px; background: #fff; border-radius: 50%;
+  transition: transform var(--t); box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.toggle input:checked + .toggle-slider { background: var(--primary); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(-20px); }
+
+/* ============================================================
+   BADGES & CHIPS
+   ============================================================ */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: var(--r-full);
+  font-size: .72rem; font-weight: 700; white-space: nowrap;
+}
+.badge-blue   { background: var(--primary-light); color: var(--primary); }
+.badge-green  { background: #e6f4ea; color: #1e7e34; }
+.badge-red    { background: var(--danger-bg); color: #c62828; }
+.badge-yellow { background: #fff3cd; color: #856404; }
+.badge-gray   { background: #f1f3f4; color: var(--text-2); }
+
+/* ============================================================
+   DATE DISPLAY (Hebrew + Gregorian)
+   ============================================================ */
+.dual-date {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .75rem; color: var(--text-3);
+}
+.dual-date .heb  { color: var(--text-2); font-weight: 500; }
+.dual-date .sep  { color: var(--border); }
+.dual-date .greg { color: var(--text-3); }
+
+/* ============================================================
+   CLASS MANAGEMENT
+   ============================================================ */
+.classes-toolbar {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.classes-toolbar .search-box {
+  flex: 1; min-width: 180px;
+  padding: 8px 12px 8px 32px;
+  border: 1.5px solid var(--border); border-radius: var(--r-full);
+  font-family: 'Heebo', sans-serif; font-size: .85rem; background: #fafbfc;
+  position: relative;
+}
+.search-wrap { position: relative; flex: 1; min-width: 180px; }
+.search-wrap::before {
+  content: '🔍'; position: absolute; right: 10px; top: 50%;
+  transform: translateY(-50%); font-size: .8rem; pointer-events: none; z-index: 1;
+}
+.search-wrap input { padding-right: 32px; border-radius: var(--r-full); }
+
+.class-list { display: flex; flex-direction: column; gap: 10px; }
+
+.class-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r-lg); padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  transition: all var(--t); position: relative;
+  cursor: default;
+}
+.class-card:hover { box-shadow: var(--sh-md); border-color: var(--primary); }
+.class-card.drag-over { border-color: var(--primary); background: var(--primary-light); }
+.class-card.dragging  { opacity: .4; }
+
+.drag-handle {
+  color: var(--text-3); cursor: grab; padding: 4px;
+  font-size: 1.1rem; flex-shrink: 0; touch-action: none;
+}
+.drag-handle:active { cursor: grabbing; }
+
+.class-style-dot {
+  width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+}
+.style-torah       { background: #1a3a6b; }
+.style-elementary  { background: #ff6b9d; }
+.style-science     { background: #00acc1; }
+.style-minimal     { background: #455a64; }
+
+.class-info { flex: 1; min-width: 0; }
+.class-name { font-size: .95rem; font-weight: 700; color: var(--text); }
+.class-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 3px; }
+.class-teacher { font-size: .78rem; color: var(--text-2); }
+
+.class-subjects-preview {
+  display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px;
+}
+.subject-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: var(--r-full);
+  font-size: .7rem; font-weight: 600; color: #fff;
+}
+
+.class-actions {
+  display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+}
+.order-btns { display: flex; flex-direction: column; gap: 2px; }
+.order-btn {
+  width: 24px; height: 22px; border: 1.5px solid var(--border);
+  border-radius: 5px; background: #fafbfc; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .75rem; transition: all var(--t); color: var(--text-2);
+}
+.order-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+.order-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+/* Expand subjects */
+.class-expand-toggle {
+  cursor: pointer; padding: 4px 8px; border-radius: 6px;
+  font-size: .75rem; color: var(--text-3); background: none; border: none;
+  font-family: 'Heebo', sans-serif; transition: color var(--t);
+}
+.class-expand-toggle:hover { color: var(--primary); }
+
+.class-subjects-panel {
+  display: none; padding: 12px 16px 14px;
+  border-top: 1px solid var(--border); margin: 0 -16px -14px;
+}
+.class-subjects-panel.open { display: block; }
+.subjects-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.subject-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; background: #f8f9fa; border-radius: 8px;
+}
+.subject-row .s-icon { font-size: 1rem; width: 22px; text-align: center; }
+.subject-row .s-name { flex: 1; font-size: .85rem; font-weight: 600; }
+.subject-row .s-drive { font-size: .72rem; color: var(--text-3); }
+
+/* ============================================================
+   ARCHIVE
+   ============================================================ */
+.archive-list { display: flex; flex-direction: column; gap: 8px; }
+.archive-item {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r-md); padding: 12px 16px;
+  display: flex; align-items: center; gap: 12px;
+  opacity: .75; transition: opacity var(--t);
+}
+.archive-item:hover { opacity: 1; }
+.archive-info { flex: 1; }
+.archive-name { font-size: .9rem; font-weight: 700; text-decoration: line-through; color: var(--text-2); }
+.archive-date { font-size: .75rem; color: var(--text-3); margin-top: 2px; }
+.archive-empty {
+  text-align: center; padding: 48px 20px;
+  color: var(--text-3); font-size: .9rem;
+}
+
+/* ============================================================
+   COLOR SWATCHES
+   ============================================================ */
+.swatch-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.swatch {
+  width: 32px; height: 32px; border-radius: 8px;
+  cursor: pointer; border: 2px solid transparent;
+  transition: all var(--t); box-shadow: var(--sh-sm);
+}
+.swatch:hover { transform: scale(1.15); border-color: #fff; box-shadow: var(--sh-md); }
+
+/* ============================================================
+   QUICK LINKS EDITOR
+   ============================================================ */
+.link-rows { display: flex; flex-direction: column; gap: 8px; }
+.link-row {
+  display: grid; grid-template-columns: 46px 1fr 1fr 40px;
+  gap: 8px; align-items: center;
+  padding: 10px 12px; background: #f8f9fa;
+  border-radius: var(--r-sm); border: 1.5px solid var(--border);
+}
+.link-row input { margin: 0; }
+.link-emoji-input { text-align: center; font-size: 1.3rem; padding: 6px 4px; }
+
+/* ============================================================
+   AI CHAT WINDOW
+   ============================================================ */
+.ai-layout { display: flex; gap: 16px; height: 520px; }
+.ai-chat { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+.chat-messages {
+  flex: 1; overflow-y: auto; padding: 16px;
+  background: #f8f9fa; border-radius: var(--r-lg) var(--r-lg) 0 0;
+  border: 1.5px solid var(--border); border-bottom: none;
+  display: flex; flex-direction: column; gap: 12px;
+  scrollbar-width: thin;
+}
+
+.chat-msg { display: flex; gap: 8px; animation: fadeIn .15s ease; }
+.chat-msg.user { flex-direction: row-reverse; }
+.chat-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .9rem; flex-shrink: 0; align-self: flex-end;
+}
+.chat-msg.user   .chat-avatar { background: var(--primary); }
+.chat-msg.gemini .chat-avatar { background: linear-gradient(135deg, #1a73e8, #34a853); }
+
+.chat-bubble {
+  max-width: 72%; padding: 10px 14px;
+  border-radius: 16px; font-size: .88rem; line-height: 1.6;
+}
+.chat-msg.user   .chat-bubble { background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+.chat-msg.gemini .chat-bubble { background: #fff; color: var(--text); border-bottom-left-radius: 4px; box-shadow: var(--sh-sm); }
+
+.chat-msg.gemini .chat-bubble code {
+  background: #f1f3f4; padding: 1px 5px; border-radius: 4px;
+  font-family: 'Courier New', monospace; font-size: .82em;
+}
+
+/* כפתור "החל שינויים" שמגיע עם תשובת AI */
+.apply-btn-wrap { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+
+.chat-thinking {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--text-3); font-size: .82rem; padding: 8px 0;
+}
+.dots span {
+  display: inline-block; width: 6px; height: 6px;
+  background: var(--text-3); border-radius: 50; margin: 0 1px;
+  animation: bounce .9s ease infinite;
+}
+.dots span:nth-child(2) { animation-delay: .15s; }
+.dots span:nth-child(3) { animation-delay: .3s; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-5px)} }
+
+.chat-input-row {
+  display: flex; gap: 8px; align-items: flex-end;
+  padding: 12px; background: var(--card);
+  border: 1.5px solid var(--border); border-top: none;
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+}
+.chat-input-row textarea {
+  flex: 1; min-height: 44px; max-height: 120px;
+  resize: none; border-radius: var(--r-md); font-size: .88rem;
+  margin: 0;
+}
+
+/* AI Settings panel */
+.ai-settings {
+  width: 220px; flex-shrink: 0;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.ai-settings .card { padding: 14px; margin-bottom: 0; }
+.ai-info-row { display: flex; justify-content: space-between; align-items: center; }
+.ai-info-label { font-size: .75rem; color: var(--text-3); }
+.ai-info-val   { font-size: .8rem; font-weight: 600; color: var(--text); }
+
+.suggestion-list { display: flex; flex-direction: column; gap: 6px; }
+.suggestion-chip {
+  padding: 7px 10px; border-radius: var(--r-sm);
+  background: #f8f9fa; border: 1.5px solid var(--border);
+  cursor: pointer; font-size: .78rem; color: var(--text-2);
+  text-align: right; transition: all var(--t);
+  font-family: 'Heebo', sans-serif;
+}
+.suggestion-chip:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+
+/* ============================================================
+   CODE BLOCK
+   ============================================================ */
+.code-block {
+  background: #1e1e2e; color: #cdd6f4;
+  padding: 14px 16px; border-radius: var(--r-md);
+  font-family: 'Courier New', monospace; font-size: .8rem;
+  overflow-x: auto; white-space: pre; direction: ltr; text-align: left;
+  position: relative; max-height: 280px; overflow-y: auto;
+}
+.code-copy {
+  position: absolute; top: 8px; left: 8px;
+  background: rgba(255,255,255,.1); border: none;
+  color: rgba(255,255,255,.7); padding: 3px 10px;
+  border-radius: 5px; cursor: pointer; font-size: .72rem;
+  font-family: 'Heebo', sans-serif; transition: background var(--t);
+}
+.code-copy:hover { background: rgba(255,255,255,.2); }
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45); backdrop-filter: blur(4px);
+  z-index: 500; display: flex; align-items: center; justify-content: center;
+  padding: 20px; opacity: 0; pointer-events: none;
+  transition: opacity var(--t);
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--card); border-radius: var(--r-xl);
+  padding: 28px; width: 100%; max-width: 520px;
+  box-shadow: var(--sh-lg); transform: translateY(16px) scale(.97);
+  transition: all var(--t); max-height: 90vh; overflow-y: auto;
+}
+.modal-overlay.open .modal { transform: none; }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.modal-title { font-size: 1.1rem; font-weight: 900; color: #1a1a2e; }
+.modal-close {
+  background: #f1f3f4; border: none; width: 32px; height: 32px;
+  border-radius: 50%; cursor: pointer; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--t);
+}
+.modal-close:hover { background: var(--danger-bg); }
+
+/* Style picker inside modal */
+.style-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.style-option {
+  padding: 10px 8px; border-radius: var(--r-md);
+  border: 2px solid var(--border); cursor: pointer;
+  text-align: center; transition: all var(--t);
+  font-size: .75rem; font-weight: 600;
+}
+.style-option:hover        { border-color: var(--primary); }
+.style-option.selected     { border-color: var(--primary); background: var(--primary-light); }
+.style-option .style-swatch { width: 28px; height: 28px; border-radius: 8px; margin: 0 auto 6px; }
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #1a1a2e; color: #fff;
+  padding: 11px 22px; border-radius: 12px;
+  font-size: .88rem; font-weight: 600;
+  box-shadow: var(--sh-lg); z-index: 999;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+  white-space: nowrap; pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ============================================================
+   MOBILE NAV (bottom bar)
+   ============================================================ */
+.mob-nav {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0;
+  height: var(--mobnav-h); background: var(--card);
+  border-top: 1px solid var(--border);
+  z-index: 300; overflow-x: auto;
+}
+.mob-nav-inner {
+  display: flex; height: 100%; min-width: max-content;
+  padding: 0 8px;
+}
+.mob-nav-btn {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px; padding: 0 12px;
+  cursor: pointer; color: var(--text-3); min-width: 58px;
+  transition: color var(--t); background: none; border: none;
+  font-family: 'Heebo', sans-serif;
+}
+.mob-nav-btn.active { color: var(--primary); }
+.mob-nav-icon { font-size: 1.2rem; }
+.mob-nav-label { font-size: .6rem; font-weight: 600; white-space: nowrap; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 960px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .mob-nav { display: flex; }
+  .main { padding: 16px; padding-bottom: calc(var(--mobnav-h) + 16px); }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .g4 { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: 1fr 1fr; }
+  .ai-layout { flex-direction: column; height: auto; }
+  .ai-settings { width: 100%; }
+}
+@media (max-width: 600px) {
+  .g2, .g3, .g4 { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .link-row { grid-template-columns: 40px 1fr; }
+  .class-card { flex-wrap: wrap; }
+  .ai-chat { height: 400px; }
+  .topbar-date { display: none; }
+  .modal { padding: 20px; }
+}
+@media (max-width: 380px) {
+  .stats { grid-template-columns: 1fr; }
+}
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOPBAR
+     ============================================================ -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">🏫</div>
+    <div>
+      <div class="topbar-title" id="tb-school-name">לוח בקרה</div>
+      <div class="topbar-sub">Developer Admin Panel v2.0</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-date" id="tb-date"></div>
+    <div class="save-indicator" id="save-indicator">
+      <span id="save-icon">💾</span>
+      <span id="save-text">שמור (Ctrl+S)</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     LAYOUT
+     ============================================================ -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">ניהול</div>
+      <div class="nav-item active" data-tab="dashboard"><span class="nav-icon">📊</span>לוח מחוונים</div>
+      <div class="nav-item" data-tab="classes"><span class="nav-icon">🏫</span>ניהול כיתות <span class="nav-badge" id="badge-classes">0</span></div>
+      <div class="nav-item" data-tab="archive"><span class="nav-icon">🗂️</span>ארכיון כיתות <span class="nav-badge" id="badge-archive" style="background:var(--text-3)">0</span></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">עיצוב ותוכן</div>
+      <div class="nav-item" data-tab="colors"><span class="nav-icon">🎨</span>צבעים גלובליים</div>
+      <div class="nav-item" data-tab="school"><span class="nav-icon">📋</span>פרטי בית הספר</div>
+      <div class="nav-item" data-tab="links"><span class="nav-icon">⚡</span>כפתורים מהירים</div>
+      <div class="nav-item" data-tab="announce"><span class="nav-icon">📢</span>הודעה גלובלית</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">כלים</div>
+      <div class="nav-item" data-tab="ai"><span class="nav-icon">✨</span>עוזר AI</div>
+      <div class="nav-item" data-tab="export"><span class="nav-icon">📤</span>גיבוי וייצוא</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">רכיבי הוראה</div>
+      <div class="nav-item nav-external" onclick="window.open('../teacher-engine/interactive-teacher.html','_blank')">
+        <span class="nav-icon">🎓</span>עוזר מורה AI
+        <span style="font-size:.65rem;opacity:.6;margin-right:auto;padding-right:4px">↗</span>
+      </div>
+      <div class="nav-item nav-external" onclick="window.open('../teacher-engine/demo.html','_blank')">
+        <span class="nav-icon">🧪</span>דמו ובדיקה
+        <span style="font-size:.65rem;opacity:.6;margin-right:auto;padding-right:4px">↗</span>
+      </div>
+      <div class="nav-item nav-external" onclick="window.open('../license/license-gate.html','_blank')">
+        <span class="nav-icon">🔑</span>דף כניסה
+        <span style="font-size:.65rem;opacity:.6;margin-right:auto;padding-right:4px">↗</span>
+      </div>
+      <div class="nav-item nav-external" onclick="window.open('../license/admin-code-gen.html','_blank')">
+        <span class="nav-icon">🎟️</span>מחולל קודים
+        <span style="font-size:.65rem;opacity:.6;margin-right:auto;padding-right:4px">↗</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main" id="main">
+
+    <!-- ==================== DASHBOARD ==================== -->
+    <div class="tab-panel active" id="tab-dashboard">
+      <div class="sec-header">
+        <h1>📊 לוח מחוונים</h1>
+        <p id="dash-date-line">טוען תאריך...</p>
+      </div>
+
+      <div class="stats" id="stats-bar">
+        <div class="stat-card">
+          <div class="stat-icon">🏫</div>
+          <div><div class="stat-val" id="s-classes">0</div><div class="stat-lbl">כיתות פעילות</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📚</div>
+          <div><div class="stat-val" id="s-subjects">0</div><div class="stat-lbl">מקצועות</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⚡</div>
+          <div><div class="stat-val" id="s-links">0</div><div class="stat-lbl">כפתורים מהירים</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🗂️</div>
+          <div><div class="stat-val" id="s-archive">0</div><div class="stat-lbl">בארכיון</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📅 תאריך היום</div>
+        <div id="dash-full-date" style="font-size:1.1rem; font-weight:700; margin-bottom:6px;"></div>
+        <div id="dash-greg-date" style="font-size:.9rem; color:var(--text-2);"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">💡 מדריך מהיר</div>
+        <ol style="padding-right:20px; line-height:2.4; color:var(--text-2); font-size:.88rem;">
+          <li>הוסף כיתות בלשונית <strong>ניהול כיתות</strong> ←</li>
+          <li>עדכן <strong>צבעים גלובליים</strong> להתאמה מלאה</li>
+          <li>ערוך <strong>כפתורים מהירים</strong> לכל כיתה</li>
+          <li>שאל את <strong>עוזר ה-AI ✨</strong> לעזרה בחופשי</li>
+          <li>בצע <strong>גיבוי JSON</strong> בסוף כל עבודה</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🕐 פעולה אחרונה</div>
+        <p id="last-action" style="color:var(--text-3); font-size:.85rem;">טרם בוצעה פעולה.</p>
+      </div>
+    </div>
+
+    <!-- ==================== CLASSES ==================== -->
+    <div class="tab-panel" id="tab-classes">
+      <div class="sec-header">
+        <h1>🏫 ניהול כיתות</h1>
+        <p>גרור לסידור מחדש · לחץ ↑↓ להזזה · לחץ ✏️ לעריכה</p>
+      </div>
+
+      <div class="classes-toolbar">
+        <div class="search-wrap">
+          <input type="text" id="class-search" placeholder="חפש כיתה..." oninput="filterClasses()">
+        </div>
+        <button class="btn btn-primary" onclick="openClassModal()">➕ הוסף כיתה</button>
+        <button class="btn btn-outline btn-sm" onclick="sortClassesByName()">א-ת מיון</button>
+      </div>
+
+      <div class="class-list" id="class-list">
+        <!-- rendered by JS -->
+      </div>
+
+      <div id="classes-empty" style="text-align:center; padding:48px 20px; color:var(--text-3); display:none;">
+        <div style="font-size:2.5rem; margin-bottom:12px;">🏫</div>
+        <div style="font-size:.95rem;">אין כיתות עדיין. לחץ "הוסף כיתה" כדי להתחיל.</div>
+      </div>
+    </div>
+
+    <!-- ==================== ARCHIVE ==================== -->
+    <div class="tab-panel" id="tab-archive">
+      <div class="sec-header">
+        <h1>🗂️ ארכיון כיתות</h1>
+        <p>כיתות שהוסרו — לחץ "שחזר" להחזרתן לרשימה הפעילה</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📦 כיתות מאורכבות</div>
+        <div class="archive-list" id="archive-list"></div>
+        <div id="archive-empty" class="archive-empty" style="display:none;">
+          ✅ הארכיון ריק — אין כיתות שהוסרו.
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== COLORS ==================== -->
+    <div class="tab-panel" id="tab-colors">
+      <div class="sec-header">
+        <h1>🎨 צבעים גלובליים</h1>
+        <p>שנה כאן — הצבעים ישפיעו על ייצוא ה-CSS לכל האתר</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🖌️ פלטת הצבעים</div>
+        <div class="g2">
+          <div class="form-group">
+            <label>צבע ראשי</label>
+            <div class="color-row">
+              <input type="color" id="cp-primary" value="#1a73e8" oninput="onColorChange('primary')">
+              <input type="text"  id="ch-primary" value="#1a73e8" oninput="onHexChange('primary')" maxlength="7">
+            </div>
+            <div class="swatch-row">
+              <div class="swatch" style="background:#1a73e8" title="כחול Google"    onclick="setColor('primary','#1a73e8')"></div>
+              <div class="swatch" style="background:#1a3a6b" title="כחול תורני"     onclick="setColor('primary','#1a3a6b')"></div>
+              <div class="swatch" style="background:#00acc1" title="טורקיז מדעים"   onclick="setColor('primary','#00acc1')"></div>
+              <div class="swatch" style="background:#3949ab" title="אינדיגו"         onclick="setColor('primary','#3949ab')"></div>
+              <div class="swatch" style="background:#2e7d32" title="ירוק"            onclick="setColor('primary','#2e7d32')"></div>
+              <div class="swatch" style="background:#6a1b9a" title="סגול"            onclick="setColor('primary','#6a1b9a')"></div>
+              <div class="swatch" style="background:#b71c1c" title="אדום"            onclick="setColor('primary','#b71c1c')"></div>
+              <div class="swatch" style="background:#263238" title="כהה"             onclick="setColor('primary','#263238')"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>צבע משני / הדגשה</label>
+            <div class="color-row">
+              <input type="color" id="cp-secondary" value="#fbbc04" oninput="onColorChange('secondary')">
+              <input type="text"  id="ch-secondary" value="#fbbc04" oninput="onHexChange('secondary')" maxlength="7">
+            </div>
+            <div class="swatch-row">
+              <div class="swatch" style="background:#fbbc04" title="צהוב"   onclick="setColor('secondary','#fbbc04')"></div>
+              <div class="swatch" style="background:#c9a227" title="זהב"    onclick="setColor('secondary','#c9a227')"></div>
+              <div class="swatch" style="background:#ff9800" title="כתום"   onclick="setColor('secondary','#ff9800')"></div>
+              <div class="swatch" style="background:#e91e63" title="ורוד"   onclick="setColor('secondary','#e91e63')"></div>
+              <div class="swatch" style="background:#00bcd4" title="ציאן"   onclick="setColor('secondary','#00bcd4')"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>צבע הדגשה (Accent)</label>
+            <div class="color-row">
+              <input type="color" id="cp-accent" value="#34a853" oninput="onColorChange('accent')">
+              <input type="text"  id="ch-accent" value="#34a853" oninput="onHexChange('accent')" maxlength="7">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>צבע רקע הדף</label>
+            <div class="color-row">
+              <input type="color" id="cp-bg" value="#f0f4f8" oninput="onColorChange('bg')">
+              <input type="text"  id="ch-bg" value="#f0f4f8" oninput="onHexChange('bg')" maxlength="7">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:12px;">
+          <label>תצוגה מקדימה</label>
+          <div id="color-preview"
+               style="padding:20px; border-radius:12px; color:#fff; text-align:center; font-weight:700; font-size:1.1rem; transition:background .3s;">
+            שם בית הספר
+          </div>
+        </div>
+
+        <div class="btn-actions">
+          <button class="btn btn-primary" onclick="saveAll()">💾 שמור</button>
+          <button class="btn btn-outline" onclick="resetColors()">↺ אפס לברירת מחדל</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SCHOOL ==================== -->
+    <div class="tab-panel" id="tab-school">
+      <div class="sec-header">
+        <h1>📋 פרטי בית הספר</h1>
+        <p>מידע שמופיע בכל רכיבי האתר</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🏫 פרטים בסיסיים</div>
+        <div class="g2">
+          <div class="form-group">
+            <label>שם בית הספר</label>
+            <input type="text" id="s-name" placeholder='בית ספר "אור תורה"'>
+          </div>
+          <div class="form-group">
+            <label>שנת הלימודים</label>
+            <input type="text" id="s-year" placeholder='תשפ"ו'>
+          </div>
+          <div class="form-group">
+            <label>מוטו / חזון קצר</label>
+            <input type="text" id="s-motto" placeholder="חינוך ברוח יהודית">
+          </div>
+          <div class="form-group">
+            <label>אימייל יצירת קשר</label>
+            <input type="email" id="s-email" placeholder="school@example.org.il">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>כתובת לוגו (URL)</label>
+          <input type="url" id="s-logo" placeholder="https://...">
+        </div>
+        <div class="btn-actions">
+          <button class="btn btn-primary" onclick="saveAll()">💾 שמור</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== QUICK LINKS ==================== -->
+    <div class="tab-panel" id="tab-links">
+      <div class="sec-header">
+        <h1>⚡ כפתורים מהירים</h1>
+        <p>הכפתורים מופיעים בכל עמודי האתר בגלריית הקישורים</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🔗 רשימת כפתורים</div>
+        <div class="link-rows" id="link-rows"></div>
+        <div class="btn-actions">
+          <button class="btn btn-success" onclick="addLink()">➕ הוסף כפתור</button>
+          <button class="btn btn-primary" onclick="saveAll()">💾 שמור</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ANNOUNCEMENT ==================== -->
+    <div class="tab-panel" id="tab-announce">
+      <div class="sec-header">
+        <h1>📢 הודעה גלובלית</h1>
+        <p>הודעה שתופיע בראש כל עמוד</p>
+      </div>
+      <div class="card">
+        <div class="form-group">
+          <div class="toggle-wrap">
+            <label style="margin:0;" for="ann-on">הפעל הודעה גלובלית</label>
+            <label class="toggle"><input type="checkbox" id="ann-on"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>טקסט ההודעה</label>
+          <textarea id="ann-text" placeholder="לדוגמה: מחר — חופש! לא יתקיימו לימודים בפ.יסמ."></textarea>
+        </div>
+        <div class="g2">
+          <div class="form-group">
+            <label>סוג</label>
+            <select id="ann-type">
+              <option value="info">ℹ️ מידע (כחול)</option>
+              <option value="warning">⚠️ אזהרה (כתום)</option>
+              <option value="danger">🚨 דחוף (אדום)</option>
+              <option value="success">✅ הצלחה (ירוק)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>תאריך תפוגה</label>
+            <input type="text" id="ann-expiry" placeholder="כ' תשרי תשפ"ו">
+          </div>
+        </div>
+        <div id="ann-created" style="font-size:.78rem; color:var(--text-3); margin-bottom:10px;"></div>
+        <div class="btn-actions">
+          <button class="btn btn-primary" onclick="saveAll()">💾 שמור ופרסם</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== AI ASSISTANT ==================== -->
+    <div class="tab-panel" id="tab-ai">
+      <div class="sec-header">
+        <h1>✨ עוזר AI — Gemini</h1>
+        <p>כתוב הנחיה בעברית חופשית · AI ישנה את ה-State או יציע קוד</p>
+      </div>
+
+      <div class="ai-layout">
+        <!-- CHAT -->
+        <div class="ai-chat">
+          <div class="chat-messages" id="chat-messages">
+            <div class="chat-msg gemini">
+              <div class="chat-avatar">🤖</div>
+              <div class="chat-bubble">
+                שלום! אני עוזר ה-AI של לוח הבקרה.<br>
+                תוכל לבקש ממני דברים כמו:<br>
+                <em>• "שנה את הצבע הראשי לסגול"</em><br>
+                <em>• "הוסף כיתה ג'1 עם מורה שרה"</em><br>
+                <em>• "צור CSS לבאנר תורני כהה"</em>
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-row">
+            <textarea id="chat-input" placeholder="כתוב הנחיה כאן..." rows="1"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage();}"></textarea>
+            <button class="btn btn-primary btn-icon" onclick="sendAIMessage()" title="שלח (Enter)">➤</button>
+          </div>
+        </div>
+
+        <!-- AI SETTINGS PANEL -->
+        <div class="ai-settings">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:12px; padding-bottom:8px;">⚙️ הגדרות AI</div>
+            <div class="form-group">
+              <label>מפתח API</label>
+              <div style="font-size:.78rem; color:var(--text-2); line-height:1.5;">
+                המפתח נטען מהשרת מתוך <code>GEMINI_API_KEY</code> בקובץ <code>.env</code>.
+                הפעל <code>python server.py</code> לפני השימוש.
+              </div>
+            </div>
+            <div class="form-group">
+              <label>מודל</label>
+              <select id="ai-model">
+                <option value="gemini-3.6-flash">Gemini 2.5 Flash (מהיר)</option>
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro (חזק)</option>
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash (קל)</option>
+              </select>
+            </div>
+            <button class="btn btn-outline btn-sm" style="width:100%;" onclick="clearChat()">🗑️ נקה שיחה</button>
+          </div>
+
+          <div class="card">
+            <div class="card-title" style="margin-bottom:10px; padding-bottom:8px;">💡 הנחיות מהירות</div>
+            <div class="suggestion-list">
+              <button class="suggestion-chip" onclick="fillSuggestion('שנה את הצבע הראשי לכחול כהה #1a237e')">🎨 שנה לכחול כהה</button>
+              <button class="suggestion-chip" onclick="fillSuggestion('הוסף כפתור מהיר בשם מערכת שעות עם אייקון 📅')">➕ הוסף כפתור</button>
+              <button class="suggestion-chip" onclick="fillSuggestion('צור CSS לבאנר תורני בגווני כחול-זהב')">📄 CSS לבאנר</button>
+              <button class="suggestion-chip" onclick="fillSuggestion('הפעל הודעה גלובלית דחופה: מחר אין לימודים')">📢 הודעה גלובלית</button>
+              <button class="suggestion-chip" onclick="fillSuggestion('סכם את כל הכיתות הפעילות')">📊 סכם כיתות</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== EXPORT ==================== -->
+    <div class="tab-panel" id="tab-export">
+      <div class="sec-header">
+        <h1>📤 גיבוי וייצוא</h1>
+        <p>שמור גיבוי שלם של כל הנתונים וייצא CSS לאתר</p>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-title">💾 גיבוי מלא (JSON)</div>
+          <p style="color:var(--text-2); font-size:.85rem; margin-bottom:14px;">
+            שומר את כל הכיתות, ארכיון, כפתורים, צבעים והגדרות בקובץ יחיד.
+          </p>
+          <div class="btn-actions" style="margin-top:0;">
+            <button class="btn btn-primary" onclick="exportBackup()">⬇️ ייצוא גיבוי JSON</button>
+            <button class="btn btn-outline" onclick="document.getElementById('import-file').click()">📂 טעינת גיבוי</button>
+            <input type="file" id="import-file" accept=".json" style="display:none" onchange="importBackup(event)">
+          </div>
+          <div id="backup-info" style="margin-top:12px; font-size:.8rem; color:var(--text-3);"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🔗 Google Apps Script</div>
+          <div class="form-group">
+            <label>URL של Web App</label>
+            <input type="url" id="gas-url" placeholder="https://script.google.com/macros/s/.../exec">
+          </div>
+          <div class="btn-actions" style="margin-top:0;">
+            <button class="btn btn-primary btn-sm" onclick="testGAS()">🔌 בדוק</button>
+            <button class="btn btn-success btn-sm" onclick="pushToGAS()">☁️ שמור בענן</button>
+            <button class="btn btn-outline btn-sm" onclick="pullFromGAS()">⬇️ טען מענן</button>
+          </div>
+          <div id="gas-status" style="margin-top:10px; font-size:.8rem; color:var(--text-3);"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📋 ייצוא CSS גלובלי</div>
+        <button class="btn btn-primary btn-sm" onclick="generateCSS()" style="margin-bottom:12px;">
+          🔄 צור קוד CSS
+        </button>
+        <div class="code-block" id="css-out">
+לחץ "צור קוד CSS" לייצוא...</div>
+        <div class="btn-actions">
+          <button class="btn btn-success btn-sm" onclick="copyCSS()">📋 העתק</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- ============================================================
+     MODAL — הוסף / ערוך כיתה
+     ============================================================ -->
+<div class="modal-overlay" id="class-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">➕ הוספת כיתה חדשה</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <input type="hidden" id="modal-class-id">
+
+    <div class="form-group">
+      <label>שם הכיתה *</label>
+      <input type="text" id="m-name" placeholder="לדוגמה: כיתה ב'1 / אנגלית ח'2">
+    </div>
+
+    <div class="g2">
+      <div class="form-group">
+        <label>שם המורה</label>
+        <input type="text" id="m-teacher" placeholder="שם המורה">
+      </div>
+      <div class="form-group">
+        <label>חדר / מיקום</label>
+        <input type="text" id="m-room" placeholder="חדר 12">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>ID תיקיית Google Drive (ראשית)</label>
+      <input type="text" id="m-drive" placeholder="הכנס ID של תיקייה...">
+    </div>
+
+    <div class="form-group">
+      <label>סגנון באנר</label>
+      <div class="style-picker">
+        <div class="style-option selected" data-style="torah" onclick="selectStyle(this,'torah')">
+          <div class="style-swatch" style="background:linear-gradient(135deg,#1a3a6b,#2a5298);"></div>
+          תורני
+        </div>
+        <div class="style-option" data-style="elementary" onclick="selectStyle(this,'elementary')">
+          <div class="style-swatch" style="background:linear-gradient(135deg,#ff6b9d,#ffca28);"></div>
+          יסודי
+        </div>
+        <div class="style-option" data-style="science" onclick="selectStyle(this,'science')">
+          <div class="style-swatch" style="background:linear-gradient(135deg,#00acc1,#006064);"></div>
+          מדעים
+        </div>
+        <div class="style-option" data-style="minimal" onclick="selectStyle(this,'minimal')">
+          <div class="style-swatch" style="background:linear-gradient(135deg,#455a64,#263238);"></div>
+          מינימל
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>הערה פנימית (למפתח בלבד)</label>
+      <textarea id="m-note" placeholder="הערות טכניות..." rows="2"></textarea>
+    </div>
+
+    <!-- מקצועות -->
+    <div class="card-title" style="margin-top:16px;">📚 מקצועות</div>
+    <div id="modal-subjects" style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px;"></div>
+    <button class="btn btn-outline btn-sm" onclick="addModalSubject()">➕ הוסף מקצוע</button>
+
+    <div class="btn-actions" style="margin-top:20px;">
+      <button class="btn btn-primary" onclick="saveClassModal()">💾 שמור כיתה</button>
+      <button class="btn btn-outline" onclick="closeModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     TOAST
+     ============================================================ -->
+<div class="toast" id="toast"></div>
+
+<!-- ============================================================
+     MOBILE BOTTOM NAV
+     ============================================================ -->
+<nav class="mob-nav">
+  <div class="mob-nav-inner">
+    <button class="mob-nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard',this)">
+      <span class="mob-nav-icon">📊</span><span class="mob-nav-label">מחוונים</span>
+    </button>
+    <button class="mob-nav-btn" data-tab="classes" onclick="switchTab('classes',this)">
+      <span class="mob-nav-icon">🏫</span><span class="mob-nav-label">כיתות</span>
+    </button>
+    <button class="mob-nav-btn" data-tab="archive" onclick="switchTab('archive',this)">
+      <span class="mob-nav-icon">🗂️</span><span class="mob-nav-label">ארכיון</span>
+    </button>
+    <button class="mob-nav-btn" data-tab="colors" onclick="switchTab('colors',this)">
+      <span class="mob-nav-icon">🎨</span><span class="mob-nav-label">צבעים</span>
+    </button>
+    <button class="mob-nav-btn" data-tab="links" onclick="switchTab('links',this)">
+      <span class="mob-nav-icon">⚡</span><span class="mob-nav-label">כפתורים</span>
+    </button>
+    <button class="mob-nav-btn" data-tab="ai" onclick="switchTab('ai',this)">
+      <span class="mob-nav-icon">✨</span><span class="mob-nav-label">AI</span>
+    </button>
+    <button class="mob-nav-btn" data-tab="export" onclick="switchTab('export',this)">
+      <span class="mob-nav-icon">📤</span><span class="mob-nav-label">גיבוי</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+'use strict';
+
+/* ============================================================
+   STATE — מודל נתונים מלא
+   ============================================================ */
+const DEFAULT_LINKS = [
+  { id: uid(), icon: '📅', text: 'מערכת שעות',     url: '#', color: '#1a73e8' },
+  { id: uid(), icon: '📚', text: 'חומרי למידה',    url: '#', color: '#34a853' },
+  { id: uid(), icon: '🎮', text: 'משחקים חינוכיים', url: '#', color: '#9c27b0' },
+  { id: uid(), icon: '📧', text: 'יצירת קשר',      url: '#', color: '#ea4335' },
+];
+
+let state = {
+  version: '2.0',
+  school: { name: 'בית ספר שלנו', year: 'תשפ"ו', motto: '', email: '', logo: '' },
+  colors: { primary: '#1a73e8', secondary: '#fbbc04', accent: '#34a853', bg: '#f0f4f8' },
+  classes: [],         // { id, name, style, teacher, room, driveId, note, order, archived, archivedAt, createdAt, subjects[] }
+  links:   DEFAULT_LINKS,
+  announcement: { active: false, text: '', type: 'info', expiry: '', createdAt: null },
+  ai: { model: 'gemini-3.6-flash', history: [] },
+  appsScriptUrl: '',
+  lastSaved: null,
+};
+
+/* ============================================================
+   UTILS
+   ============================================================ */
+function uid() {
+  return typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+/* ===== תאריך עברי + לועזי — גימטריה מלאה ===== */
+
+/* ממיר מספר שלם לאותיות גימטריה עבריות.
+   דוגמאות: 6→ו', 15→ט"ו, 25→כ"ה, 786→תשפ"ו */
+function numToGematria(n) {
+  if (!n || n <= 0) return '';
+  const ONES     = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
+  const TENS     = ['', 'י', 'כ', 'ל', 'מ', 'נ', 'ס', 'ע', 'פ', 'צ'];
+  const HUNDREDS = ['', 'ק', 'ר', 'ש', 'ת', 'תק', 'תר', 'תש', 'תת', 'תתק'];
+  let letters = '';
+  const h   = Math.floor(n / 100);
+  const rem = n % 100;
+  if (h > 0) letters += HUNDREDS[h];
+  // חריגים: ט"ו וט"ז במקום י"ה וי"ו (לא כותבים שם ה')
+  if      (rem === 15) letters += 'טו';
+  else if (rem === 16) letters += 'טז';
+  else {
+    const t = Math.floor(rem / 10);
+    const o = rem % 10;
+    if (t > 0) letters += TENS[t];
+    if (o > 0) letters += ONES[o];
+  }
+  if (!letters) return '';
+  // אות בודדת → גרש ('), מרובות → גרשיים (") לפני האחרונה
+  if (letters.length === 1) return letters + "'";
+  return letters.slice(0, -1) + '"' + letters.slice(-1);
+}
+
+/* מחשב דינמית את התאריך העברי הנוכחי ומחזיר גימטריה מלאה.
+   פלט לדוגמה:
+     heb:  "יום שני, ו' בחודש אב שנת תשפ"ו לבריאת העולם"
+     greg: "20/07/2026" */
+function hebrewDate(date = new Date()) {
+  try {
+    const d = (date instanceof Date) ? date : new Date(date);
+
+    // לוקאל אנגלי עם לוח עברי — מחזיר ערכים נומריים אמינים בכל דפדפן
+    const enParts = new Intl.DateTimeFormat('en-u-ca-hebrew', {
+      weekday: 'long', day: 'numeric', year: 'numeric'
+    }).formatToParts(d);
+    const getEn = type => (enParts.find(p => p.type === type) || {}).value || '';
+
+    const weekdayEn = getEn('weekday');                               // 'Monday'
+    const dayNum    = parseInt(getEn('day'), 10);                     // 6
+    const yearFull  = parseInt(getEn('year').replace(/\D/g, ''), 10); // 5786
+
+    // שם החודש בעברית — לוקאל עברי עם לוח עברי
+    const monthParts = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', {
+      month: 'long'
+    }).formatToParts(d);
+    const monthHe = (monthParts.find(p => p.type === 'month') || {}).value || '';
+
+    // מיפוי ימי שבוע אנגלי → עברי
+    const WD = {
+      Sunday:    'ראשון',
+      Monday:    'שני',
+      Tuesday:   'שלישי',
+      Wednesday: 'רביעי',
+      Thursday:  'חמישי',
+      Friday:    'שישי',
+      Saturday:  'שבת',
+    };
+    const weekdayHe = WD[weekdayEn] || weekdayEn;
+
+    // המרה לגימטריה — היום: ו', השנה: תשפ"ו (ללא ה-5000)
+    const dayGem  = numToGematria(dayNum);
+    const yearGem = numToGematria(yearFull % 1000);
+
+    const heb  = `יום ${weekdayHe}, ${dayGem} בחודש ${monthHe} שנת ${yearGem} לבריאת העולם`;
+    const greg = new Intl.DateTimeFormat('he-IL', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    }).format(d);
+
+    return { heb, greg, combined: `${heb} | ${greg}` };
+  } catch {
+    const greg = (date instanceof Date ? date : new Date()).toLocaleDateString('he-IL');
+    return { heb: greg, greg, combined: greg };
+  }
+}
+
+function dualDateEl(date = new Date()) {
+  const { heb, greg } = hebrewDate(date);
+  return `<span class="dual-date"><span class="heb">${heb}</span><span class="sep">|</span><span class="greg">${greg}</span></span>`;
+}
+
+/* ============================================================
+   LOCAL STORAGE
+   ============================================================ */
+const LS_KEY = 'schoolAdmin_v2';
+
+function autoSave() {
+  setSaveStatus('saving');
+  state.lastSaved = new Date().toISOString();
+  // sync form → state before saving
+  syncFormToState();
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+    setSaveStatus('saved');
+    setTimeout(() => setSaveStatus('idle'), 2200);
+  } catch(e) {
+    setSaveStatus('idle');
+    showToast('⚠️ שגיאה בשמירה: ' + e.message);
+  }
+}
+
+function saveAll() {
+  syncFormToState();
+  autoSave();
+  refreshDashboard();
+  showToast('✅ נשמר בהצלחה');
+  logAction('שמירה ידנית');
+}
+
+function setSaveStatus(s) {
+  const el = document.getElementById('save-indicator');
+  const ico = document.getElementById('save-icon');
+  const txt = document.getElementById('save-text');
+  el.className = 'save-indicator ' + s;
+  if (s === 'saving') { ico.textContent = '⏳'; txt.textContent = 'שומר...'; }
+  else if (s === 'saved') { ico.textContent = '✅'; txt.textContent = 'נשמר'; }
+  else { ico.textContent = '💾'; txt.textContent = 'שמור (Ctrl+S)'; }
+}
+
+function loadFromLS() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) state = { ...state, ...JSON.parse(raw) };
+  } catch {}
+}
+
+/* ============================================================
+   FORM ↔ STATE SYNC
+   ============================================================ */
+function syncStateToForm() {
+  // Colors
+  ['primary','secondary','accent','bg'].forEach(k => {
+    const v = state.colors[k] || '';
+    const cp = document.getElementById('cp-' + k);
+    const ch = document.getElementById('ch-' + k);
+    if (cp) cp.value = v;
+    if (ch) ch.value = v;
+  });
+  // School
+  ['name','year','motto','email','logo'].forEach(k => {
+    const el = document.getElementById('s-' + k);
+    if (el) el.value = state.school[k] || '';
+  });
+  // Announcement
+  const ann = state.announcement;
+  const annOn = document.getElementById('ann-on');
+  if (annOn) annOn.checked = !!ann.active;
+  const annTx = document.getElementById('ann-text');
+  if (annTx) annTx.value = ann.text || '';
+  const annTy = document.getElementById('ann-type');
+  if (annTy) annTy.value = ann.type || 'info';
+  const annEx = document.getElementById('ann-expiry');
+  if (annEx) annEx.value = ann.expiry || '';
+  if (ann.createdAt) {
+    const el = document.getElementById('ann-created');
+    if (el) el.innerHTML = 'נוצר: ' + dualDateEl(new Date(ann.createdAt));
+  }
+  // GAS
+  const gasEl = document.getElementById('gas-url');
+  if (gasEl) gasEl.value = state.appsScriptUrl || '';
+  // AI
+  const aiMod = document.getElementById('ai-model');
+  if (aiMod) aiMod.value = state.ai.model || 'gemini-3.6-flash';
+
+  applyColors();
+}
+
+function syncFormToState() {
+  // Colors
+  ['primary','secondary','accent','bg'].forEach(k => {
+    const el = document.getElementById('ch-' + k);
+    if (el && el.value) state.colors[k] = el.value;
+  });
+  // School
+  ['name','year','motto','email','logo'].forEach(k => {
+    const el = document.getElementById('s-' + k);
+    if (el) state.school[k] = el.value;
+  });
+  // Announcement
+  const annOn = document.getElementById('ann-on');
+  if (annOn) state.announcement.active = annOn.checked;
+  const annTx = document.getElementById('ann-text');
+  if (annTx) state.announcement.text = annTx.value;
+  const annTy = document.getElementById('ann-type');
+  if (annTy) state.announcement.type = annTy.value;
+  const annEx = document.getElementById('ann-expiry');
+  if (annEx) state.announcement.expiry = annEx.value;
+  if (state.announcement.active && !state.announcement.createdAt) {
+    state.announcement.createdAt = new Date().toISOString();
+  }
+  // GAS
+  const gasEl = document.getElementById('gas-url');
+  if (gasEl) state.appsScriptUrl = gasEl.value;
+  // AI
+  const aiMod = document.getElementById('ai-model');
+  if (aiMod) state.ai.model = aiMod.value;
+
+  document.getElementById('tb-school-name').textContent = state.school.name || 'לוח בקרה';
+}
+
+/* ============================================================
+   COLOR MANAGEMENT
+   ============================================================ */
+function applyColors() {
+  const r = document.documentElement.style;
+  r.setProperty('--primary',   state.colors.primary   || '#1a73e8');
+  r.setProperty('--secondary', state.colors.secondary || '#fbbc04');
+  r.setProperty('--accent',    state.colors.accent    || '#34a853');
+  r.setProperty('--bg-page',   state.colors.bg        || '#f0f4f8');
+  const prev = document.getElementById('color-preview');
+  if (prev) prev.style.background = state.colors.primary;
+}
+
+function onColorChange(key) {
+  const val = document.getElementById('cp-' + key).value;
+  document.getElementById('ch-' + key).value = val;
+  state.colors[key] = val;
+  applyColors();
+}
+
+function onHexChange(key) {
+  const val = document.getElementById('ch-' + key).value;
+  if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+    document.getElementById('cp-' + key).value = val;
+    state.colors[key] = val;
+    applyColors();
+  }
+}
+
+function setColor(key, val) {
+  document.getElementById('cp-' + key).value = val;
+  document.getElementById('ch-' + key).value = val;
+  state.colors[key] = val;
+  applyColors();
+}
+
+function resetColors() {
+  setColor('primary',   '#1a73e8');
+  setColor('secondary', '#fbbc04');
+  setColor('accent',    '#34a853');
+  setColor('bg',        '#f0f4f8');
+  showToast('↺ צבעים אופסו');
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+function switchTab(tab, clickEl) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('active'));
+
+  const panel = document.getElementById('tab-' + tab);
+  if (panel) panel.classList.add('active');
+
+  // Desktop sidebar
+  const sideItem = document.querySelector(`.nav-item[data-tab="${tab}"]`);
+  if (sideItem) sideItem.classList.add('active');
+
+  // Mobile nav
+  const mobBtn = clickEl || document.querySelector(`.mob-nav-btn[data-tab="${tab}"]`);
+  if (mobBtn) mobBtn.classList.add('active');
+
+  if (tab === 'classes') renderClasses();
+  if (tab === 'archive') renderArchive();
+  if (tab === 'links')   renderLinks();
+  if (tab === 'dashboard') refreshDashboard();
+}
+
+// Sidebar click
+document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+  item.addEventListener('click', () => switchTab(item.dataset.tab));
+});
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+function refreshDashboard() {
+  const active = state.classes.filter(c => !c.archived);
+  const arch   = state.classes.filter(c => c.archived);
+  const subjectCount = active.reduce((n, c) => n + (c.subjects || []).length, 0);
+
+  document.getElementById('s-classes').textContent  = active.length;
+  document.getElementById('s-subjects').textContent = subjectCount;
+  document.getElementById('s-links').textContent    = (state.links || []).length;
+  document.getElementById('s-archive').textContent  = arch.length;
+
+  document.getElementById('badge-classes').textContent = active.length;
+  document.getElementById('badge-archive').textContent = arch.length;
+
+  const { heb, greg } = hebrewDate();
+  document.getElementById('dash-full-date').textContent = heb;
+  document.getElementById('dash-greg-date').textContent = greg;
+  document.getElementById('dash-date-line').innerHTML = 'היום: ' + dualDateEl();
+  document.getElementById('tb-date').textContent = heb.split(',')[0] + ' · ' + greg;
+}
+
+function logAction(msg) {
+  const el = document.getElementById('last-action');
+  if (el) el.innerHTML = msg + ' — ' + dualDateEl();
+}
+
+/* ============================================================
+   CLASS MANAGEMENT — CRUD
+   ============================================================ */
+function getActiveClasses() {
+  return state.classes.filter(c => !c.archived).sort((a, b) => a.order - b.order);
+}
+
+function renderClasses(filter = '') {
+  const list = document.getElementById('class-list');
+  const empty = document.getElementById('classes-empty');
+  const active = getActiveClasses();
+  const filtered = filter
+    ? active.filter(c => c.name.toLowerCase().includes(filter.toLowerCase()) || (c.teacher||'').includes(filter))
+    : active;
+
+  list.innerHTML = '';
+  if (filtered.length === 0) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  filtered.forEach((cls, idx) => {
+    const div = document.createElement('div');
+    div.className = 'class-card';
+    div.draggable = true;
+    div.dataset.id = cls.id;
+
+    const subjects = cls.subjects || [];
+    const subjectChips = subjects.slice(0, 4).map(s =>
+      `<span class="subject-chip" style="background:${s.color||'#9aa0a6'}">${s.icon||'📚'} ${s.name}</span>`
+    ).join('') + (subjects.length > 4 ? `<span class="subject-chip" style="background:#ccc;color:#333">+${subjects.length - 4}</span>` : '');
+
+    div.innerHTML = `
+      <div class="drag-handle" title="גרור לסידור">⠿</div>
+      <div class="class-style-dot style-${cls.style || 'minimal'}"></div>
+      <div class="class-info">
+        <div class="class-name">${escHtml(cls.name)}</div>
+        <div class="class-meta">
+          ${cls.teacher ? `<span class="class-teacher">👩‍🏫 ${escHtml(cls.teacher)}</span>` : ''}
+          ${cls.room    ? `<span class="badge badge-gray">🚪 ${escHtml(cls.room)}</span>` : ''}
+          <span class="dual-date" style="font-size:.7rem;">
+            <span class="heb">${hebrewDate(new Date(cls.createdAt || Date.now())).heb.replace(/.*?,\s*/,'')}</span>
+          </span>
+        </div>
+        ${subjects.length ? `<div class="class-subjects-preview">${subjectChips}</div>` : ''}
+      </div>
+      <div class="class-actions">
+        <div class="order-btns">
+          <button class="order-btn" onclick="moveClass('${cls.id}',-1)" title="הזז למעלה" ${idx===0?'disabled':''}>↑</button>
+          <button class="order-btn" onclick="moveClass('${cls.id}',1)"  title="הזז למטה"  ${idx===filtered.length-1?'disabled':''}>↓</button>
+        </div>
+        <button class="btn btn-ghost btn-icon" onclick="openClassModal('${cls.id}')" title="עריכה">✏️</button>
+        <button class="btn btn-ghost btn-icon" onclick="archiveClass('${cls.id}')"   title="העבר לארכיון">🗑️</button>
+      </div>
+    `;
+
+    // Drag & Drop
+    div.addEventListener('dragstart', e => {
+      dragSrc = cls.id;
+      setTimeout(() => div.classList.add('dragging'), 0);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    div.addEventListener('dragend', () => div.classList.remove('dragging'));
+    div.addEventListener('dragover', e => { e.preventDefault(); div.classList.add('drag-over'); });
+    div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
+    div.addEventListener('drop', e => {
+      e.preventDefault();
+      div.classList.remove('drag-over');
+      if (dragSrc && dragSrc !== cls.id) dropClass(dragSrc, cls.id);
+    });
+
+    list.appendChild(div);
+  });
+  document.getElementById('badge-classes').textContent = active.length;
+}
+
+let dragSrc = null;
+
+function dropClass(srcId, targetId) {
+  const active = getActiveClasses();
+  const si = active.findIndex(c => c.id === srcId);
+  const ti = active.findIndex(c => c.id === targetId);
+  if (si < 0 || ti < 0) return;
+  const [moved] = active.splice(si, 1);
+  active.splice(ti, 0, moved);
+  active.forEach((c, i) => c.order = i);
+  const arch = state.classes.filter(c => c.archived);
+  state.classes = [...active, ...arch];
+  autoSave();
+  renderClasses(document.getElementById('class-search').value);
+  logAction(`סודר מחדש: ${moved.name}`);
+}
+
+function moveClass(id, dir) {
+  const active = getActiveClasses();
+  const idx = active.findIndex(c => c.id === id);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= active.length) return;
+  [active[idx], active[newIdx]] = [active[newIdx], active[idx]];
+  active.forEach((c, i) => c.order = i);
+  const arch = state.classes.filter(c => c.archived);
+  state.classes = [...active, ...arch];
+  autoSave();
+  renderClasses(document.getElementById('class-search').value);
+}
+
+function filterClasses() {
+  renderClasses(document.getElementById('class-search').value);
+}
+
+function sortClassesByName() {
+  const active = getActiveClasses().sort((a,b) => a.name.localeCompare(b.name, 'he'));
+  active.forEach((c, i) => c.order = i);
+  const arch = state.classes.filter(c => c.archived);
+  state.classes = [...active, ...arch];
+  autoSave();
+  renderClasses();
+  showToast('✅ ממוין א-ת');
+}
+
+function archiveClass(id) {
+  const cls = state.classes.find(c => c.id === id);
+  if (!cls) return;
+  cls.archived = true;
+  cls.archivedAt = new Date().toISOString();
+  // reorder remaining
+  getActiveClasses().forEach((c, i) => c.order = i);
+  autoSave();
+  refreshDashboard();
+  renderClasses(document.getElementById('class-search').value);
+  renderArchive();
+  showToast(`🗂️ "${cls.name}" הועברה לארכיון`);
+  logAction(`הועבר לארכיון: ${cls.name}`);
+}
+
+/* ============================================================
+   ARCHIVE
+   ============================================================ */
+function renderArchive() {
+  const list = document.getElementById('archive-list');
+  const empty = document.getElementById('archive-empty');
+  const archived = state.classes.filter(c => c.archived);
+  list.innerHTML = '';
+  if (archived.length === 0) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  archived.forEach(cls => {
+    const { heb, greg } = hebrewDate(new Date(cls.archivedAt || Date.now()));
+    const div = document.createElement('div');
+    div.className = 'archive-item';
+    div.innerHTML = `
+      <div class="class-style-dot style-${cls.style || 'minimal'}"></div>
+      <div class="archive-info">
+        <div class="archive-name">${escHtml(cls.name)}</div>
+        <div class="archive-date">
+          הועבר לארכיון: <span class="dual-date"><span class="heb">${heb}</span> <span class="sep">|</span> <span class="greg">${greg}</span></span>
+          ${cls.teacher ? ` · 👩‍🏫 ${escHtml(cls.teacher)}` : ''}
+        </div>
+      </div>
+      <button class="btn btn-success btn-sm" onclick="restoreClass('${cls.id}')">↩️ שחזר</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteClassPermanent('${cls.id}')">🗑️ מחק לצמיתות</button>
+    `;
+    list.appendChild(div);
+  });
+  document.getElementById('badge-archive').textContent = archived.length;
+}
+
+function restoreClass(id) {
+  const cls = state.classes.find(c => c.id === id);
+  if (!cls) return;
+  cls.archived = false;
+  cls.archivedAt = null;
+  const active = getActiveClasses();
+  cls.order = active.length;
+  autoSave();
+  refreshDashboard();
+  renderArchive();
+  showToast(`↩️ "${cls.name}" שוחזרה`);
+  logAction(`שוחזרה: ${cls.name}`);
+}
+
+function deleteClassPermanent(id) {
+  const cls = state.classes.find(c => c.id === id);
+  if (!cls) return;
+  if (!confirm(`מחיקה לצמיתות של "${cls.name}"?\nלא ניתן לשחזר פעולה זו.`)) return;
+  state.classes = state.classes.filter(c => c.id !== id);
+  autoSave();
+  refreshDashboard();
+  renderArchive();
+  showToast(`🗑️ "${cls.name}" נמחקה לצמיתות`);
+}
+
+/* ============================================================
+   CLASS MODAL — פתיחה / שמירה
+   ============================================================ */
+let modalSubjects = [];
+
+function openClassModal(id) {
+  const modal = document.getElementById('class-modal');
+  document.getElementById('modal-class-id').value = id || '';
+
+  if (id) {
+    const cls = state.classes.find(c => c.id === id);
+    if (!cls) return;
+    document.getElementById('modal-title').textContent = `✏️ עריכת: ${cls.name}`;
+    document.getElementById('m-name').value    = cls.name;
+    document.getElementById('m-teacher').value = cls.teacher || '';
+    document.getElementById('m-room').value    = cls.room    || '';
+    document.getElementById('m-drive').value   = cls.driveId || '';
+    document.getElementById('m-note').value    = cls.note    || '';
+    modalSubjects = JSON.parse(JSON.stringify(cls.subjects || []));
+    // Select style
+    document.querySelectorAll('.style-option').forEach(o => {
+      o.classList.toggle('selected', o.dataset.style === (cls.style || 'minimal'));
+    });
+  } else {
+    document.getElementById('modal-title').textContent = '➕ הוספת כיתה חדשה';
+    ['m-name','m-teacher','m-room','m-drive','m-note'].forEach(k => {
+      document.getElementById(k).value = '';
+    });
+    modalSubjects = [];
+    document.querySelectorAll('.style-option').forEach((o, i) => o.classList.toggle('selected', i === 0));
+  }
+
+  renderModalSubjects();
+  modal.classList.add('open');
+  document.getElementById('m-name').focus();
+}
+
+function closeModal() {
+  document.getElementById('class-modal').classList.remove('open');
+}
+
+function selectStyle(el, style) {
+  document.querySelectorAll('.style-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function renderModalSubjects() {
+  const container = document.getElementById('modal-subjects');
+  container.innerHTML = '';
+  modalSubjects.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'subject-row';
+    div.innerHTML = `
+      <input type="text" value="${escHtml(s.icon||'📚')}" style="width:42px;text-align:center;font-size:1.1rem;padding:4px;"
+             onchange="modalSubjects[${i}].icon=this.value">
+      <input type="text" value="${escHtml(s.name)}" placeholder="שם מקצוע"
+             style="flex:1;" onchange="modalSubjects[${i}].name=this.value">
+      <input type="color" value="${s.color||'#1a73e8'}" style="width:36px;height:32px;"
+             onchange="modalSubjects[${i}].color=this.value">
+      <button class="btn btn-ghost btn-xs" onclick="removeModalSubject(${i})">✕</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function addModalSubject() {
+  modalSubjects.push({ id: uid(), name: '', icon: '📚', color: '#1a73e8', driveId: '' });
+  renderModalSubjects();
+}
+
+function removeModalSubject(i) {
+  modalSubjects.splice(i, 1);
+  renderModalSubjects();
+}
+
+function saveClassModal() {
+  const name = document.getElementById('m-name').value.trim();
+  if (!name) { showToast('⚠️ יש להזין שם כיתה'); return; }
+
+  const style = document.querySelector('.style-option.selected')?.dataset.style || 'minimal';
+  const id    = document.getElementById('modal-class-id').value;
+
+  // Sync subject names from inputs (in case not triggered onchange)
+  document.querySelectorAll('#modal-subjects .subject-row').forEach((row, i) => {
+    if (modalSubjects[i]) {
+      const inputs = row.querySelectorAll('input');
+      if (inputs[0]) modalSubjects[i].icon    = inputs[0].value;
+      if (inputs[1]) modalSubjects[i].name    = inputs[1].value;
+      if (inputs[2]) modalSubjects[i].color   = inputs[2].value;
+    }
+  });
+
+  if (id) {
+    const cls = state.classes.find(c => c.id === id);
+    if (cls) {
+      cls.name     = name;
+      cls.style    = style;
+      cls.teacher  = document.getElementById('m-teacher').value;
+      cls.room     = document.getElementById('m-room').value;
+      cls.driveId  = document.getElementById('m-drive').value;
+      cls.note     = document.getElementById('m-note').value;
+      cls.subjects = modalSubjects.filter(s => s.name.trim());
+    }
+    showToast(`✅ כיתה "${name}" עודכנה`);
+    logAction(`עודכנה כיתה: ${name}`);
+  } else {
+    const newCls = {
+      id: uid(), name, style,
+      teacher:  document.getElementById('m-teacher').value,
+      room:     document.getElementById('m-room').value,
+      driveId:  document.getElementById('m-drive').value,
+      note:     document.getElementById('m-note').value,
+      order:    getActiveClasses().length,
+      archived: false, archivedAt: null,
+      createdAt: new Date().toISOString(),
+      subjects: modalSubjects.filter(s => s.name.trim()),
+    };
+    state.classes.push(newCls);
+    showToast(`✅ כיתה "${name}" נוספה`);
+    logAction(`נוספה כיתה: ${name}`);
+  }
+
+  closeModal();
+  autoSave();
+  refreshDashboard();
+  renderClasses(document.getElementById('class-search').value);
+}
+
+/* ============================================================
+   QUICK LINKS EDITOR
+   ============================================================ */
+function renderLinks() {
+  const container = document.getElementById('link-rows');
+  container.innerHTML = '';
+  (state.links || []).forEach((link, i) => {
+    const div = document.createElement('div');
+    div.className = 'link-row';
+    div.innerHTML = `
+      <input type="text"  class="link-emoji-input" value="${escHtml(link.icon||'🔗')}"
+             oninput="state.links[${i}].icon=this.value">
+      <input type="text"  value="${escHtml(link.text||'')}"  placeholder="שם הכפתור"
+             oninput="state.links[${i}].text=this.value">
+      <input type="url"   value="${escHtml(link.url||'')}"   placeholder="https://..."
+             oninput="state.links[${i}].url=this.value">
+      <button class="btn btn-ghost btn-icon btn-sm" onclick="removeLink(${i})">🗑️</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function addLink() {
+  if (!state.links) state.links = [];
+  state.links.push({ id: uid(), icon: '🔗', text: 'כפתור חדש', url: '#', color: '#1a73e8' });
+  renderLinks();
+}
+
+function removeLink(i) {
+  state.links.splice(i, 1);
+  renderLinks();
+}
+
+/* ============================================================
+   AI ASSISTANT
+   ============================================================ */
+function buildSystemPrompt() {
+  const snapshot = JSON.stringify({
+    school:       state.school,
+    colors:       state.colors,
+    classesCount: state.classes.filter(c=>!c.archived).length,
+    classes:      state.classes.filter(c=>!c.archived).map(c=>({ name:c.name, style:c.style, teacher:c.teacher, subjects:(c.subjects||[]).map(s=>s.name) })),
+    links:        (state.links||[]).map(l=>l.text),
+    announcement: state.announcement,
+  }, null, 2);
+
+  return `אתה עוזר מפתח אתר בית ספר ישראלי. ענה תמיד בעברית.
+מצב המערכת הנוכחי:
+${snapshot}
+
+כאשר המשתמש מבקש שינויי State (צבעים, כפתורים, הגדרות), ענה JSON בלבד:
+{
+  "type": "state",
+  "message": "הסבר בעברית",
+  "changes": { ... שינויים חלקיים ב-state ... }
+}
+
+כאשר המשתמש מבקש קוד (CSS/HTML/JS), ענה JSON בלבד:
+{
+  "type": "code",
+  "message": "הסבר בעברית",
+  "language": "css|html|js",
+  "code": "הקוד כאן"
+}
+
+כאשר המשתמש שואל שאלה כללית, ענה JSON:
+{
+  "type": "text",
+  "message": "תשובה בעברית"
+}`;
+}
+
+function addChatMsg(role, html, extra = '') {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.innerHTML = `
+    <div class="chat-avatar">${role === 'user' ? '👤' : '🤖'}</div>
+    <div>
+      <div class="chat-bubble">${html}</div>
+      ${extra}
+    </div>
+  `;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+const API_BASE = '';
+
+async function sendAIMessage() {
+  const input = document.getElementById('chat-input');
+  const msg   = input.value.trim();
+  if (!msg) return;
+
+  input.value = '';
+  addChatMsg('user', escHtml(msg).replace(/\n/g,'<br>'));
+
+  // Thinking indicator
+  const thinkDiv = document.createElement('div');
+  thinkDiv.className = 'chat-thinking';
+  thinkDiv.innerHTML = '<span>מעבד</span><div class="dots"><span></span><span></span><span></span></div>';
+  document.getElementById('chat-messages').appendChild(thinkDiv);
+  document.getElementById('chat-messages').scrollTop = 99999;
+
+  // Build history
+  state.ai.history.push({ role: 'user', content: msg });
+  if (state.ai.history.length > 14) state.ai.history = state.ai.history.slice(-14);
+
+  try {
+    const res = await fetch(API_BASE + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model:      document.getElementById('ai-model').value || 'gemini-3.6-flash',
+        max_tokens: 1024,
+        system:     buildSystemPrompt(),
+        messages:   state.ai.history,
+      }),
+    });
+
+    thinkDiv.remove();
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'HTTP ' + res.status);
+    }
+
+    const data   = await res.json();
+    const rawText = data.content?.[0]?.text || '';
+    state.ai.history.push({ role: 'assistant', content: rawText });
+
+    // Parse JSON response
+    let parsed;
+    try {
+      // Extract JSON even if wrapped in ```json ... ```
+      const match = rawText.match(/```json\n?([\s\S]*?)```/) || rawText.match(/(\{[\s\S]*\})/);
+      parsed = JSON.parse(match ? match[1] : rawText);
+    } catch {
+      parsed = { type: 'text', message: rawText };
+    }
+
+    if (parsed.type === 'state' && parsed.changes) {
+      const escapedMsg = escHtml(parsed.message || 'בוצע עדכון State').replace(/\n/g,'<br>');
+      const changes = JSON.stringify(parsed.changes);
+      addChatMsg('gemini', escapedMsg,
+        `<div class="apply-btn-wrap">
+          <button class="btn btn-success btn-sm" onclick='applyStateChanges(${changes})'>✅ החל שינויים</button>
+          <button class="btn btn-outline btn-sm" onclick="showToast('ביטול — לא הוחל')">❌ בטל</button>
+         </div>`
+      );
+
+    } else if (parsed.type === 'code' && parsed.code) {
+      const escapedMsg = escHtml(parsed.message || '').replace(/\n/g,'<br>');
+      const codeId = 'code-' + Date.now();
+      addChatMsg('gemini', escapedMsg +
+        `<div class="code-block" id="${codeId}" style="margin-top:10px;">${escHtml(parsed.code)}</div>`,
+        `<div class="apply-btn-wrap">
+          <button class="btn btn-outline btn-sm" onclick="copyCode('${codeId}')">📋 העתק קוד</button>
+         </div>`
+      );
+
+    } else {
+      const escapedMsg = escHtml(parsed.message || rawText).replace(/\n/g,'<br>');
+      addChatMsg('gemini', escapedMsg);
+    }
+
+    autoSave();
+
+  } catch (err) {
+    thinkDiv.remove();
+    addChatMsg('gemini', `<span style="color:var(--danger)">❌ שגיאה: ${escHtml(err.message)}</span>`);
+  }
+}
+
+function applyStateChanges(changes) {
+  try {
+    // Deep merge changes into state
+    deepMerge(state, changes);
+    syncStateToForm();
+    renderClasses();
+    renderLinks();
+    renderArchive();
+    refreshDashboard();
+    applyColors();
+    autoSave();
+    showToast('✅ שינויים הוחלו בהצלחה!');
+    logAction('שינויים הוחלו ע"י AI');
+    addChatMsg('gemini', '✅ השינויים הוחלו! בדוק את הלשוניות הרלוונטיות.');
+  } catch (e) {
+    showToast('❌ שגיאה בהחלת שינויים: ' + e.message);
+  }
+}
+
+function deepMerge(target, src) {
+  for (const key in src) {
+    if (src[key] !== null && typeof src[key] === 'object' && !Array.isArray(src[key])) {
+      if (!target[key] || typeof target[key] !== 'object') target[key] = {};
+      deepMerge(target[key], src[key]);
+    } else {
+      target[key] = src[key];
+    }
+  }
+}
+
+function fillSuggestion(txt) {
+  const input = document.getElementById('chat-input');
+  input.value = txt;
+  input.focus();
+  // Switch to AI tab
+  switchTab('ai');
+}
+
+function clearChat() {
+  document.getElementById('chat-messages').innerHTML = `
+    <div class="chat-msg gemini">
+      <div class="chat-avatar">🤖</div>
+      <div class="chat-bubble">שיחה נוקתה. כיצד אוכל לעזור?</div>
+    </div>`;
+  state.ai.history = [];
+}
+
+function copyCode(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => showToast('📋 הקוד הועתק'));
+}
+
+/* ============================================================
+   EXPORT / IMPORT
+   ============================================================ */
+function exportBackup() {
+  syncFormToState();
+  const payload = JSON.stringify(state, null, 2);
+  const blob = new Blob([payload], { type: 'application/json' });
+  const { heb } = hebrewDate();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `school-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  const bi = document.getElementById('backup-info');
+  if (bi) bi.innerHTML = `גיבוי אחרון: ${dualDateEl()}`;
+  showToast('💾 גיבוי JSON הורד');
+  logAction('ייצוא גיבוי');
+}
+
+function importBackup(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      state = { ...state, ...imported };
+      localStorage.setItem(LS_KEY, JSON.stringify(state));
+      syncStateToForm();
+      renderClasses();
+      renderLinks();
+      renderArchive();
+      refreshDashboard();
+      applyColors();
+      showToast('📂 גיבוי נטען בהצלחה');
+      logAction('ייבוא גיבוי JSON');
+    } catch (err) {
+      showToast('❌ קובץ לא תקין: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function generateCSS() {
+  syncFormToState();
+  const c = state.colors;
+  const css = `/* ==========================================
+   CSS גלובלי — ${state.school.name} | ${state.school.year}
+   נוצר: ${hebrewDate().combined}
+   ========================================== */
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');
+
+:root {
+  --primary:       ${c.primary};
+  --primary-dark:  ${shiftColor(c.primary, -20)};
+  --primary-light: ${c.primary}22;
+  --secondary:     ${c.secondary};
+  --accent:        ${c.accent};
+  --bg-page:       ${c.bg};
+  --font-main:     'Heebo', 'Rubik', sans-serif;
+}
+
+body, * {
+  font-family: var(--font-main);
+  box-sizing: border-box;
+}
+body {
+  direction: rtl;
+  background: var(--bg-page);
+}`;
+  document.getElementById('css-out').textContent = css;
+}
+
+function shiftColor(hex, amt) {
+  /* simple brightness shift */
+  try {
+    let n = parseInt(hex.slice(1), 16);
+    const r = Math.max(0, Math.min(255, (n >> 16) + amt));
+    const g = Math.max(0, Math.min(255, ((n >> 8) & 0xff) + amt));
+    const b = Math.max(0, Math.min(255, (n & 0xff) + amt));
+    return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('');
+  } catch { return hex; }
+}
+
+function copyCSS() {
+  const el = document.getElementById('css-out');
+  if (!el.textContent || el.textContent.startsWith('לחץ')) { showToast('⚠️ קודם צור CSS'); return; }
+  navigator.clipboard.writeText(el.textContent).then(() => showToast('📋 CSS הועתק'));
+}
+
+/* ============================================================
+   APPS SCRIPT (GAS)
+   ============================================================ */
+async function testGAS() {
+  const url = document.getElementById('gas-url').value;
+  const st  = document.getElementById('gas-status');
+  if (!url) { st.textContent = '⚠️ הכנס URL'; return; }
+  st.textContent = '⏳ בודק...';
+  try {
+    const res = await fetch(url + '?action=ping');
+    const json = await res.json();
+    st.textContent = '✅ ' + (json.message || 'מחובר!');
+    st.style.color = 'var(--accent)';
+  } catch(e) {
+    st.textContent = '❌ ' + e.message;
+    st.style.color = 'var(--danger)';
+  }
+}
+
+async function pushToGAS() {
+  syncFormToState();
+  const url = document.getElementById('gas-url').value;
+  if (!url) { showToast('⚠️ הכנס URL ל-Apps Script'); return; }
+  showToast('☁️ שולח לענן...');
+  try {
+    await fetch(url, { method: 'POST', body: JSON.stringify({ action: 'saveSettings', settings: state }) });
+    showToast('✅ נשמר בענן');
+    logAction('שמירה לענן (Apps Script)');
+  } catch(e) { showToast('❌ שגיאה: ' + e.message); }
+}
+
+async function pullFromGAS() {
+  const url = document.getElementById('gas-url').value;
+  if (!url) { showToast('⚠️ הכנס URL'); return; }
+  try {
+    const res = await fetch(url + '?action=getSettings');
+    const data = await res.json();
+    if (data.settings) {
+      deepMerge(state, data.settings);
+      syncStateToForm();
+      showToast('⬇️ הגדרות נטענו מהענן');
+      logAction('טעינה מענן (Apps Script)');
+    }
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+/* ============================================================
+   UTILS — MISC
+   ============================================================ */
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* ============================================================
+   KEYBOARD SHORTCUTS
+   ============================================================ */
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    saveAll();
+  }
+});
+
+/* ============================================================
+   TOPBAR DATE CLOCK
+   ============================================================ */
+function updateTopbarDate() {
+  const el = document.getElementById('tb-date');
+  if (!el) return;
+  const { heb, greg } = hebrewDate();
+  el.innerHTML = `${heb.split(',').slice(0,2).join(',')} · ${greg}`;
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function init() {
+  loadFromLS();
+  syncStateToForm();
+  applyColors();
+  renderClasses();
+  renderLinks();
+  renderArchive();
+  refreshDashboard();
+  updateTopbarDate();
+  setInterval(updateTopbarDate, 60000);
+
+  // Auto-save every 60s
+  setInterval(() => { syncFormToState(); autoSave(); }, 60000);
+
+  showToast('👋 ברוך הבא ללוח הבקרה v2');
+}
+
+init();
+</script>
+</body>
+</html>

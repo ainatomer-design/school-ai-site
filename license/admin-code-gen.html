@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>מחולל קודי רישיון — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Heebo', sans-serif;
+  background: #0d1b3e;
+  color: #f1f5f9;
+  min-height: 100vh;
+  padding: 32px 16px;
+}
+
+.wrap { max-width: 720px; margin: 0 auto; }
+
+/* password gate */
+.pw-gate {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  position: fixed; inset: 0;
+  background: #0d1b3e;
+  z-index: 100;
+  flex-direction: column;
+  gap: 16px;
+}
+.pw-gate.hide { display: none; }
+.pw-card {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 20px;
+  padding: 36px;
+  width: 340px;
+  text-align: center;
+}
+.pw-icon  { font-size: 2.5rem; margin-bottom: 12px; }
+.pw-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 20px; }
+.pw-input {
+  width: 100%;
+  background: rgba(255,255,255,.08);
+  border: 1.5px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #fff;
+  font-family: inherit;
+  font-size: .95rem;
+  text-align: center;
+  outline: none;
+  margin-bottom: 12px;
+}
+.pw-input:focus { border-color: #1a73e8; }
+.pw-btn {
+  width: 100%;
+  padding: 12px;
+  background: #1a73e8;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-family: inherit;
+  font-size: .95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* topbar */
+.topbar {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+.tb-brand { display: flex; align-items: center; gap: 10px; font-size: 1rem; font-weight: 800; }
+.tb-logo {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, #1a73e8, #34a853);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+}
+.badge { background: #ea4335; color: #fff; font-size: .62rem; font-weight: 900; padding: 2px 8px; border-radius: 99px; letter-spacing: .06em; }
+
+/* card */
+.card {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 16px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.card-hd {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  font-weight: 700;
+  font-size: .88rem;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-body { padding: 20px; }
+
+/* form */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: .78rem; color: rgba(255,255,255,.6); }
+.form-group input, .form-group select {
+  background: rgba(255,255,255,.07);
+  border: 1.5px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #fff;
+  font-family: inherit;
+  font-size: .88rem;
+  outline: none;
+  transition: .2s;
+}
+.form-group input:focus, .form-group select:focus { border-color: #1a73e8; }
+.form-group select option { background: #1a1a2e; }
+
+.gen-btn {
+  margin-top: 16px;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #1a73e8, #1557b0);
+  border: none; border-radius: 12px;
+  color: #fff; font-family: inherit;
+  font-size: .95rem; font-weight: 700;
+  cursor: pointer; transition: .2s;
+}
+.gen-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+/* result */
+.result-box {
+  display: none;
+  margin-top: 16px;
+  padding: 16px 20px;
+  background: rgba(52,168,83,.1);
+  border: 1.5px solid rgba(52,168,83,.3);
+  border-radius: 12px;
+}
+.result-box.show { display: block; }
+.result-label { font-size: .72rem; color: rgba(255,255,255,.5); margin-bottom: 8px; }
+.result-code {
+  font-family: 'Inter', monospace;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #81e89b;
+  letter-spacing: .12em;
+  margin-bottom: 12px;
+}
+.result-meta { font-size: .75rem; color: rgba(255,255,255,.5); line-height: 1.7; }
+.copy-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 16px;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 8px;
+  color: #fff;
+  font-family: inherit; font-size: .8rem;
+  cursor: pointer; transition: .2s;
+  margin-top: 10px;
+}
+.copy-btn:hover { background: rgba(255,255,255,.2); }
+
+/* history */
+.hist-row {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: .8rem;
+  gap: 10px;
+}
+.hist-row:last-child { border-bottom: none; }
+.hist-code { font-family: 'Inter', monospace; font-weight: 700; color: #93c5fd; font-size: .75rem; }
+.hist-meta { color: rgba(255,255,255,.45); font-size: .72rem; }
+.hist-status { font-size: .68rem; padding: 2px 8px; border-radius: 99px; }
+.hist-status.ok  { background: rgba(52,168,83,.2);  color: #81e89b; }
+.hist-status.exp { background: rgba(234,67,53,.15); color: #f87171; }
+.clear-btn {
+  font-size: .75rem; color: rgba(255,255,255,.3);
+  background: none; border: none; cursor: pointer; font-family: inherit;
+  transition: .2s;
+}
+.clear-btn:hover { color: #ea4335; }
+
+.empty-msg { color: rgba(255,255,255,.3); font-size: .82rem; text-align: center; padding: 20px; }
+  </style>
+</head>
+<body>
+
+<!-- PASSWORD GATE -->
+<div class="pw-gate" id="pw-gate">
+  <div class="pw-card">
+    <div class="pw-icon">🔐</div>
+    <div class="pw-title">גישת מנהל</div>
+    <input class="pw-input" type="password" id="pw-input" placeholder="סיסמת מנהל" onkeydown="if(event.key==='Enter') checkPw()">
+    <button class="pw-btn" onclick="checkPw()">כניסה</button>
+    <div id="pw-err" style="margin-top:10px;font-size:.78rem;color:#f87171;display:none">סיסמה שגויה</div>
+  </div>
+</div>
+
+<div class="wrap" id="main-content" style="display:none">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-brand">
+      <div class="tb-logo">🎓</div>
+      <span>מחולל קודי רישיון</span>
+      <span class="badge">ADMIN</span>
+    </div>
+    <a href="../license/license-gate.html" style="color:rgba(255,255,255,.4);font-size:.78rem;text-decoration:none">← לדף הכניסה</a>
+  </div>
+
+  <!-- GENERATOR -->
+  <div class="card">
+    <div class="card-hd">🎟️ יצירת קוד רישיון חדש</div>
+    <div class="card-body">
+      <div class="g2">
+        <div class="form-group">
+          <label>שם הלקוח / מוסד</label>
+          <input type="text" id="cust-name" placeholder="בית ספר א.ב.ג">
+        </div>
+        <div class="form-group">
+          <label>מזהה לקוח (מספר)</label>
+          <input type="number" id="cust-id" placeholder="1" min="1" max="60466175" value="1">
+        </div>
+        <div class="form-group">
+          <label>תוקף הרישיון</label>
+          <select id="plan">
+            <option value="30">30 יום (ניסיון)</option>
+            <option value="90">90 יום (רבעוני)</option>
+            <option value="180">180 יום (חצי שנה)</option>
+            <option value="365" selected>365 יום (שנה)</option>
+            <option value="730">730 יום (שנתיים)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>הערה פנימית</label>
+          <input type="text" id="cust-note" placeholder="אופציונלי">
+        </div>
+      </div>
+      <button class="gen-btn" onclick="generateCode()">⚡ צור קוד</button>
+
+      <div class="result-box" id="result-box">
+        <div class="result-label">קוד הרישיון שנוצר:</div>
+        <div class="result-code" id="result-code">KOORS-XXXXX-XXXXX-XXXX</div>
+        <div class="result-meta" id="result-meta"></div>
+        <button class="copy-btn" onclick="copyCode()">📋 העתק קוד</button>
+        <button class="copy-btn" onclick="copyEmail()" style="margin-right:8px">📧 העתק הודעת מייל</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <span>📋 היסטוריית קודים שנוצרו</span>
+      <button class="clear-btn" onclick="clearHistory()">נקה היסטוריה</button>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div id="history-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   CONFIG — שנה כאן את הסיסמה שלך
+   ============================================================ */
+const ADMIN_PASSWORD = 'koors2024admin';   // ✏️ שנה לסיסמה חזקה שלך
+const SECRET         = 'KOORS2024EDU_AINATOMER';   // חייב להיות זהה ל-license-gate.html
+const EPOCH          = new Date('2024-01-01').getTime();
+
+/* ============================================================
+   PASSWORD GATE
+   ============================================================ */
+function checkPw() {
+  const pw = document.getElementById('pw-input').value;
+  if (pw === ADMIN_PASSWORD) {
+    document.getElementById('pw-gate').classList.add('hide');
+    document.getElementById('main-content').style.display = 'block';
+    loadHistory();
+    // Auto-increment customer ID
+    const hist = getHistory();
+    if (hist.length > 0) {
+      const maxId = Math.max(...hist.map(h => h.custId || 0));
+      document.getElementById('cust-id').value = maxId + 1;
+    }
+  } else {
+    document.getElementById('pw-err').style.display = 'block';
+    document.getElementById('pw-input').value = '';
+  }
+}
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkPw(); });
+
+/* ============================================================
+   CODE GENERATION
+   ============================================================ */
+function todayDay()      { return Math.floor((Date.now() - EPOCH) / 86400000); }
+function base36(n, pad)  { return n.toString(36).toUpperCase().padStart(pad, '0'); }
+
+function simpleHash(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) + h) ^ str.charCodeAt(i);
+    h = h >>> 0;
+  }
+  return h;
+}
+
+let lastGenerated = null;
+
+function generateCode() {
+  const custId  = parseInt(document.getElementById('cust-id').value) || 1;
+  const days    = parseInt(document.getElementById('plan').value);
+  const name    = document.getElementById('cust-name').value.trim() || 'לקוח';
+  const note    = document.getElementById('cust-note').value.trim();
+
+  const expiryDay = todayDay() + days;
+  const custPart  = base36(custId, 5);
+  const expPart   = base36(expiryDay, 5);
+  const chkVal    = simpleHash(custPart + expPart + SECRET) % (36 ** 4);
+  const chkPart   = base36(chkVal, 4);
+
+  const code = `KOORS-${custPart}-${expPart}-${chkPart}`;
+  const expiryDate = new Date(EPOCH + expiryDay * 86400000);
+
+  document.getElementById('result-code').textContent = code;
+  document.getElementById('result-meta').innerHTML =
+    `לקוח: <strong>${name}</strong> (מזהה: ${custId})<br>` +
+    `תוקף: <strong>${expiryDate.toLocaleDateString('he-IL')}</strong> (${days} ימים)<br>` +
+    (note ? `הערה: ${note}` : '');
+  document.getElementById('result-box').classList.add('show');
+
+  lastGenerated = { code, custId, custName: name, days, expiryDate: expiryDate.toISOString(), note, createdAt: new Date().toISOString() };
+
+  // Save to history
+  const hist = getHistory();
+  hist.unshift(lastGenerated);
+  localStorage.setItem('koors_codes_history', JSON.stringify(hist.slice(0, 200)));
+  loadHistory();
+
+  // Auto increment ID
+  document.getElementById('cust-id').value = custId + 1;
+}
+
+function copyCode() {
+  const code = document.getElementById('result-code').textContent;
+  navigator.clipboard.writeText(code).then(() => showCopyFeedback('✅ הקוד הועתק!'));
+}
+
+function copyEmail() {
+  if (!lastGenerated) return;
+  const { code, custName, expiryDate, days } = lastGenerated;
+  const fmt = new Date(expiryDate).toLocaleDateString('he-IL');
+  const msg = `שלום ${custName},\n\nקוד הגישה שלך למערכת עוזר המורה AI:\n\n${code}\n\nהקוד תקף עד: ${fmt} (${days} ימים)\n\nכניסה למערכת: https://your-site.com/license/license-gate.html\n\nתודה!`;
+  navigator.clipboard.writeText(msg).then(() => showCopyFeedback('✅ הודעת המייל הועתקה!'));
+}
+
+function showCopyFeedback(msg) {
+  const btn = document.querySelector('.copy-btn');
+  const orig = btn.textContent;
+  btn.textContent = msg;
+  setTimeout(() => { btn.textContent = orig; }, 2000);
+}
+
+/* ============================================================
+   HISTORY
+   ============================================================ */
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem('koors_codes_history') || '[]'); } catch { return []; }
+}
+
+function loadHistory() {
+  const hist = getHistory();
+  const el   = document.getElementById('history-list');
+
+  if (hist.length === 0) {
+    el.innerHTML = '<div class="empty-msg">אין קודים בהיסטוריה</div>';
+    return;
+  }
+
+  el.innerHTML = hist.map(h => {
+    const exp     = new Date(h.expiryDate);
+    const expired = exp < new Date();
+    const fmtExp  = exp.toLocaleDateString('he-IL');
+    const fmtCre  = new Date(h.createdAt).toLocaleDateString('he-IL');
+    return `
+      <div class="hist-row">
+        <div>
+          <div class="hist-code">${h.code}</div>
+          <div class="hist-meta">${h.custName} · נוצר: ${fmtCre}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="hist-meta">עד ${fmtExp}</div>
+          <span class="hist-status ${expired ? 'exp' : 'ok'}">${expired ? 'פג תוקף' : 'פעיל'}</span>
+          <button onclick="copyToClip('${h.code}')" style="background:none;border:none;cursor:pointer;font-size:.85rem;opacity:.5;padding:0">📋</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function copyToClip(code) {
+  navigator.clipboard.writeText(code);
+}
+
+function clearHistory() {
+  if (confirm('למחוק את כל ההיסטוריה?')) {
+    localStorage.removeItem('koors_codes_history');
+    loadHistory();
+  }
+}
+</script>
+</body>
+</html>

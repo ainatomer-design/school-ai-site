@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>באנר מינימליסטי</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Heebo', sans-serif;
+      direction: rtl;
+      background: transparent;
+      overflow-x: hidden;
+    }
+
+    /* ============================================
+       באנר מינימליסטי ונקי
+       ============================================ */
+    .banner {
+      background: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      display: flex;
+      min-height: 160px;
+    }
+
+    /* פס צבע ימני - האיבר הצבעוני היחיד */
+    .color-strip {
+      /* ✏️ שנה כאן את הצבע הראשי של הבאנר */
+      background: linear-gradient(180deg, #1a73e8 0%, #1557b0 100%);
+      width: 10px;
+      flex-shrink: 0;
+    }
+
+    /* תוכן */
+    .content {
+      padding: 32px 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex: 1;
+    }
+
+    /* פס עליון: שם בית הספר + שנה */
+    .meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .school-name {
+      /* ✏️ שנה כאן את הצבע של שם בית הספר */
+      color: #1a73e8;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .meta-divider {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #d0d5dd;
+    }
+
+    .school-year {
+      color: #9aa0a6;
+      font-size: 0.82rem;
+      font-weight: 400;
+    }
+
+    /* כותרת ראשית */
+    .banner-title {
+      color: #1a1a2e;
+      font-size: 2.6rem;
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 8px;
+    }
+
+    /* שם המורה */
+    .banner-teacher {
+      color: #5f6368;
+      font-size: 1rem;
+      font-weight: 400;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* נקודה מפרידה לפני "מורה:" */
+    .teacher-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      /* ✏️ שנה כאן את הצבע של הנקודה */
+      background: #1a73e8;
+      flex-shrink: 0;
+    }
+
+    /* ===== חלק ימין: נושא / סיסמה קצרה ===== */
+    .side-box {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 24px 32px 24px 0;
+      border-right: 1px solid #f0f0f0;
+      text-align: center;
+      min-width: 130px;
+      flex-shrink: 0;
+    }
+
+    .side-icon {
+      font-size: 2.5rem;
+      margin-bottom: 8px;
+    }
+
+    .side-label {
+      color: #9aa0a6;
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* ============================================
+       רספונסיביות
+       ============================================ */
+    @media (max-width: 600px) {
+      .banner { flex-direction: column; }
+      .color-strip { width: 100%; height: 6px; }
+      .side-box {
+        border-right: none;
+        border-bottom: 1px solid #f0f0f0;
+        padding: 20px;
+        flex-direction: row;
+        gap: 12px;
+        align-items: center;
+        justify-content: flex-end;
+        min-width: unset;
+      }
+      .side-icon { font-size: 2rem; margin-bottom: 0; }
+      .banner-title { font-size: 1.9rem; }
+      .content { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!--
+  ==============================================================
+  📌 באנר מינימליסטי ונקי — עיצוב מקצועי ורגוע
+  ==============================================================
+  מתאים לכל מקצוע — מראה אלגנטי ומקצועי
+  הוראות: העתק קוד זה ל-Google Sites > Embed Code
+  ==============================================================
+-->
+
+<div class="banner">
+
+  <!-- ✏️ שנה את הצבע בCSS למעלה (color-strip > background) -->
+  <div class="color-strip"></div>
+
+  <!-- תיבת צד (ימין) - אייקון ולייבל -->
+  <div class="side-box">
+    <!-- ✏️ שנה כאן: אמוג'י מייצג את המקצוע -->
+    <div class="side-icon">📖</div>
+    <!-- ✏️ שנה כאן: מילה קצרה לתיאור -->
+    <div class="side-label">עברית</div>
+  </div>
+
+  <!-- תוכן ראשי -->
+  <div class="content">
+
+    <!-- פס מידע עליון -->
+    <div class="meta">
+      <!-- ✏️ שנה כאן: שם בית הספר -->
+      <span class="school-name">בית ספר "הדר"</span>
+      <div class="meta-divider"></div>
+      <!-- ✏️ שנה כאן: שנת הלימודים -->
+      <span class="school-year">תשפ"ה</span>
+    </div>
+
+    <!-- ✏️ שנה כאן: שם הכיתה / המקצוע -->
+    <h1 class="banner-title">כיתה ז' | שפה ועברית</h1>
+
+    <!-- ✏️ שנה כאן: שם המורה -->
+    <p class="banner-teacher">
+      <span class="teacher-dot"></span>
+      מורה: [שם המורה]
+    </p>
+
+  </div>
+</div>
+
+</body>
+</html>

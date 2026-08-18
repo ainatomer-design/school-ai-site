@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>באנר יסודי צבעוני</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Heebo', sans-serif;
+      direction: rtl;
+      background: transparent;
+      overflow-x: hidden;
+    }
+
+    /* ============================================
+       באנר - רקע שמח וצבעוני
+       ============================================ */
+    .banner {
+      /* ✏️ שנה כאן את הצבעים של הגרדיאנט */
+      background: linear-gradient(135deg, #ff6b9d 0%, #ffca28 35%, #66bb6a 65%, #42a5f5 100%);
+      padding: 36px 28px 40px;
+      position: relative;
+      overflow: hidden;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    }
+
+    /* ===== צורות מעוגלות ברקע (אוטומטי) ===== */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.18;
+      pointer-events: none;
+    }
+    .blob-1 { width: 200px; height: 200px; background: #fff; top: -60px; right: -60px; }
+    .blob-2 { width: 150px; height: 150px; background: #fff; bottom: -40px; left: -40px; }
+    .blob-3 { width: 80px;  height: 80px;  background: #fff; top: 20px; left: 40%; }
+
+    /* כרטיס לבן פנימי - מסגרת הכותרת */
+    .banner-card {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(8px);
+      border-radius: 16px;
+      padding: 28px 40px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+      max-width: 560px;
+      width: 100%;
+    }
+
+    /* אייקונים גדולים בשורה עליונה */
+    .banner-icons {
+      font-size: 2.2rem;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* שם בית הספר */
+    .banner-school {
+      color: #5f6368;
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 3px;
+      margin-bottom: 8px;
+    }
+
+    /* שם הכיתה - גדול ושמח */
+    .banner-title {
+      /* ✏️ שנה כאן את הגוון הראשי של הכותרת */
+      background: linear-gradient(135deg, #ff6b9d, #ab47bc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 3rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+
+    /* שם המורה */
+    .banner-teacher {
+      color: #5f6368;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    /* ====== כפתורי נושאים מהירים ====== */
+    .banner-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .chip {
+      padding: 6px 16px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    /* ✏️ שנה כאן את הצבעים של התגיות */
+    .chip-1 { background: #ff6b9d; }
+    .chip-2 { background: #ffca28; color: #333; }
+    .chip-3 { background: #66bb6a; }
+    .chip-4 { background: #42a5f5; }
+
+    /* ============================================
+       רספונסיביות
+       ============================================ */
+    @media (max-width: 600px) {
+      .banner { padding: 28px 16px 32px; }
+      .banner-card { padding: 22px 24px; }
+      .banner-title { font-size: 2.2rem; }
+      .banner-icons { font-size: 1.8rem; gap: 8px; }
+    }
+
+    @media (max-width: 380px) {
+      .banner-title { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!--
+  ==============================================================
+  📌 באנר יסודי צבעוני — לכיתות א'-ו'
+  ==============================================================
+  מתאים במיוחד לכיתות נמוכות: צבעים שמחים, אייקונים גדולים
+  הוראות: העתק קוד זה ל-Google Sites > Embed Code
+  ==============================================================
+-->
+
+<div class="banner">
+  <!-- צורות ברקע (אוטומטי) -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <div class="banner-card">
+
+    <!-- ✏️ שנה כאן: האמוג'יים שמייצגים את הכיתה/מקצוע
+         לדוגמה לכיתה א': 🌟⭐✨  |  לאנגלית: 🌍📖✏️
+         למתמטיקה: ➕✖️🔢  |  למדעים: 🔬🌱🦋 -->
+    <div class="banner-icons">
+      🌟 📚 ✏️ 🎨
+    </div>
+
+    <!-- ✏️ שנה כאן: שם בית הספר -->
+    <div class="banner-school">בית ספר יסודי "שלנו" · תשפ"ה</div>
+
+    <!-- ✏️ שנה כאן: שם הכיתה -->
+    <h1 class="banner-title">כיתה ב'2</h1>
+
+    <!-- ✏️ שנה כאן: שם המורה/ת -->
+    <p class="banner-teacher">👩‍🏫 מורה: [שם המורה]</p>
+
+    <!-- ✏️ שנה כאן: תגיות נושאים (הוסף/מחק chip לפי הצורך)
+         שנה את הטקסט בין ><, ואת הצבע ב-class -->
+    <div class="banner-chips">
+      <span class="chip chip-1">📖 קריאה</span>
+      <span class="chip chip-2">🔢 חשבון</span>
+      <span class="chip chip-3">✡️ תורה</span>
+      <span class="chip chip-4">🎨 אמנות</span>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

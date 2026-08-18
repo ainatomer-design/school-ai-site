@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>לוח מבחנים ומשימות</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Heebo', sans-serif; direction: rtl; background: transparent; }
+
+    /* ============================================
+       עטיפה כללית
+       ============================================ */
+    .wrapper {
+      background: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.09);
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* ===== כותרת הטבלה ===== */
+    .table-header {
+      /* ✏️ שנה כאן את צבע הכותרת */
+      background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
+      padding: 20px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-icon {
+      width: 46px;
+      height: 46px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .header-title {
+      color: #ffffff;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .header-sub {
+      color: rgba(255,255,255,0.72);
+      font-size: 0.8rem;
+    }
+
+    /* סינון מהיר לפי סוג */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid rgba(255,255,255,0.4);
+      background: transparent;
+      color: rgba(255,255,255,0.85);
+      font-family: 'Heebo', sans-serif;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover,
+    .filter-btn.active {
+      background: rgba(255,255,255,0.2);
+      border-color: #fff;
+      color: #fff;
+    }
+
+    /* ===== טבלה ===== */
+    .table-scroll {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: right;
+    }
+
+    thead th {
+      background: #f8f9fa;
+      color: #5f6368;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 12px 20px;
+      border-bottom: 2px solid #e8ecf0;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.15s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+
+    tbody tr:hover { background: #f8f9fa; }
+
+    /* שורה "עברה" (עמומה) */
+    tbody tr.past {
+      opacity: 0.45;
+      text-decoration: line-through;
+    }
+
+    /* שורה "קרובה" (מודגשת) */
+    tbody tr.soon {
+      background: #fff8e1;
+    }
+
+    tbody td {
+      padding: 14px 20px;
+      color: #202124;
+      font-size: 0.92rem;
+      vertical-align: middle;
+    }
+
+    /* עמודת תאריך */
+    .col-date {
+      white-space: nowrap;
+      color: #5f6368 !important;
+      font-size: 0.85rem !important;
+    }
+
+    /* תגית סוג (מבחן / עבודה / פרויקט) */
+    .type-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .type-exam     { background: #fce8e6; color: #c62828; }
+    .type-homework { background: #e8f0fe; color: #1557b0; }
+    .type-project  { background: #e6f4ea; color: #1e7e34; }
+    .type-quiz     { background: #fef3e2; color: #e65100; }
+
+    /* תגית מקצוע */
+    .subject-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: #f1f3f4;
+      color: #3c4043;
+    }
+
+    /* תגית "קרוב!" */
+    .soon-tag {
+      display: inline-block;
+      background: #fb8c00;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-right: 6px;
+      animation: blink 1.5s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.6; }
+    }
+
+    /* ===== תחתית: הוספת שורה ===== */
+    .table-footer {
+      padding: 16px 20px;
+      border-top: 1px solid #f0f0f0;
+      text-align: center;
+      color: #9aa0a6;
+      font-size: 0.83rem;
+    }
+
+    /* ===== רספונסיביות ===== */
+    @media (max-width: 600px) {
+      .table-header { padding: 16px 18px; }
+      thead th, tbody td { padding: 10px 14px; font-size: 0.82rem; }
+      .filter-bar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!--
+  ==============================================================
+  📌 לוח מבחנים ומשימות — טבלה רספונסיבית ומעוצבת
+  ==============================================================
+  הוראות:
+  1. העתק קוד זה ל-Google Sites > Embed Code
+  2. ערוך כל שורה בטבלה (מסומן ✏️)
+  3. להוספת שורה: העתק <tr> שלם והדבק לפני </tbody>
+  4. לשורה "עברה": הוסף class="past" ל-<tr>
+  5. לשורה "בקרוב": הוסף class="soon" ל-<tr>
+  ==============================================================
+-->
+
+<div class="wrapper">
+
+  <!-- כותרת -->
+  <div class="table-header">
+    <div class="header-left">
+      <div class="header-icon">📅</div>
+      <div>
+        <!-- ✏️ שנה כאן: כותרת הלוח -->
+        <div class="header-title">לוח מבחנים ומשימות</div>
+        <!-- ✏️ שנה כאן: שם הכיתה ורבעון -->
+        <div class="header-sub">כיתה ח'2 · רבעון א' — תשפ"ה</div>
+      </div>
+    </div>
+
+    <!-- כפתורי סינון (אופציונלי) -->
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterTable(this,'all')">הכל</button>
+      <button class="filter-btn" onclick="filterTable(this,'exam')">מבחנים</button>
+      <button class="filter-btn" onclick="filterTable(this,'homework')">עבודות</button>
+      <button class="filter-btn" onclick="filterTable(this,'project')">פרויקטים</button>
+    </div>
+  </div>
+
+  <!-- טבלה -->
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>📅 תאריך</th>
+          <th>📚 מקצוע</th>
+          <th>📋 נושא</th>
+          <th>🏷️ סוג</th>
+          <th>📝 הערה</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!--
+          ✏️ שורה לדוגמה - מבחן קרוב (מסומן ב"קרוב!")
+          class="soon" = צהוב מודגש
+        -->
+        <tr class="soon" data-type="exam">
+          <td class="col-date">יום ב' | כ"ב תשרי</td>
+          <td><span class="subject-badge">מדעים</span></td>
+          <td>
+            <span class="soon-tag">קרוב!</span>
+            מבנה התא ואברוני התא
+          </td>
+          <td><span class="type-badge type-exam">🔴 מבחן</span></td>
+          <td>חומר מפרקים 1-3</td>
+        </tr>
+
+        <!--
+          ✏️ שורה רגילה - עבודת בית
+        -->
+        <tr data-type="homework">
+          <td class="col-date">יום ג' | כ"ג תשרי</td>
+          <td><span class="subject-badge">עברית</span></td>
+          <td>עבודת כתיבה יצירתית — "ספר אחר"</td>
+          <td><span class="type-badge type-homework">📘 עבודה</span></td>
+          <td>לפחות עמוד וחצי</td>
+        </tr>
+
+        <!--
+          ✏️ שורה - פרויקט
+        -->
+        <tr data-type="project">
+          <td class="col-date">יום א' | כ"ח תשרי</td>
+          <td><span class="subject-badge">היסטוריה</span></td>
+          <td>פרויקט "אישים בתולדות ישראל"</td>
+          <td><span class="type-badge type-project">🟢 פרויקט</span></td>
+          <td>הגשה דיגיטלית ל-Drive</td>
+        </tr>
+
+        <!--
+          ✏️ שורה - קוויז
+        -->
+        <tr data-type="quiz">
+          <td class="col-date">יום ד' | כ"ד תשרי</td>
+          <td><span class="subject-badge">אנגלית</span></td>
+          <td>אוצר מילים — Unit 3</td>
+          <td><span class="type-badge type-quiz">🟠 קוויז</span></td>
+          <td>20 מילים</td>
+        </tr>
+
+        <!--
+          ✏️ שורה שעברה (מוצלבת)
+          class="past" = מעומעם ומוצלב
+        -->
+        <tr class="past" data-type="exam">
+          <td class="col-date">יום א' | ט"ו תשרי</td>
+          <td><span class="subject-badge">מתמטיקה</span></td>
+          <td>משוואות ממעלה ראשונה</td>
+          <td><span class="type-badge type-exam">🔴 מבחן</span></td>
+          <td>— עבר —</td>
+        </tr>
+
+        <!--
+          ✏️ להוספת שורה חדשה, העתק מכאן:
+
+          <tr data-type="exam">
+            <td class="col-date">יום ? | תאריך</td>
+            <td><span class="subject-badge">מקצוע</span></td>
+            <td>נושא המבחן/המשימה</td>
+            <td><span class="type-badge type-exam">🔴 מבחן</span></td>
+            <td>הערה נוספת</td>
+          </tr>
+        -->
+
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-footer">
+    <!-- ✏️ שנה כאן: הערה כללית בתחתית -->
+    💡 לוח הזמנים עשוי להשתנות — מומלץ לבדוק באפליקציית הכיתה
+  </div>
+
+</div>
+
+<script>
+  /* ============================================
+     סינון לפי סוג - פועל אוטומטי, אל תשנה
+     ============================================ */
+  function filterTable(btn, type) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    document.querySelectorAll('tbody tr').forEach(row => {
+      if (type === 'all' || row.dataset.type === type) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>פאנל מחנך</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root { --primary:#1a73e8; --accent:#34a853; --danger:#ea4335; --bg:#f0f4f8; --card:#fff; --text:#202124; --muted:#5f6368; --border:#e8ecf0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Heebo, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* LOGIN */
+    #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .login-card { background: var(--card); border-radius: 20px; padding: 40px 36px; width: 100%; max-width: 380px; box-shadow: 0 8px 40px rgba(0,0,0,.1); text-align: center; }
+    .logo-icon { width: 64px; height: 64px; border-radius: 18px; background: linear-gradient(135deg,#3b82f6,#34a853); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 16px; }
+    .login-card h1 { font-size: 1.4rem; font-weight: 900; margin-bottom: 4px; }
+    .login-card .sub { color: var(--muted); font-size: .85rem; margin-bottom: 24px; }
+    .login-card input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 12px; font-family: inherit; font-size: 1rem; margin-bottom: 12px; text-align: center; letter-spacing: .1em; }
+    .login-card input:focus { outline: none; border-color: var(--primary); }
+    .login-card button { width: 100%; padding: 13px; background: var(--primary); color: #fff; border: 0; border-radius: 12px; font-family: inherit; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    .error-msg { background: #fee2e2; color: #991b1b; border-radius: 10px; padding: 10px; font-size: .85rem; margin-bottom: 12px; display: none; }
+
+    /* APP */
+    #app-screen { display: none; }
+    .topbar { background: #0f172a; color: #fff; height: 58px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: sticky; top: 0; z-index: 20; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+    .mini-logo { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg,#3b82f6,#34a853); display: flex; align-items: center; justify-content: center; }
+    .topbar-actions { display: flex; align-items: center; gap: 12px; }
+    .badge-name { background: #1e40af; color: #bfdbfe; padding: 4px 12px; border-radius: 999px; font-size: .8rem; font-weight: 700; }
+    .btn-logout { background: #ef4444; color: #fff; padding: 5px 12px; border-radius: 8px; font-weight: 700; border: 0; cursor: pointer; font-family: inherit; font-size: .85rem; }
+
+    .layout { display: grid; grid-template-columns: 200px 1fr; min-height: calc(100vh - 58px); }
+    nav { background: #fff; border-left: 1px solid var(--border); padding: 12px 0; }
+    .nav-item { display: flex; gap: 8px; padding: 10px 16px; cursor: pointer; color: var(--muted); font-size: .9rem; border-right: 3px solid transparent; }
+    .nav-item.active { background: #e8f0fe; color: var(--primary); font-weight: 700; border-right-color: var(--primary); }
+    main { padding: 24px; }
+    .panel { display: none; } .panel.active { display: block; }
+    h1 { font-size: 1.3rem; margin-bottom: 6px; }
+    .sub { color: var(--muted); font-size: .85rem; margin-bottom: 18px; }
+    .card { background: var(--card); border-radius: 14px; padding: 18px; margin-bottom: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.05); }
+    label { display: block; font-size: .78rem; font-weight: 700; margin: 10px 0 6px; color: var(--muted); }
+    input, textarea, select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: .9rem; }
+    textarea { min-height: 90px; resize: vertical; }
+    .btn { border: 0; border-radius: 10px; padding: 10px 16px; font-family: inherit; font-weight: 700; cursor: pointer; font-size: .88rem; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-ok { background: var(--accent); color: #fff; }
+    .btn-ghost { background: #eef2f6; color: var(--text); }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .chip { background: #e8f0fe; color: var(--primary); border: 0; border-radius: 999px; padding: 6px 12px; font-size: .78rem; cursor: pointer; font-family: inherit; }
+
+    .feature-card { border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+    .feature-card .fc-title { font-weight: 700; margin-bottom: 4px; }
+    .feature-card .fc-meta { font-size: .78rem; color: var(--muted); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 700; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-active { background: #dcfce7; color: #166534; }
+    .badge-disabled { background: #fee2e2; color: #991b1b; }
+
+    .pending-notice { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 14px; margin-bottom: 14px; font-size: .85rem; color: #9a3412; }
+
+    .ai-thinking { color: var(--muted); font-style: italic; font-size: .85rem; margin-top: 8px; display: none; }
+
+    @media (max-width: 700px) {
+      .layout { grid-template-columns: 1fr; }
+      nav { display: flex; overflow-x: auto; border-left: 0; border-bottom: 1px solid var(--border); }
+      .nav-item { white-space: nowrap; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- מסך כניסה -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="logo-icon">👩‍🏫</div>
+    <h1>כניסת מחנך</h1>
+    <p class="sub">הזן את קוד הגישה שקיבלת מהמנהל</p>
+    <div class="error-msg" id="login-error"></div>
+    <input type="text" id="code-input" placeholder="קוד גישה (לדוגמה: AB12CD34)" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter') login()">
+    <button onclick="login()" style="margin-top:8px">כניסה &rarr;</button>
+  </div>
+</div>
+
+<!-- פאנל ראשי -->
+<div id="app-screen">
+  <header class="topbar">
+    <div class="brand"><div class="mini-logo">👩‍🏫</div>פאנל מחנך</div>
+    <div class="topbar-actions">
+      <span class="badge-name" id="teacher-name-badge"></span>
+      <button class="btn-logout" onclick="logout()">יציאה</button>
+    </div>
+  </header>
+  <div class="layout">
+    <nav>
+      <div class="nav-item active" data-tab="build">🤖 בנה פיצ'ר עם AI</div>
+      <div class="nav-item" data-tab="my-features">📋 הפיצ'רים שלי</div>
+      <div class="nav-item" data-tab="class-code">🔑 קוד כיתה</div>
+    </nav>
+    <main>
+
+      <!-- בנה פיצ'ר -->
+      <section class="panel active" id="tab-build">
+        <h1>בנה פיצ'ר חדש עם AI</h1>
+        <p class="sub">תאר בעברית מה אתה צריך — ה-AI ייצור אותו ויישלח לאישור המנהל.</p>
+        <div class="pending-notice">⏳ כל פיצ'ר שתיצור יישלח לאישור המנהל לפני שיופיע בכיתה.</div>
+        <div class="card">
+          <label>מה אתה צריך?</label>
+          <textarea id="feature-desc" placeholder="לדוגמה: לוח משימות שבועי עם 5 משימות לכיתה ד&#39;1&#10;או: מבחן קצר בחשבון עם 3 שאלות&#10;או: הודעה — מחר יש טיול"></textarea>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <button class="chip" onclick="fillDesc('מבחן קצר בעברית עם 3 שאלות לבחירה')">מבחן</button>
+            <button class="chip" onclick="fillDesc('לוח משימות שבועי עם 4 משימות')">לוח משימות</button>
+            <button class="chip" onclick="fillDesc('הודעה חשובה להורים — ')">הודעה</button>
+            <button class="chip" onclick="fillDesc('קבוצת קישורים שימושיים ללימוד')">קישורים</button>
+            <button class="chip" onclick="fillDesc('מעקב ציונים לכיתה')">מעקב ציונים</button>
+          </div>
+          <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
+            <strong style="font-size:.85rem">🔒 הגנה על הפיצ'ר</strong>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;margin-top:8px;color:var(--text)">
+              <input type="checkbox" id="feat-protected" style="width:16px;height:16px;accent-color:var(--primary)" onchange="document.getElementById('feat-code-box').style.display=this.checked?'block':'none'">
+              דרוש קוד גישה לפיצ'ר זה
+            </label>
+            <div id="feat-code-box" style="display:none;margin-top:8px">
+              <input type="text" id="feat-code" placeholder="קוד גישה (לדוגמה: תמונות2025)" style="max-width:280px">
+              <p style="font-size:.75rem;color:var(--muted);margin-top:4px">שתף קוד זה רק עם מי שאמור לראות את הפיצ'ר.</p>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="buildFeature()">✨ צור פיצ'ר</button>
+          </div>
+          <div class="ai-thinking" id="ai-thinking">ה-AI בונה את הפיצ'ר... ⏳</div>
+        </div>
+        <div id="build-result"></div>
+      </section>
+
+      <!-- הפיצ'רים שלי -->
+      <section class="panel" id="tab-my-features">
+        <h1>הפיצ'רים שלי</h1>
+        <p class="sub">פיצ'רים שיצרת — ירוק = פעיל, כתום = ממתין לאישור, אדום = מושבת.</p>
+        <div id="my-features-list"><div class="card" style="color:var(--muted)">טוען...</div></div>
+      </section>
+
+      <!-- קוד כיתה -->
+      <section class="panel" id="tab-class-code">
+        <h1>קוד כיתה לתלמידים</h1>
+        <p class="sub">שתף את הקוד הזה עם התלמידים שלך — הם יכנסו לאתר ויראו פיצ'רים פעילים.</p>
+        <div class="card" style="text-align:center">
+          <div style="font-size:2.5rem;font-weight:900;letter-spacing:.2em;color:var(--primary);margin:12px 0" id="class-code-display">—</div>
+          <p class="sub">כתובת כניסה לתלמידים:</p>
+          <div style="background:#f0f4f8;border-radius:10px;padding:10px;font-size:.9rem;margin:8px 0;word-break:break-all" id="class-url-display"></div>
+          <button class="btn btn-ghost" onclick="copyCode()">📋 העתק קישור</button>
+        </div>
+        <div class="card">
+          <strong>מצב גישה נוכחי</strong>
+          <p class="sub" style="margin-top:6px" id="access-mode-text">טוען...</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+let currentUser = null;
+let geminiKey = localStorage.getItem('koors_teacher_gemini') || '';
+
+function showError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function login() {
+  const code = document.getElementById('code-input').value.trim().toUpperCase();
+  if (!code) { showError('הזן קוד גישה'); return; }
+  try {
+    const r = await fetch('/api/auth/teacher', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({code})
+    });
+    const d = await r.json();
+    if (!r.ok) { showError(d.error?.message || 'קוד שגוי'); return; }
+    currentUser = d.user;
+    enterApp();
+  } catch { showError('שגיאת חיבור'); }
+}
+
+function enterApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('teacher-name-badge').textContent = currentUser.name + ' · ' + (currentUser.role === 'teacher' ? 'מחנך' : 'צוות');
+  loadClassCode();
+  setupNav();
+  if (!geminiKey) {
+    geminiKey = prompt('הזן מפתח Gemini API (מ-aistudio.google.com):') || '';
+    if (geminiKey) localStorage.setItem('koors_teacher_gemini', geminiKey);
+  }
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', {method:'POST'});
+  location.reload();
+}
+
+function setupNav() {
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.onclick = () => {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('tab-' + el.dataset.tab).classList.add('active');
+      if (el.dataset.tab === 'my-features') loadMyFeatures();
+    };
+  });
+}
+
+function fillDesc(t) {
+  document.getElementById('feature-desc').value = t;
+  document.getElementById('feature-desc').focus();
+}
+
+async function buildFeature() {
+  const desc = document.getElementById('feature-desc').value.trim();
+  if (!desc) { alert('תאר מה אתה צריך'); return; }
+  if (!geminiKey) {
+    geminiKey = prompt('הזן מפתח Gemini API:') || '';
+    if (geminiKey) localStorage.setItem('koors_teacher_gemini', geminiKey);
+  }
+  document.getElementById('ai-thinking').style.display = 'block';
+  document.getElementById('build-result').innerHTML = '';
+  try {
+    const protected_ = document.getElementById('feat-protected').checked;
+    const feat_code = document.getElementById('feat-code').value.trim();
+    const r = await fetch('/api/features', {
+      method: 'POST', headers: {'Content-Type':'application/json','X-Gemini-Key':geminiKey},
+      body: JSON.stringify({
+        description: desc,
+        target_class: currentUser.class_id || '',
+        gemini_key: geminiKey,
+        access_level: protected_ ? 'protected' : 'public',
+        feature_code: protected_ ? feat_code : '',
+      })
+    });
+    const d = await r.json();
+    document.getElementById('ai-thinking').style.display = 'none';
+    if (!r.ok) { document.getElementById('build-result').innerHTML = `<div class="card" style="color:#991b1b">שגיאה: ${d.error?.message}</div>`; return; }
+    const f = d.feature || d.raw || {};
+    document.getElementById('build-result').innerHTML = `
+      <div class="card" style="border:2px solid #34a853">
+        <div style="color:#166534;font-weight:700;margin-bottom:8px">✅ הפיצ'ר נוצר ונשלח לאישור המנהל</div>
+        <div class="fc-title">${esc(f.title||'')}</div>
+        <div class="fc-meta">${esc(f.description||'')}</div>
+        <div class="fc-meta" style="margin-top:6px">סוג: ${esc(f.feature_type||'')}</div>
+      </div>`;
+    document.getElementById('feature-desc').value = '';
+  } catch(e) {
+    document.getElementById('ai-thinking').style.display = 'none';
+    document.getElementById('build-result').innerHTML = `<div class="card" style="color:#991b1b">שגיאה: ${esc(e.message)}</div>`;
+  }
+}
+
+async function loadMyFeatures() {
+  const el = document.getElementById('my-features-list');
+  el.innerHTML = '<div class="card" style="color:var(--muted)">טוען...</div>';
+  try {
+    const statuses = ['pending','active','disabled'];
+    const all = [];
+    for (const s of statuses) {
+      const r = await fetch(`/api/features?status=${s}`);
+      const d = await r.json();
+      all.push(...(d.features||[]).filter(f => f.creator_name === currentUser.name));
+    }
+    if (!all.length) { el.innerHTML = '<div class="card" style="color:var(--muted)">עדיין לא יצרת פיצ'רים.</div>'; return; }
+    el.innerHTML = all.map(f => `
+      <div class="feature-card">
+        <div class="fc-title">${esc(f.title)} <span class="badge badge-${f.status}">${statusLabel(f.status)}</span></div>
+        <div class="fc-meta">${esc(f.description)} · ${esc(f.feature_type)}</div>
+        <div class="fc-meta" style="margin-top:4px">נוצר: ${new Date(f.created_at).toLocaleDateString('he-IL')}</div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = `<div class="card" style="color:#991b1b">${esc(e.message)}</div>`; }
+}
+
+async function loadClassCode() {
+  const classId = currentUser.class_id;
+  const urlEl = document.getElementById('class-url-display');
+  const codeEl = document.getElementById('class-code-display');
+  if (classId) {
+    codeEl.textContent = classId;
+    urlEl.textContent = location.origin + '/class/' + classId;
+  } else {
+    codeEl.textContent = '—';
+    urlEl.textContent = 'לא משויך לכיתה';
+  }
+  try {
+    const r = await fetch('/api/access-settings');
+    const d = await r.json();
+    const modes = {code:'קוד גישה אישי לכל משתמש', per_user:'קוד כיתה משותף', open:'גישה חופשית'};
+    document.getElementById('access-mode-text').textContent = modes[d.settings?.mode] || d.settings?.mode || '—';
+  } catch {}
+}
+
+function copyCode() {
+  const url = document.getElementById('class-url-display').textContent;
+  navigator.clipboard.writeText(url).then(() => alert('הקישור הועתק!'));
+}
+
+function statusLabel(s) { return {pending:'ממתין לאישור',active:'פעיל',disabled:'מושבת'}[s]||s; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>

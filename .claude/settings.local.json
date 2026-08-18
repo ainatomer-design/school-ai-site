@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($get = Invoke-WebRequest -Uri \"http://127.0.0.1:8080/\" -Method GET -UseBasicParsing; Write-Host \"GET Status: $\\($get.StatusCode\\)\"; Write-Host \"Content snippet: $\\($get.Content.Substring\\(0,120\\)\\)\")",
+      "PowerShell($body = \"message=%D7%A9%D7%9C%D7%95%D7%9D+%D7%A9%D7%A8%D7%AA\"; $post = Invoke-WebRequest -Uri \"http://127.0.0.1:8080/\" -Method POST -Body $body -ContentType \"application/x-www-form-urlencoded\" -UseBasicParsing; Write-Host \"POST Status: $\\($post.StatusCode\\)\"; Write-Host \"Response body: $\\($post.Content\\)\")",
+      "Bash(mkdir -p \"c:\\\\koors\\\\new project f\\\\python-demo\")",
+      "Bash(python -c ' *)",
+      "Bash(python course-demo/app.py)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git remote *)",
+      "Bash(git branch *)",
+      "Bash(git push *)",
+      "Bash(python -c \"import app; print\\('OK'\\)\")"
+    ]
+  }
+}
