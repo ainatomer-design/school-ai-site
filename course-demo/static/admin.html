@@ -408,10 +408,15 @@ async function health() {
   }
 }
 
+function _normalizeClasses() {
+  (state.classes || []).forEach(c => { if (!c.id) c.id = uid(); });
+}
+
 async function loadState() {
   const r = await fetch('/api/state');
   const d = await r.json();
   if (d.state) state = Object.assign(state, d.state);
+  _normalizeClasses();
   fillForm();
 }
 
@@ -451,7 +456,9 @@ function setClassTeacherModel(i, model) {
   state.classes[i].teacher_ai.model = model;
 }
 function renderClasses() {
-  document.getElementById('class-list').innerHTML = (state.classes || []).map((c,i) => `
+  document.getElementById('class-list').innerHTML = (state.classes || []).map((c,i) => {
+    if (!c.id) c.id = uid();  // safety: should already be set by _normalizeClasses
+    return `
     <div style="border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px">
 
       <!-- שורת עריכה -->
@@ -500,7 +507,8 @@ function renderClasses() {
         </div>
       </details>
 
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function renderLinks() {
   document.getElementById('link-list').innerHTML = (state.links || []).map((l,i) => `
@@ -564,6 +572,7 @@ function deepMerge(t, s) {
 async function applyPending() {
   if (!pending) { toast('אין שינויים ממתינים'); return; }
   deepMerge(state, pending.changes);
+  _normalizeClasses();  // AI responses never include id; restore them after merge
   fillForm();
   const ok = await saveAll();
   if (!ok) {
