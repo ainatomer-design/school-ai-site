@@ -39,7 +39,7 @@ load_dotenv(ROOT / ".env")
 load_dotenv(ROOT.parent / ".env")
 STATIC = ROOT / "static"
 SCHOOL_ID = "default"
-DEFAULT_MODEL = "gemini-3.6-flash"
+DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 
 app = Flask(__name__, static_folder=str(STATIC), static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY", "koors-school-secret-2025")
