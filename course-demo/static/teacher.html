@@ -128,7 +128,7 @@
           <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <label style="margin:0;font-size:.78rem;white-space:nowrap">מודל Gemini:</label>
             <select id="teacher-model-select" onchange="saveTeacherModel(this.value)" style="width:auto;min-width:200px;padding:6px 10px">
-              <option value="gemini-2.5-flash">⚡ Gemini 2.5 Flash — מהיר</option>
+              <option value="gemini-3.6-flash">⚡ Gemini 3.6 Flash — מהיר (מומלץ)</option>
               <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro — מתקדם</option>
               <option value="gemini-2.0-flash">🔷 Gemini 2.0 Flash</option>
               <option value="gemini-1.5-flash">🔹 Gemini 1.5 Flash</option>
@@ -173,7 +173,7 @@
 let currentUser = null;
 let geminiKey = localStorage.getItem('koors_teacher_gemini') || '';
 const TEACHER_MODEL_LS = 'koors_teacher_model';
-function getTeacherModel() { return localStorage.getItem(TEACHER_MODEL_LS) || 'gemini-2.5-flash'; }
+function getTeacherModel() { return localStorage.getItem(TEACHER_MODEL_LS) || 'gemini-3.6-flash'; }
 function saveTeacherModel(v) { localStorage.setItem(TEACHER_MODEL_LS, v); }
 
 function showError(msg) {
