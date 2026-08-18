@@ -148,11 +148,16 @@ def load_state() -> dict:
 
 def save_state(payload: dict) -> dict:
     rows = sb_request("GET", f"school_state?id=eq.{SCHOOL_ID}&select=id")
-    body = {"id": SCHOOL_ID, "payload": payload}
     if rows:
-        sb_request("PATCH", f"school_state?id=eq.{SCHOOL_ID}", json={"payload": payload})
+        result = sb_request("PATCH", f"school_state?id=eq.{SCHOOL_ID}", json={"payload": payload})
+        if result is not None and len(result) == 0:
+            raise RuntimeError("PATCH התאים 0 שורות — ייתכן שהרשאות RLS חוסמות כתיבה")
     else:
-        sb_request("POST", "school_state", json=body)
+        sb_request(
+            "POST",
+            "school_state",
+            json={"id": SCHOOL_ID, "payload": payload},
+        )
     return payload
 
 
@@ -337,6 +342,28 @@ def admin_site():
 @app.route("/api/version")
 def version():
     return jsonify({"version": APP_VERSION, "model": DEFAULT_MODEL})
+
+@app.route("/api/db-check")
+def db_check():
+    url, key = supabase_config()
+    result = {"url_set": bool(url), "key_set": bool(key), "key_type": "unknown"}
+    if key:
+        result["key_prefix"] = key[:12] + "..."
+        result["key_type"] = "service_role (likely)" if len(key) > 100 else "anon (likely — too short!)"
+    try:
+        rows = sb_request("GET", f"school_state?id=eq.{SCHOOL_ID}&select=id")
+        result["can_read"] = True
+        result["row_exists"] = bool(rows)
+    except Exception as e:
+        result["can_read"] = False
+        result["read_error"] = str(e)
+    try:
+        sb_request("PATCH", f"school_state?id=eq.{SCHOOL_ID}", json={"payload": {"_ping": True}})
+        result["can_write"] = True
+    except Exception as e:
+        result["can_write"] = False
+        result["write_error"] = str(e)
+    return jsonify(result)
 
 @app.route("/api/health")
 def health():
