@@ -19,6 +19,7 @@
     .login-card input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 12px; font-family: inherit; font-size: 1rem; margin-bottom: 12px; text-align: center; letter-spacing: .1em; }
     .login-card input:focus { outline: none; border-color: var(--primary); }
     .login-card button { width: 100%; padding: 13px; background: var(--primary); color: #fff; border: 0; border-radius: 12px; font-family: inherit; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    .login-class-badge { display: inline-block; background: #e8f0fe; color: var(--primary); padding: 5px 16px; border-radius: 999px; font-size: .82rem; font-weight: 700; margin-bottom: 16px; }
     .error-msg { background: #fee2e2; color: #991b1b; border-radius: 10px; padding: 10px; font-size: .85rem; margin-bottom: 12px; display: none; }
 
     /* APP */
@@ -32,10 +33,10 @@
 
     .layout { display: grid; grid-template-columns: 210px 1fr; min-height: calc(100vh - 58px); }
     nav { background: #fff; border-left: 1px solid var(--border); padding: 12px 0; }
-    .nav-item { display: flex; gap: 8px; padding: 10px 16px; cursor: pointer; color: var(--muted); font-size: .9rem; border-right: 3px solid transparent; align-items: center; }
+    .nav-item { display: flex; align-items: center; gap: 8px; padding: 10px 16px; cursor: pointer; color: var(--muted); font-size: .9rem; border-right: 3px solid transparent; }
     .nav-item.active { background: #e8f0fe; color: var(--primary); font-weight: 700; border-right-color: var(--primary); }
-    .nav-item .nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); margin-right: auto; display: none; }
-    .nav-item.needs-setup .nav-dot { display: block; }
+    .nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); margin-right: auto; display: none; flex-shrink: 0; }
+    .needs-setup .nav-dot { display: block; }
     main { padding: 24px; }
     .panel { display: none; } .panel.active { display: block; }
     h1 { font-size: 1.3rem; margin-bottom: 6px; }
@@ -62,22 +63,24 @@
     .pending-notice { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 14px; margin-bottom: 14px; font-size: .85rem; color: #9a3412; }
     .no-key-banner { background: #fff7ed; border: 2px solid #f97316; border-radius: 14px; padding: 16px 18px; margin-bottom: 18px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
     .no-key-banner .nkb-icon { font-size: 1.8rem; flex-shrink: 0; }
-    .no-key-banner .nkb-text { flex: 1; min-width: 160px; }
-    .no-key-banner .nkb-text strong { color: #9a3412; display: block; margin-bottom: 3px; }
-    .no-key-banner .nkb-text span { color: #9a3412; font-size: .83rem; }
+    .no-key-banner .nkb-body { flex: 1; min-width: 160px; }
+    .no-key-banner .nkb-body strong { color: #9a3412; display: block; margin-bottom: 3px; }
+    .no-key-banner .nkb-body span { color: #9a3412; font-size: .83rem; }
 
     .ai-thinking { color: var(--muted); font-style: italic; font-size: .85rem; margin-top: 8px; display: none; }
 
-    /* Settings tab styles */
-    .settings-class-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 8px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
-    .settings-class-badge { background: #e8f0fe; color: var(--primary); font-size: .8rem; padding: 5px 14px; border-radius: 999px; font-weight: 700; }
+    /* Settings tab */
+    .settings-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 8px; }
+    .settings-class-pill { background: #e8f0fe; color: var(--primary); font-size: .8rem; padding: 5px 14px; border-radius: 999px; font-weight: 700; }
     .settings-status { font-size: .78rem; padding: 4px 10px; border-radius: 999px; font-weight: 700; }
     .settings-status.ok { background: #dcfce7; color: #166534; }
     .settings-status.missing { background: #fee2e2; color: #991b1b; }
-    .key-input-wrap { position: relative; }
-    .key-input-wrap input { padding-left: 40px; }
     .provider-hint { font-size: .78rem; color: var(--muted); margin-top: 5px; }
-    .provider-hint a { color: var(--primary); }
+
+    /* URL cards in Class Code tab */
+    .url-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 8px 0; }
+    .url-label { font-size: .72rem; font-weight: 700; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
+    .url-value { font-size: .88rem; word-break: break-all; color: var(--primary); font-weight: 600; }
 
     @media (max-width: 700px) {
       .layout { grid-template-columns: 1fr; }
@@ -92,20 +95,25 @@
 <div id="login-screen">
   <div class="login-card">
     <div class="logo-icon">👩‍🏫</div>
-    <h1>כניסת מחנך</h1>
-    <p class="sub">הזן את קוד הגישה שקיבלת מהמנהל</p>
+    <h1 id="login-title">כניסת מחנך</h1>
+    <div id="login-class-pill" style="display:none" class="login-class-badge"></div>
+    <p class="sub" id="login-sub">הזן את קוד הגישה שקיבלת מהמנהל</p>
     <div class="error-msg" id="login-error"></div>
     <input type="text" id="code-input" placeholder="קוד גישה (לדוגמה: AB12CD34)"
       oninput="this.value=this.value.toUpperCase()"
       onkeydown="if(event.key==='Enter') login()">
-    <button onclick="login()" style="margin-top:8px">כניסה &rarr;</button>
+    <button onclick="login()" style="margin-top:8px">כניסה לפאנל &rarr;</button>
   </div>
 </div>
 
 <!-- פאנל ראשי -->
 <div id="app-screen">
   <header class="topbar">
-    <div class="brand"><div class="mini-logo">👩‍🏫</div>פאנל מחנך</div>
+    <div class="brand">
+      <div class="mini-logo">👩‍🏫</div>
+      <span>פאנל מחנך</span>
+      <span id="topbar-class-badge" style="background:#1e3a5f;color:#93c5fd;font-size:.75rem;padding:3px 10px;border-radius:999px;font-weight:700;display:none"></span>
+    </div>
     <div class="topbar-actions">
       <span class="badge-name" id="teacher-name-badge"></span>
       <button class="btn-logout" onclick="logout()">יציאה</button>
@@ -119,7 +127,7 @@
         ⚙️ הגדרות AI
         <span class="nav-dot" title="נדרש הגדרה"></span>
       </div>
-      <div class="nav-item" data-tab="class-code">🔑 קוד כיתה</div>
+      <div class="nav-item" data-tab="class-code">🔑 קישורי כיתה</div>
     </nav>
     <main>
 
@@ -128,12 +136,12 @@
         <h1>בנה פיצ'ר חדש עם AI</h1>
         <p class="sub">תאר בעברית מה אתה צריך — ה-AI ייצור אותו ויישלח לאישור המנהל.</p>
 
-        <!-- באנר חסר מפתח — מוסתר כברירת מחדל -->
+        <!-- באנר חסר מפתח -->
         <div class="no-key-banner" id="no-key-banner" style="display:none">
           <div class="nkb-icon">🔑</div>
-          <div class="nkb-text">
+          <div class="nkb-body">
             <strong>לא הוגדר מפתח AI לכיתה זו</strong>
-            <span>יש להגדיר ספק AI ומפתח לפני שניתן ליצור פיצ'רים.</span>
+            <span>הגדר ספק AI ומפתח לפני שניתן ליצור פיצ'רים.</span>
           </div>
           <button class="btn btn-primary" onclick="goToSettings()">הגדר עכשיו ⚙️</button>
         </div>
@@ -141,7 +149,7 @@
         <div class="pending-notice">⏳ כל פיצ'ר שתיצור יישלח לאישור המנהל לפני שיופיע בכיתה.</div>
         <div class="card">
           <label>מה אתה צריך?</label>
-          <textarea id="feature-desc" placeholder="לדוגמה: לוח משימות שבועי עם 5 משימות לכיתה ד&#39;1&#10;או: מבחן קצר בחשבון עם 3 שאלות&#10;או: הודעה — מחר יש טיול"></textarea>
+          <textarea id="feature-desc" placeholder="לדוגמה: לוח משימות שבועי עם 5 משימות&#10;או: מבחן קצר בחשבון עם 3 שאלות&#10;או: הודעה — מחר יש טיול"></textarea>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
             <button class="chip" onclick="fillDesc('מבחן קצר בעברית עם 3 שאלות לבחירה')">מבחן</button>
             <button class="chip" onclick="fillDesc('לוח משימות שבועי עם 4 משימות')">לוח משימות</button>
@@ -186,38 +194,31 @@
         <h1>הגדרות AI</h1>
         <p class="sub">הגדרות אלו נשמרות בדפדפן עבור הכיתה שלך בלבד.</p>
         <div class="card">
-
-          <!-- שורת כיתה + סטטוס -->
-          <div class="settings-class-row">
+          <div class="settings-header">
             <div>
-              <div style="font-weight:700;margin-bottom:4px">הגדרות AI לכיתה</div>
-              <span class="settings-class-badge" id="settings-class-badge">טוען...</span>
+              <div style="font-weight:700;margin-bottom:5px">תצורת AI לכיתה</div>
+              <span class="settings-class-pill" id="settings-class-pill">טוען...</span>
             </div>
-            <span class="settings-status" id="settings-status-badge">בודק...</span>
+            <span class="settings-status" id="settings-status">בודק...</span>
           </div>
 
-          <!-- ספק -->
           <label>ספק AI</label>
           <select id="teacher-provider-select" onchange="onTeacherProviderChange(this.value)">
             <option value="gemini">🟡 Google Gemini</option>
             <option value="claude">🟣 Anthropic Claude</option>
           </select>
 
-          <!-- מפתח Gemini -->
           <div id="teacher-gemini-box" style="margin-top:12px">
             <label>מפתח Gemini API</label>
             <input type="password" id="teacher-gemini-key" placeholder="AIza..." autocomplete="off">
             <p class="provider-hint">מתקבל ב-aistudio.google.com — נשמר רק בדפדפן זה.</p>
           </div>
-
-          <!-- מפתח Claude -->
           <div id="teacher-claude-box" style="display:none;margin-top:12px">
             <label>מפתח Anthropic API</label>
             <input type="password" id="teacher-claude-key" placeholder="sk-ant-..." autocomplete="off">
             <p class="provider-hint">מתקבל ב-console.anthropic.com — נשמר רק בדפדפן זה.</p>
           </div>
 
-          <!-- מודל -->
           <label style="margin-top:16px">מודל AI</label>
           <select id="teacher-model-select" onchange="onTeacherModelChange(this.value)">
             <optgroup label="🟡 Google Gemini">
@@ -240,16 +241,37 @@
         </div>
       </section>
 
-      <!-- קוד כיתה -->
+      <!-- קישורי כיתה -->
       <section class="panel" id="tab-class-code">
-        <h1>קוד כיתה לתלמידים</h1>
-        <p class="sub">שתף את הקוד הזה עם התלמידים שלך — הם יכנסו לאתר ויראו פיצ'רים פעילים.</p>
-        <div class="card" style="text-align:center">
-          <div style="font-size:2.5rem;font-weight:900;letter-spacing:.2em;color:var(--primary);margin:12px 0" id="class-code-display">—</div>
-          <p class="sub">כתובת כניסה לתלמידים:</p>
-          <div style="background:#f0f4f8;border-radius:10px;padding:10px;font-size:.9rem;margin:8px 0;word-break:break-all" id="class-url-display"></div>
-          <button class="btn btn-ghost" onclick="copyCode()">📋 העתק קישור</button>
+        <h1>קישורי כיתה</h1>
+        <p class="sub">קישורים לשיתוף עם תלמידים ולניהול אישי.</p>
+
+        <!-- קישור ניהול למחנך -->
+        <div class="card">
+          <strong style="font-size:.95rem">🔗 קישור ניהול — למחנך בלבד</strong>
+          <p class="sub" style="margin-top:6px">שמור קישור זה לניהול ישיר של הכיתה שלך ללא כניסה מחודשת לכתובת הראשית.</p>
+          <div class="url-card" id="teacher-url-card">
+            <div class="url-label">כתובת פאנל המחנך</div>
+            <div class="url-value" id="teacher-manage-url">—</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-ghost" onclick="copyTeacherUrl()">📋 העתק קישור ניהול</button>
+          </div>
         </div>
+
+        <!-- קישור תלמידים -->
+        <div class="card">
+          <strong style="font-size:.95rem">🎓 קישור תלמידים</strong>
+          <p class="sub" style="margin-top:6px">שתף קישור זה עם תלמידיך — הם יכנסו לפורטל התלמיד של הכיתה.</p>
+          <div class="url-card">
+            <div class="url-label">כתובת כניסה לתלמידים</div>
+            <div class="url-value" id="class-url-display">—</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-ghost" onclick="copyStudentUrl()">📋 העתק קישור תלמידים</button>
+          </div>
+        </div>
+
         <div class="card">
           <strong>מצב גישה נוכחי</strong>
           <p class="sub" style="margin-top:6px" id="access-mode-text">טוען...</p>
@@ -261,10 +283,21 @@
 </div>
 
 <script>
+/* ===== URL class detection ===== */
+// Matches /teacher/class/<class_id>
+const _URL_CLASS = (function() {
+  var m = location.pathname.match(/^\/teacher\/class\/([^/]+)/);
+  return m ? decodeURIComponent(m[1]) : null;
+})();
+
 let currentUser = null;
 
-/* ===== localStorage keys per class_id ===== */
-function _cid() { return (currentUser && currentUser.class_id) || 'default'; }
+/* ===== Class ID resolution (URL > user record > 'default') ===== */
+function _cid() {
+  return _URL_CLASS || (currentUser && currentUser.class_id) || 'default';
+}
+
+/* ===== localStorage keys — namespaced per class_id ===== */
 function _ls(suffix) { return 'koors_t_' + suffix + '_' + _cid(); }
 
 /* ===== Provider / Model helpers ===== */
@@ -272,18 +305,18 @@ function detectProvider(model) {
   return (model || '').startsWith('claude') ? 'claude' : 'gemini';
 }
 
-const MODEL_LABELS = {
-  'gemini-3.6-flash':        '⚡ Gemini 3.6 Flash',
-  'gemini-2.5-pro':          '🧠 Gemini 2.5 Pro',
-  'gemini-2.0-flash':        '🔷 Gemini 2.0 Flash',
-  'claude-sonnet-4-6':       '✨ Claude Sonnet 4.6',
-  'claude-opus-4-7':         '💎 Claude Opus 4.7',
-  'claude-haiku-4-5-20251001': '🐦 Claude Haiku 4.5',
+var MODEL_LABELS = {
+  'gemini-3.6-flash':          '⚡ Gemini 3.6 Flash',
+  'gemini-2.5-pro':            '🧠 Gemini 2.5 Pro',
+  'gemini-2.0-flash':          '🔷 Gemini 2.0 Flash',
+  'claude-sonnet-4-6':         '✨ Claude Sonnet 4.6',
+  'claude-opus-4-7':           '💎 Claude Opus 4.7',
+  'claude-haiku-4-5-20251001': '🐦 Claude Haiku 4.5'
 };
 
 /* ===== Get / Save per-class config ===== */
 function getTeacherModel() {
-  const m = localStorage.getItem(_ls('model'));
+  var m = localStorage.getItem(_ls('model'));
   return (!m || m === 'gemini-2.5-flash') ? 'gemini-3.6-flash' : m;
 }
 function _saveModel(v) { localStorage.setItem(_ls('model'), v); }
@@ -295,43 +328,41 @@ function _saveKey(provider, key) { localStorage.setItem(_ls(provider), key); }
 
 /* ===== Config completeness check ===== */
 function hasValidConfig() {
-  const model    = getTeacherModel();
-  const provider = detectProvider(model);
+  var model    = getTeacherModel();
+  var provider = detectProvider(model);
   return !!getTeacherKey(provider);
 }
 
-/* ===== UI helpers ===== */
+/* ===== UI state helpers ===== */
 function _showBuildBanner(show) {
-  const el = document.getElementById('no-key-banner');
+  var el = document.getElementById('no-key-banner');
   if (el) el.style.display = show ? 'flex' : 'none';
 }
 
 function _updateNavDot() {
-  const navEl = document.getElementById('nav-ai-settings');
+  var navEl = document.getElementById('nav-ai-settings');
   if (!navEl) return;
-  if (hasValidConfig()) {
-    navEl.classList.remove('needs-setup');
-  } else {
-    navEl.classList.add('needs-setup');
-  }
+  if (hasValidConfig()) navEl.classList.remove('needs-setup');
+  else                  navEl.classList.add('needs-setup');
 }
 
 function _updateBuildBadge() {
-  const model = getTeacherModel();
-  const el    = document.getElementById('build-model-badge');
+  var model = getTeacherModel();
+  var el    = document.getElementById('build-model-badge');
   if (el) el.textContent = MODEL_LABELS[model] || model;
 }
 
 function _updateSettingsStatus() {
-  const ok  = hasValidConfig();
-  const el  = document.getElementById('settings-status-badge');
+  var ok = hasValidConfig();
+  var el = document.getElementById('settings-status');
   if (!el) return;
-  el.textContent  = ok ? '✅ מוגדר' : '⚠️ חסר הגדרה';
-  el.className    = 'settings-status ' + (ok ? 'ok' : 'missing');
+  el.textContent = ok ? '✅ מוגדר' : '⚠️ חסר הגדרה';
+  el.className   = 'settings-status ' + (ok ? 'ok' : 'missing');
 }
 
 function _updateAll() {
-  _showBuildBanner(!hasValidConfig());
+  var ok = hasValidConfig();
+  _showBuildBanner(!ok);
   _updateBuildBadge();
   _updateNavDot();
   _updateSettingsStatus();
@@ -341,60 +372,79 @@ function goToSettings() {
   document.querySelector('[data-tab="ai-settings"]').click();
 }
 
+/* ===== Login screen customisation ===== */
+function _initLoginScreen() {
+  if (!_URL_CLASS) return;
+  var pill = document.getElementById('login-class-pill');
+  pill.textContent = 'כיתה ' + _URL_CLASS;
+  pill.style.display = 'inline-block';
+  document.getElementById('login-sub').textContent = 'הזן את קוד הגישה שלך לניהול כיתה זו';
+}
+
 /* ===== Login ===== */
 function showError(msg) {
-  const el = document.getElementById('login-error');
+  var el = document.getElementById('login-error');
   el.textContent = msg;
   el.style.display = 'block';
 }
 
 async function login() {
-  const code = document.getElementById('code-input').value.trim().toUpperCase();
+  var code = document.getElementById('code-input').value.trim().toUpperCase();
   if (!code) { showError('הזן קוד גישה'); return; }
   try {
-    const r = await fetch('/api/auth/teacher', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({code})
+    var r = await fetch('/api/auth/teacher', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({code: code})
     });
-    const d = await r.json();
-    if (!r.ok) { showError(d.error?.message || 'קוד שגוי'); return; }
+    var d = await r.json();
+    if (!r.ok) { showError((d.error && d.error.message) || 'קוד שגוי'); return; }
     currentUser = d.user;
+    // If URL specifies a class, override the user record class_id
+    if (_URL_CLASS) currentUser.class_id = _URL_CLASS;
     enterApp();
-  } catch { showError('שגיאת חיבור'); }
+  } catch(e) { showError('שגיאת חיבור'); }
 }
 
 /* ===== Enter App ===== */
 function enterApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-screen').style.display   = 'block';
-  document.getElementById('teacher-name-badge').textContent =
-    currentUser.name + ' · ' + (currentUser.role === 'teacher' ? 'מחנך' : 'צוות');
 
-  loadClassCode();
+  var role = currentUser.role === 'teacher' ? 'מחנך' : 'צוות';
+  document.getElementById('teacher-name-badge').textContent = currentUser.name + ' · ' + role;
+
+  // Show class badge in topbar when class is known
+  var classId = _cid();
+  if (classId && classId !== 'default') {
+    var tb = document.getElementById('topbar-class-badge');
+    tb.textContent    = 'כיתה ' + classId;
+    tb.style.display  = 'inline-block';
+  }
+
   setupNav();
-  _loadSettingsUI();   // populate Settings tab from localStorage
-  _updateAll();        // badges, banner, nav dot
+  _loadSettingsUI();  // populate Settings form from localStorage
+  loadClassCode();
+  _updateAll();       // badges, banner, nav dot
 
-  // If no key configured for this class — go directly to Settings tab (no setTimeout needed)
+  // Redirect to Settings immediately if no key configured for this class
   if (!hasValidConfig()) {
     goToSettings();
   }
 }
 
-/* ===== Settings Tab Logic ===== */
+/* ===== Settings Tab ===== */
 function _loadSettingsUI() {
-  // Called once after login to populate the Settings form from localStorage
-  const model    = getTeacherModel();
-  const provider = detectProvider(model);
+  var model    = getTeacherModel();
+  var provider = detectProvider(model);
   document.getElementById('teacher-model-select').value    = model;
   document.getElementById('teacher-provider-select').value = provider;
   _showProviderBox(provider);
   document.getElementById('teacher-gemini-key').value = getTeacherKey('gemini');
   document.getElementById('teacher-claude-key').value  = getTeacherKey('claude');
 
-  // Class badge
-  const classLabel = currentUser.class_id ? 'כיתה ' + currentUser.class_id : 'ללא שיוך כיתה';
-  document.getElementById('settings-class-badge').textContent = classLabel;
+  var classId   = _cid();
+  var classLabel = (classId && classId !== 'default') ? 'כיתה ' + classId : 'ללא שיוך כיתה';
+  document.getElementById('settings-class-pill').textContent = classLabel;
 }
 
 function _showProviderBox(provider) {
@@ -404,33 +454,30 @@ function _showProviderBox(provider) {
 
 function onTeacherProviderChange(provider) {
   _showProviderBox(provider);
-  // Auto-switch model to a fitting default when provider changes
-  const currentModel = document.getElementById('teacher-model-select').value;
-  const currentProv  = detectProvider(currentModel);
-  if (currentProv !== provider) {
-    const newModel = provider === 'claude' ? 'claude-sonnet-4-6' : 'gemini-3.6-flash';
+  // Auto-switch model to matching default when provider changes
+  var curModel = document.getElementById('teacher-model-select').value;
+  if (detectProvider(curModel) !== provider) {
+    var newModel = provider === 'claude' ? 'claude-sonnet-4-6' : 'gemini-3.6-flash';
     document.getElementById('teacher-model-select').value = newModel;
   }
 }
 
 function onTeacherModelChange(v) {
-  // Sync provider UI when model dropdown changes
-  const provider = detectProvider(v);
+  var provider = detectProvider(v);
   document.getElementById('teacher-provider-select').value = provider;
   _showProviderBox(provider);
 }
 
 function saveTeacherSettings() {
-  const model    = document.getElementById('teacher-model-select').value;
-  const provider = detectProvider(model);
-  const inputId  = provider === 'claude' ? 'teacher-claude-key' : 'teacher-gemini-key';
-  const k        = document.getElementById(inputId).value.trim();
-
-  const msgEl = document.getElementById('teacher-settings-msg');
+  var model    = document.getElementById('teacher-model-select').value;
+  var provider = detectProvider(model);
+  var inputId  = provider === 'claude' ? 'teacher-claude-key' : 'teacher-gemini-key';
+  var k        = document.getElementById(inputId).value.trim();
+  var msgEl    = document.getElementById('teacher-settings-msg');
 
   if (!k) {
-    msgEl.textContent  = '❌ הזן מפתח ' + (provider === 'claude' ? 'Anthropic' : 'Gemini');
-    msgEl.style.color  = '#991b1b';
+    msgEl.textContent   = '❌ הזן מפתח ' + (provider === 'claude' ? 'Anthropic' : 'Gemini');
+    msgEl.style.color   = '#991b1b';
     msgEl.style.display = 'block';
     document.getElementById(inputId).focus();
     return;
@@ -440,39 +487,38 @@ function saveTeacherSettings() {
   _saveKey(provider, k);
   _updateAll();
 
-  msgEl.textContent  = '✅ הגדרות AI נשמרו בהצלחה';
-  msgEl.style.color  = '#166534';
+  msgEl.textContent   = '✅ הגדרות AI נשמרו בהצלחה';
+  msgEl.style.color   = '#166534';
   msgEl.style.display = 'block';
 
-  // Navigate to Build tab after short confirmation delay
-  setTimeout(() => {
+  setTimeout(function() {
     msgEl.style.display = 'none';
     document.querySelector('[data-tab="build"]').click();
   }, 1100);
 }
 
 function toggleTeacherKeyVis() {
-  ['teacher-gemini-key','teacher-claude-key'].forEach(id => {
-    const el = document.getElementById(id);
+  ['teacher-gemini-key', 'teacher-claude-key'].forEach(function(id) {
+    var el = document.getElementById(id);
     el.type = el.type === 'password' ? 'text' : 'password';
   });
 }
 
 /* ===== Navigation ===== */
 async function logout() {
-  await fetch('/api/auth/logout', {method:'POST'});
+  await fetch('/api/auth/logout', {method: 'POST'});
   location.reload();
 }
 
 function setupNav() {
-  document.querySelectorAll('.nav-item').forEach(el => {
-    el.onclick = () => {
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(function(el) {
+    el.onclick = function() {
+      document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+      document.querySelectorAll('.panel').forEach(function(p)   { p.classList.remove('active'); });
       el.classList.add('active');
       document.getElementById('tab-' + el.dataset.tab).classList.add('active');
       if (el.dataset.tab === 'my-features') loadMyFeatures();
-      if (el.dataset.tab === 'build') _updateAll();
+      if (el.dataset.tab === 'build')       _updateAll();
     };
   });
 }
@@ -484,13 +530,13 @@ function fillDesc(t) {
 }
 
 async function buildFeature() {
-  const desc = document.getElementById('feature-desc').value.trim();
+  var desc = document.getElementById('feature-desc').value.trim();
   if (!desc) return;
 
-  // Guard: check config before making any AI call
-  const model    = getTeacherModel();
-  const provider = detectProvider(model);
-  const key      = getTeacherKey(provider);
+  // Hard guard — no API call if no key
+  var model    = getTeacherModel();
+  var provider = detectProvider(model);
+  var key      = getTeacherKey(provider);
   if (!key) {
     _showBuildBanner(true);
     goToSettings();
@@ -500,32 +546,32 @@ async function buildFeature() {
   document.getElementById('ai-thinking').style.display = 'block';
   document.getElementById('build-result').innerHTML = '';
 
-  const protected_ = document.getElementById('feat-protected').checked;
-  const feat_code  = document.getElementById('feat-code').value.trim();
+  var protected_ = document.getElementById('feat-protected').checked;
+  var feat_code  = document.getElementById('feat-code').value.trim();
 
-  const body = {
+  var body = {
     description:  desc,
-    target_class: currentUser.class_id || '',
-    model,
+    target_class: _cid() !== 'default' ? _cid() : (currentUser.class_id || ''),
+    model:        model,
     access_level: protected_ ? 'protected' : 'public',
-    feature_code: protected_ ? feat_code : '',
+    feature_code: protected_ ? feat_code : ''
   };
-  if (provider === 'claude') { body.anthropic_key = key; }
-  else                       { body.gemini_key    = key; }
+  if (provider === 'claude') body.anthropic_key = key;
+  else                       body.gemini_key    = key;
 
   try {
-    const r = await fetch('/api/features', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
+    var r = await fetch('/api/features', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body)
     });
-    const d = await r.json();
+    var d = await r.json();
     document.getElementById('ai-thinking').style.display = 'none';
     if (!r.ok) {
       document.getElementById('build-result').innerHTML =
-        '<div class="card" style="color:#991b1b">שגיאה: ' + esc(d.error && d.error.message ? d.error.message : 'שגיאה לא ידועה') + '</div>';
+        '<div class="card" style="color:#991b1b">שגיאה: ' + esc((d.error && d.error.message) || 'שגיאה') + '</div>';
       return;
     }
-    const f = d.feature || d.raw || {};
+    var f = d.feature || d.raw || {};
     document.getElementById('build-result').innerHTML =
       '<div class="card" style="border:2px solid #34a853">' +
       '<div style="color:#166534;font-weight:700;margin-bottom:8px">✅ הפיצ\'ר נוצר ונשלח לאישור המנהל</div>' +
@@ -543,60 +589,79 @@ async function buildFeature() {
 
 /* ===== My Features ===== */
 async function loadMyFeatures() {
-  const el = document.getElementById('my-features-list');
+  var el = document.getElementById('my-features-list');
   el.innerHTML = '<div class="card" style="color:var(--muted)">טוען...</div>';
   try {
-    const statuses = ['pending','active','disabled'];
-    const all = [];
-    for (const s of statuses) {
-      const r = await fetch('/api/features?status=' + s);
-      const d = await r.json();
-      all.push(...(d.features || []).filter(f => f.creator_name === currentUser.name));
+    var statuses = ['pending', 'active', 'disabled'];
+    var all = [];
+    for (var i = 0; i < statuses.length; i++) {
+      var r = await fetch('/api/features?status=' + statuses[i]);
+      var d = await r.json();
+      var features = (d.features || []).filter(function(f) { return f.creator_name === currentUser.name; });
+      all = all.concat(features);
     }
     if (!all.length) {
       el.innerHTML = '<div class="card" style="color:var(--muted)">עדיין לא יצרת פיצרים.</div>';
       return;
     }
-    el.innerHTML = all.map(f =>
-      '<div class="feature-card">' +
-      '<div class="fc-title">' + esc(f.title) + ' <span class="badge badge-' + f.status + '">' + statusLabel(f.status) + '</span></div>' +
-      '<div class="fc-meta">' + esc(f.description) + ' · ' + esc(f.feature_type) + '</div>' +
-      '<div class="fc-meta" style="margin-top:4px">נוצר: ' + new Date(f.created_at).toLocaleDateString('he-IL') + '</div>' +
-      '</div>'
-    ).join('');
+    el.innerHTML = all.map(function(f) {
+      return '<div class="feature-card">' +
+        '<div class="fc-title">' + esc(f.title) + ' <span class="badge badge-' + f.status + '">' + statusLabel(f.status) + '</span></div>' +
+        '<div class="fc-meta">' + esc(f.description) + ' · ' + esc(f.feature_type) + '</div>' +
+        '<div class="fc-meta" style="margin-top:4px">נוצר: ' + new Date(f.created_at).toLocaleDateString('he-IL') + '</div>' +
+        '</div>';
+    }).join('');
   } catch(e) {
     el.innerHTML = '<div class="card" style="color:#991b1b">' + esc(e.message) + '</div>';
   }
 }
 
-/* ===== Class Code ===== */
+/* ===== Class Code / URLs ===== */
 async function loadClassCode() {
-  const classId = currentUser.class_id;
-  if (classId) {
-    document.getElementById('class-code-display').textContent = classId;
-    document.getElementById('class-url-display').textContent = location.origin + '/class/' + classId;
-  } else {
-    document.getElementById('class-code-display').textContent = '—';
-    document.getElementById('class-url-display').textContent  = 'לא משויך לכיתה';
-  }
+  var classId = _cid();
+  var studentUrl = (classId && classId !== 'default')
+    ? location.origin + '/class/' + classId
+    : 'לא משויך לכיתה';
+  var teacherUrl = (classId && classId !== 'default')
+    ? location.origin + '/teacher/class/' + classId
+    : 'לא משויך לכיתה';
+
+  document.getElementById('class-url-display').textContent   = studentUrl;
+  document.getElementById('teacher-manage-url').textContent  = teacherUrl;
+
   try {
-    const r = await fetch('/api/access-settings');
-    const d = await r.json();
-    const modes = {code:'קוד גישה אישי לכל משתמש', per_user:'קוד כיתה משותף', open:'גישה חופשית'};
-    document.getElementById('access-mode-text').textContent = modes[d.settings && d.settings.mode] || (d.settings && d.settings.mode) || '—';
-  } catch {}
+    var r = await fetch('/api/access-settings');
+    var d = await r.json();
+    var modes = {code: 'קוד גישה אישי לכל משתמש', per_user: 'קוד כיתה משותף', open: 'גישה חופשית'};
+    var mode = d.settings && d.settings.mode;
+    document.getElementById('access-mode-text').textContent = modes[mode] || mode || '—';
+  } catch(e) {}
 }
 
-function copyCode() {
-  const url = document.getElementById('class-url-display').textContent;
-  navigator.clipboard.writeText(url).then(() => alert('הקישור הועתק!'));
+function copyTeacherUrl() {
+  var url = document.getElementById('teacher-manage-url').textContent;
+  if (url && url !== 'לא משויך לכיתה') {
+    navigator.clipboard.writeText(url).then(function() { alert('קישור הניהול הועתק!'); });
+  }
+}
+
+function copyStudentUrl() {
+  var url = document.getElementById('class-url-display').textContent;
+  if (url && url !== 'לא משויך לכיתה') {
+    navigator.clipboard.writeText(url).then(function() { alert('קישור התלמידים הועתק!'); });
+  }
 }
 
 /* ===== Utils ===== */
-function statusLabel(s) { return {pending:'ממתין לאישור', active:'פעיל', disabled:'מושבת'}[s] || s; }
+function statusLabel(s) {
+  return {pending: 'ממתין לאישור', active: 'פעיל', disabled: 'מושבת'}[s] || s;
+}
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+/* ===== Boot ===== */
+_initLoginScreen();
 </script>
 </body>
 </html>

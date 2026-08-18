@@ -574,6 +574,11 @@ def teacher_page():
     return send_from_directory(STATIC, "teacher.html")
 
 
+@app.route("/teacher/class/<class_id>")
+def teacher_class_page(class_id):
+    return send_from_directory(STATIC, "teacher.html")
+
+
 @app.route("/class/<code>")
 def class_page(code):
     return send_from_directory(STATIC, "student.html")
