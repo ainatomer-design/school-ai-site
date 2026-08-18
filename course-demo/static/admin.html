@@ -344,7 +344,10 @@ let state = {
 let history = [];
 let pending = null;
 
-function uid() { return crypto.randomUUID ? crypto.randomUUID() : String(Date.now()); }
+function uid() {
+  // Short, URL-friendly ID: timestamp (base-36) + 3 random chars → e.g. "m1a2b3c"
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+}
 function toast(m) {
   const t = document.getElementById('toast');
   t.textContent = m; t.classList.add('show');
@@ -409,15 +412,25 @@ async function health() {
 }
 
 function _normalizeClasses() {
-  (state.classes || []).forEach(c => { if (!c.id) c.id = uid(); });
+  let fixed = false;
+  (state.classes || []).forEach(c => { if (!c.id) { c.id = uid(); fixed = true; } });
+  return fixed;
 }
 
 async function loadState() {
   const r = await fetch('/api/state');
   const d = await r.json();
   if (d.state) state = Object.assign(state, d.state);
-  _normalizeClasses();
+  const fixed = _normalizeClasses();
   fillForm();
+  if (fixed) {
+    // Persist the generated IDs silently — without this, every reload gives new IDs and links break
+    fetch('/api/state', {
+      method: 'PUT', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({state})
+    }).catch(() => {});
+    toast('🔧 מזהי כיתות תוקנו ונשמרו אוטומטית');
+  }
 }
 
 function fillForm() {
@@ -519,7 +532,12 @@ function renderLinks() {
       <button class="btn btn-ghost" onclick="state.links.splice(${i},1);renderLinks()">🗑️</button>
     </div>`).join('');
 }
-function addClass() { state.classes.push({ id: uid(), name: "כיתה חדשה", teacher: "", room: "", subjects: [] }); renderClasses(); }
+function addClass() {
+  const newCls = { id: uid(), name: 'כיתה חדשה', teacher: '', room: '', subjects: [], features: [] };
+  state.classes.push(newCls);
+  renderClasses();
+  saveAll();  // persist the new class ID to Supabase immediately — links are stable from creation
+}
 function addLink() { state.links.push({ id: uid(), icon: "🔗", text: "כפתור", url: "#", color: "#1a73e8" }); renderLinks(); }
 function renderStaff() {
   document.getElementById('staff-list').innerHTML = (state.staff || []).map((s,i) => `
