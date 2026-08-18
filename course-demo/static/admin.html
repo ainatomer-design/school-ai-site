@@ -102,22 +102,34 @@
     <main>
       <section class="panel active" id="tab-keys">
         <h1>הזנת מפתחות</h1>
-        <p class="sub">בלי המפתחות האפליקציה לא עובדת — זה חלק מההגשה.</p>
+        <p class="sub">בחר ספק AI, הזן את המפתח המתאים — נשמר בדפדפן בלבד (localStorage).</p>
         <div class="card">
           <div id="sb-box"></div>
-          <label>מפתח Gemini API</label>
-          <input type="password" id="gemini-key" placeholder="AIza...">
-          <p class="sub" style="margin:8px 0 0">מתקבל ב־Google AI Studio. נשמר רק בדפדפן הזה (localStorage), לא בקוד.</p>
+          <label>ספק AI</label>
+          <select id="ai-provider-select" onchange="onProviderChange(this.value)" style="margin-bottom:14px">
+            <option value="gemini">🟡 Google Gemini</option>
+            <option value="claude">🟣 Anthropic Claude</option>
+          </select>
+          <div id="gemini-key-box">
+            <label>מפתח Gemini API</label>
+            <input type="password" id="gemini-key" placeholder="AIza...">
+            <p class="sub" style="margin:6px 0 0">מתקבל ב-Google AI Studio (aistudio.google.com).</p>
+          </div>
+          <div id="claude-key-box" style="display:none">
+            <label>מפתח Anthropic API</label>
+            <input type="password" id="claude-key" placeholder="sk-ant-...">
+            <p class="sub" style="margin:6px 0 0">מתקבל ב-console.anthropic.com.</p>
+          </div>
           <div class="btn-row">
             <button class="btn btn-primary" onclick="saveKey()">💾 שמור מפתח</button>
-            <button class="btn btn-ghost" onclick="document.getElementById('gemini-key').type = document.getElementById('gemini-key').type==='password'?'text':'password'">👁️ הצג/הסתר</button>
+            <button class="btn btn-ghost" onclick="toggleKeyVis()">👁️ הצג/הסתר</button>
           </div>
         </div>
         <div class="card">
-          <strong>מה חייב להיות ב-Railway Variables</strong>
+          <strong>Railway Variables הנדרשים</strong>
           <p class="sub" style="margin-top:8px">
             <code>SUPABASE_URL</code> · <code>SUPABASE_SERVICE_ROLE_KEY</code><br>
-            אופציונלי: <code>GEMINI_API_KEY</code> (אם לא מזינים כאן)
+            אופציונלי: <code>GEMINI_API_KEY</code> · <code>ANTHROPIC_API_KEY</code>
           </p>
         </div>
       </section>
@@ -127,12 +139,18 @@
         <p class="sub">דברו בעברית. אפשר לבקש לשנות שם, צבע, הודעה, כיתה או כפתור — ואז להחיל לאתר.</p>
         <div class="hint" id="ai-hint" style="display:none">קודם הזינו מפתח Gemini בלשונית מפתחות.</div>
         <div class="card" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 18px;margin-bottom:10px">
-          <span style="font-weight:700;font-size:.88rem">מודל Gemini:</span>
-          <select id="ai-model-select" onchange="saveModel(this.value)" style="width:auto;min-width:220px">
-            <option value="gemini-3.6-flash">⚡ Gemini 3.6 Flash — מהיר וחסכוני (מומלץ)</option>
-            <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro — מתקדם ומדויק</option>
-            <option value="gemini-2.0-flash">🔷 Gemini 2.0 Flash — גרסה קודמת</option>
-            <option value="gemini-1.5-flash">🔹 Gemini 1.5 Flash — דור קודם</option>
+          <span style="font-weight:700;font-size:.88rem">מודל AI:</span>
+          <select id="ai-model-select" onchange="onModelChange(this.value)" style="width:auto;min-width:260px">
+            <optgroup label="🟡 Google Gemini">
+              <option value="gemini-3.6-flash">⚡ Gemini 3.6 Flash — מהיר (מומלץ)</option>
+              <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro — מדויק</option>
+              <option value="gemini-2.0-flash">🔷 Gemini 2.0 Flash</option>
+            </optgroup>
+            <optgroup label="🟣 Anthropic Claude">
+              <option value="claude-sonnet-4-6">✨ Claude Sonnet 4.6 — מהיר ומדויק</option>
+              <option value="claude-opus-4-7">💎 Claude Opus 4.7 — הכי חזק</option>
+              <option value="claude-haiku-4-5-20251001">🐦 Claude Haiku 4.5 — הכי מהיר</option>
+            </optgroup>
           </select>
           <span style="font-size:.78rem;color:var(--muted)" id="model-save-hint">נשמר בדפדפן</span>
         </div>
@@ -295,15 +313,24 @@
   <div class="toast" id="toast"></div>
 
 <script>
-const KEY_LS = 'koors_course_gemini';
-const MODEL_LS = 'koors_course_model';
+const GEMINI_KEY_LS  = 'koors_admin_gemini';
+const CLAUDE_KEY_LS  = 'koors_admin_claude';
+const MODEL_LS       = 'koors_course_model';
+
+function detectProvider(model) {
+  return (model || '').startsWith('claude') ? 'claude' : 'gemini';
+}
 function getModel() {
   const m = localStorage.getItem(MODEL_LS);
   if (!m || m === 'gemini-2.5-flash') { localStorage.setItem(MODEL_LS, 'gemini-3.6-flash'); return 'gemini-3.6-flash'; }
   return m;
 }
-function saveModel(v) {
+function onModelChange(v) {
   localStorage.setItem(MODEL_LS, v);
+  const provider = detectProvider(v);
+  document.getElementById('ai-provider-select').value = provider;
+  _showProviderBox(provider);
+  updateKeyHint();
   const hint = document.getElementById('model-save-hint');
   hint.textContent = 'נשמר ✓';
   setTimeout(() => { hint.textContent = 'נשמר בדפדפן'; }, 1500);
@@ -323,17 +350,44 @@ function toast(m) {
   t.textContent = m; t.classList.add('show');
   clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2800);
 }
-function getKey() { return (localStorage.getItem(KEY_LS) || document.getElementById('gemini-key').value || '').trim(); }
+function _showProviderBox(provider) {
+  document.getElementById('gemini-key-box').style.display = provider === 'gemini' ? 'block' : 'none';
+  document.getElementById('claude-key-box').style.display  = provider === 'claude'  ? 'block' : 'none';
+}
+function onProviderChange(provider) {
+  _showProviderBox(provider);
+  updateKeyHint();
+}
+function toggleKeyVis() {
+  ['gemini-key','claude-key'].forEach(id => {
+    const el = document.getElementById(id);
+    el.type = el.type === 'password' ? 'text' : 'password';
+  });
+}
+function getKeyForProvider(provider) {
+  const lsKey = provider === 'claude' ? CLAUDE_KEY_LS : GEMINI_KEY_LS;
+  const inputId = provider === 'claude' ? 'claude-key' : 'gemini-key';
+  return (localStorage.getItem(lsKey) || (document.getElementById(inputId)||{}).value || '').trim();
+}
+function getKey() { return getKeyForProvider(detectProvider(getModel())); }
 function saveKey() {
-  const k = document.getElementById('gemini-key').value.trim();
-  if (!k) { toast('הזינו מפתח Gemini'); return; }
-  localStorage.setItem(KEY_LS, k);
-  toast('מפתח Gemini נשמר בדפדפן');
+  const provider = document.getElementById('ai-provider-select').value;
+  const inputId  = provider === 'claude' ? 'claude-key' : 'gemini-key';
+  const lsKey    = provider === 'claude' ? CLAUDE_KEY_LS : GEMINI_KEY_LS;
+  const k = document.getElementById(inputId).value.trim();
+  if (!k) { toast('הזינו מפתח ' + (provider === 'claude' ? 'Anthropic' : 'Gemini')); return; }
+  localStorage.setItem(lsKey, k);
+  toast('מפתח ' + (provider === 'claude' ? 'Claude' : 'Gemini') + ' נשמר בדפדפן ✅');
   updateKeyHint();
 }
 function updateKeyHint() {
-  const has = !!getKey();
-  document.getElementById('ai-hint').style.display = has ? 'none' : 'block';
+  const provider = detectProvider(getModel());
+  const has = !!getKeyForProvider(provider);
+  const hint = document.getElementById('ai-hint');
+  hint.style.display = has ? 'none' : 'block';
+  hint.textContent = provider === 'claude'
+    ? 'קודם הזינו מפתח Anthropic בלשונית מפתחות.'
+    : 'קודם הזינו מפתח Gemini בלשונית מפתחות.';
 }
 
 async function health() {
@@ -380,13 +434,42 @@ function readForm() {
   state.announcement.text = document.getElementById('ann-text').value;
   state.announcement.active = document.getElementById('ann-on').checked;
 }
+const _AI_MODEL_OPTS = [
+  {v:'gemini-3.6-flash', l:'⚡ Gemini 3.6 Flash'},
+  {v:'gemini-2.5-pro',   l:'🧠 Gemini 2.5 Pro'},
+  {v:'claude-sonnet-4-6',       l:'✨ Claude Sonnet 4.6'},
+  {v:'claude-opus-4-7',         l:'💎 Claude Opus 4.7'},
+  {v:'claude-haiku-4-5-20251001',l:'🐦 Claude Haiku 4.5'},
+];
+function _aiOpts(current) {
+  return _AI_MODEL_OPTS.map(o =>
+    `<option value="${o.v}"${o.v===current?' selected':''}>${o.l}</option>`
+  ).join('');
+}
+function setClassTeacherModel(i, model) {
+  if (!state.classes[i].teacher_ai) state.classes[i].teacher_ai = {};
+  state.classes[i].teacher_ai.model = model;
+}
 function renderClasses() {
   document.getElementById('class-list').innerHTML = (state.classes || []).map((c,i) => `
-    <div class="cls-item">
-      <input value="${esc(c.name)}" oninput="state.classes[${i}].name=this.value" placeholder="שם כיתה">
-      <input value="${esc(c.teacher||'')}" oninput="state.classes[${i}].teacher=this.value" placeholder="מורה">
-      <input value="${esc(c.room||'')}" oninput="state.classes[${i}].room=this.value" placeholder="חדר">
-      <button class="btn btn-ghost" onclick="state.classes.splice(${i},1);renderClasses()">🗑️</button>
+    <div style="border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px">
+      <div class="cls-item" style="margin-bottom:0">
+        <input value="${esc(c.name)}" oninput="state.classes[${i}].name=this.value" placeholder="שם כיתה">
+        <input value="${esc(c.teacher||'')}" oninput="state.classes[${i}].teacher=this.value" placeholder="מורה">
+        <input value="${esc(c.room||'')}" oninput="state.classes[${i}].room=this.value" placeholder="חדר">
+        <button class="btn btn-ghost" onclick="state.classes.splice(${i},1);renderClasses()">🗑️</button>
+      </div>
+      <details style="margin-top:8px">
+        <summary style="cursor:pointer;font-size:.78rem;font-weight:700;color:var(--muted);user-select:none;padding:2px 0">⚙️ הגדרות AI למחנך הכיתה</summary>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px;background:#f8fafc;border-radius:8px;margin-top:4px">
+          <span style="font-size:.78rem;font-weight:700;color:var(--muted)">מודל מועדף:</span>
+          <select style="width:auto;min-width:200px;font-size:.82rem;padding:5px 8px"
+            onchange="setClassTeacherModel(${i},this.value)">
+            ${_aiOpts(c.teacher_ai && c.teacher_ai.model ? c.teacher_ai.model : 'gemini-3.6-flash')}
+          </select>
+          <span style="font-size:.72rem;color:var(--muted)">נשמר עם הכיתה ב-Supabase</span>
+        </div>
+      </details>
     </div>`).join('');
 }
 function renderLinks() {
@@ -486,7 +569,10 @@ async function sendAI() {
   const input = document.getElementById('chat-input');
   const msg = input.value.trim();
   if (!msg) return;
-  if (!getKey()) { toast('הזינו מפתח Gemini'); return; }
+  const model    = getModel();
+  const provider = detectProvider(model);
+  const key      = getKeyForProvider(provider);
+  if (!key) { toast('הזינו מפתח ' + (provider === 'claude' ? 'Anthropic' : 'Gemini') + ' בלשונית מפתחות'); return; }
   input.value = '';
   addMsg('user', esc(msg));
   history.push({ role: 'user', content: msg });
@@ -495,11 +581,15 @@ async function sendAI() {
   think.className = 'msg'; think.innerHTML = '<div class="bubble">מעבד...</div>';
   document.getElementById('chat').appendChild(think);
 
+  const body = { messages: history, system: systemPrompt(), model, max_tokens: 1024 };
+  if (provider === 'claude') { body.anthropic_key = key; }
+  else { body.gemini_key = key; }
+
   try {
     const r = await fetch('/api/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Gemini-Key': getKey() },
-      body: JSON.stringify({ messages: history, system: systemPrompt(), gemini_key: getKey(), model: getModel(), max_tokens: 1024 })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
     });
     const d = await r.json();
     think.remove();
@@ -697,8 +787,14 @@ document.querySelectorAll('.nav-item').forEach(el => {
   };
 });
 
-document.getElementById('gemini-key').value = localStorage.getItem(KEY_LS) || '';
-document.getElementById('ai-model-select').value = getModel();
+// שחזור ערכים שמורים
+document.getElementById('gemini-key').value = localStorage.getItem(GEMINI_KEY_LS) || '';
+document.getElementById('claude-key').value  = localStorage.getItem(CLAUDE_KEY_LS)  || '';
+const _initModel = getModel();
+document.getElementById('ai-model-select').value = _initModel;
+const _initProvider = detectProvider(_initModel);
+document.getElementById('ai-provider-select').value = _initProvider;
+_showProviderBox(_initProvider);
 updateKeyHint();
 health();
 loadState();

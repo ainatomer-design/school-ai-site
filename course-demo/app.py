@@ -34,13 +34,20 @@ from flask_cors import CORS
 from google import genai
 from google.genai import types
 
+try:
+    import anthropic as _anthropic
+    _ANTHROPIC_OK = True
+except ImportError:
+    _ANTHROPIC_OK = False
+
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / ".env")
 load_dotenv(ROOT.parent / ".env")
 STATIC = ROOT / "static"
 SCHOOL_ID = "default"
 DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
-APP_VERSION = "2.0-gemini-3.6"
+DEFAULT_CLAUDE_MODEL = "claude-sonnet-4-6"
+APP_VERSION = "2.1-multi-provider"
 
 app = Flask(__name__, static_folder=str(STATIC), static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY", "koors-school-secret-2025")
@@ -184,6 +191,18 @@ def gemini_key_from_request(data: dict) -> str:
     return body_key or header_key or _env("GEMINI_API_KEY")
 
 
+def _detect_provider(model: str) -> str:
+    return "claude" if (model or "").startswith("claude") else "gemini"
+
+
+def _get_api_key(data: dict, provider: str) -> str:
+    if provider == "claude":
+        header = (request.headers.get("X-Anthropic-Key") or "").strip()
+        body = (data.get("anthropic_key") or "").strip()
+        return body or header or _env("ANTHROPIC_API_KEY")
+    return gemini_key_from_request(data)
+
+
 def _gemini_role(role: str) -> str:
     return "model" if role == "assistant" else "user"
 
@@ -198,6 +217,40 @@ def _build_contents(messages: list) -> list:
             types.Content(role=_gemini_role(msg.get("role", "user")), parts=[types.Part(text=text)])
         )
     return contents
+
+
+def _call_ai(messages: list, system: str, model: str, api_key: str, max_tokens: int = 1024) -> str:
+    provider = _detect_provider(model)
+    if provider == "claude":
+        if not _ANTHROPIC_OK:
+            raise RuntimeError("חבילת anthropic לא מותקנת בשרת — הוסף 'anthropic' ל-requirements.txt")
+        client = _anthropic.Anthropic(api_key=api_key)
+        msgs = [
+            {
+                "role": "assistant" if m.get("role") == "assistant" else "user",
+                "content": (m.get("content") or "").strip(),
+            }
+            for m in messages
+            if (m.get("content") or "").strip()
+        ]
+        resp = client.messages.create(
+            model=model,
+            max_tokens=max_tokens,
+            system=system or "",
+            messages=msgs,
+        )
+        return resp.content[0].text if resp.content else ""
+    else:
+        client = genai.Client(api_key=api_key)
+        cfg = types.GenerateContentConfig(max_output_tokens=max_tokens)
+        if system:
+            cfg.system_instruction = system
+        resp = client.models.generate_content(
+            model=model,
+            contents=_build_contents(messages),
+            config=cfg,
+        )
+        return resp.text or ""
 
 
 _SITE_PROTECT_PAGE = """<!DOCTYPE html>
@@ -428,26 +481,19 @@ def chat():
     if not messages:
         return jsonify({"error": {"message": "messages are required"}}), 400
 
-    api_key = gemini_key_from_request(data)
+    model = (data.get("model") or "").strip() or DEFAULT_MODEL
+    provider = _detect_provider(model)
+    api_key = _get_api_key(data, provider)
     if not api_key:
-        return jsonify({"error": {"message": "חסר מפתח Gemini. הזן אותו בלשונית מפתחות."}}), 400
+        pname = "Anthropic" if provider == "claude" else "Gemini"
+        return jsonify({"error": {"message": f"חסר מפתח {pname}. הזן אותו בלשונית מפתחות."}}), 400
 
-    model = data.get("model") or DEFAULT_MODEL
     system = data.get("system") or ""
     max_tokens = int(data.get("max_tokens") or 1024)
     user_text = next((m.get("content") for m in reversed(messages) if m.get("role") == "user"), "")
 
     try:
-        client = genai.Client(api_key=api_key)
-        config = types.GenerateContentConfig(max_output_tokens=max_tokens)
-        if system:
-            config.system_instruction = system
-        response = client.models.generate_content(
-            model=model,
-            contents=_build_contents(messages),
-            config=config,
-        )
-        text = response.text or ""
+        text = _call_ai(messages, system, model, api_key, max_tokens)
         change_type = "text"
         if '"type": "state"' in text or '"type":"state"' in text:
             change_type = "state"
@@ -616,27 +662,23 @@ def create_feature():
     if not description:
         return jsonify({"error": {"message": "תיאור הפיצ'ר חסר"}}), 400
 
-    api_key = gemini_key_from_request(data)
+    model = (data.get("model") or "").strip() or DEFAULT_MODEL
+    provider = _detect_provider(model)
+    api_key = _get_api_key(data, provider)
     if not api_key:
-        return jsonify({"error": {"message": "חסר מפתח Gemini"}}), 400
+        pname = "Anthropic" if provider == "claude" else "Gemini"
+        return jsonify({"error": {"message": f"חסר מפתח {pname}"}}), 400
 
     creator = session.get("teacher") or {"name": "מנהל"}
     class_name = target_class or "הכיתה"
 
-    req_model = (data.get("model") or "").strip() or DEFAULT_MODEL
     try:
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model=req_model,
-            contents=description,
-            config=types.GenerateContentConfig(
-                max_output_tokens=2048,
-                system_instruction=_feature_system_prompt(class_name),
-            ),
-        )
-        raw = response.text or ""
-        m = raw.replace("```json", "").replace("```", "").strip()
-        parsed = json.loads(m)
+        messages = [{"role": "user", "content": description}]
+        raw = _call_ai(messages, _feature_system_prompt(class_name), model, api_key, 2048)
+        cleaned = raw.replace("```json", "").replace("```", "").strip()
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError as exc:
+        return jsonify({"error": {"message": f"AI החזיר JSON לא תקין: {exc}"}}), 500
     except Exception as exc:
         return jsonify({"error": {"message": f"שגיאת AI: {exc}"}}), 500
 
