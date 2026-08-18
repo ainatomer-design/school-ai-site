@@ -164,33 +164,42 @@ async function enterClass(code, isFromUrl) {
 function showClassScreen(studentName) {
   document.getElementById('code-screen').style.display = 'none';
   document.getElementById('class-screen').style.display = 'block';
-  // טוען שם כיתה מה-state
-  fetch('/api/state').then(r => r.json()).then(d => {
-    const cls = (d.state?.classes || []).find(c => c.id === classId);
-    const label = cls
-      ? cls.name + (studentName ? ' · ' + studentName : '')
-      : (studentName ? classId + ' · ' + studentName : classId);
-    document.getElementById('class-label').textContent = label;
-  }).catch(() => {
-    document.getElementById('class-label').textContent = studentName ? classId + ' · ' + studentName : classId;
-  });
+  fetch('/api/state')
+    .then(r => r.json())
+    .then(d => {
+      const cls = (d.state && d.state.classes ? d.state.classes : []).find(c => c.id === classId);
+      let label;
+      if (cls) {
+        label = cls.name + (studentName ? ' · ' + studentName : '');
+      } else {
+        label = studentName ? classId + ' · ' + studentName : classId;
+      }
+      document.getElementById('class-label').textContent = label;
+    })
+    .catch(() => {
+      document.getElementById('class-label').textContent =
+        studentName ? classId + ' · ' + studentName : classId;
+    });
   loadFeatures();
 }
 
 async function loadFeatures() {
   const el = document.getElementById('features-container');
+  el.innerHTML = '<div class="card" style="color:var(--muted)">טוען...</div>';
   try {
-    const r = await fetch(`/api/features?status=active&class=${encodeURIComponent(classId)}`);
+    const r = await fetch('/api/features?status=active&class=' + encodeURIComponent(classId));
     const d = await r.json();
-    const features = d.features || [];
-    if (!features.length) {
-      el.innerHTML = '<div class="empty">📭 אין פיצ'רים פעילים בכיתה זו כרגע.</div>';
+    const features = Array.isArray(d.features) ? d.features : [];
+    if (features.length === 0) {
+      el.innerHTML = '<div class="empty">📭 אין פיצרים פעילים בכיתה זו כרגע.</div>';
       return;
     }
-    el.innerHTML = features.map((f, i) => renderFeature(f, i)).join('');
+    el.innerHTML = features.map(function(f, i) { return renderFeature(f, i); }).join('');
     attachQuizHandlers();
     attachFormHandlers();
-  } catch(e) { el.innerHTML = `<div class="card" style="color:#991b1b">שגיאה: ${esc(e.message)}</div>`; }
+  } catch (e) {
+    el.innerHTML = '<div class="card" style="color:#991b1b">שגיאה: ' + esc(e.message) + '</div>';
+  }
 }
 
 const _unlocked = new Set();
