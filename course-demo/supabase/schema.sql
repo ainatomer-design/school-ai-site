@@ -59,6 +59,21 @@ begin
   end if;
 end $$;
 
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'school_state'
+      and policyname = 'service role write school_state'
+  ) then
+    create policy "service role write school_state"
+      on school_state for all
+      using (true)
+      with check (true);
+  end if;
+end $$;
+
 -- ===== מערכת משתמשים, פיצ'רים והגדרות גישה =====
 
 create table if not exists users (

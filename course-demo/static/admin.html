@@ -414,11 +414,21 @@ function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'
 
 async function saveAll() {
   readForm();
-  const r = await fetch('/api/state', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state }) });
-  const d = await r.json();
-  if (!r.ok) { toast(d.error?.message || 'שגיאת שמירה'); return; }
-  toast('נשמר ב-Supabase');
-  document.getElementById('preview').src = '/';
+  try {
+    const r = await fetch('/api/state', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state }) });
+    const d = await r.json();
+    if (!r.ok) {
+      const msg = d.error?.message || d.message || ('שגיאה ' + r.status);
+      toast('❌ שגיאת שמירה: ' + msg);
+      return false;
+    }
+    toast('✅ נשמר ב-Supabase');
+    document.getElementById('preview').src = '/';
+    return true;
+  } catch (e) {
+    toast('❌ שגיאת רשת: ' + e.message);
+    return false;
+  }
 }
 
 function suggest(t) { document.getElementById('chat-input').value = t; document.getElementById('chat-input').focus(); }
@@ -442,13 +452,17 @@ async function applyPending() {
   if (!pending) { toast('אין שינויים ממתינים'); return; }
   deepMerge(state, pending.changes);
   fillForm();
-  await saveAll();
-  await fetch('/api/logs/applied', {
+  const ok = await saveAll();
+  if (!ok) {
+    addMsg('bot', '❌ השינויים לא נשמרו — בדוק שה-Supabase מחובר (לשונית מפתחות) ונסה שנית.');
+    return;
+  }
+  fetch('/api/logs/applied', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user_message: pending.userMsg, assistant_message: pending.raw })
-  });
+  }).catch(() => {});
   pending = null;
-  addMsg('bot', 'השינויים הוחלו ונשמרו ב-Supabase. רעננו את תצוגת האתר.');
+  addMsg('bot', '✅ השינויים הוחלו ונשמרו ב-Supabase בהצלחה.');
 }
 
 function systemPrompt() {
