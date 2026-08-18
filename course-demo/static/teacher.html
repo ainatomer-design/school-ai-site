@@ -173,7 +173,11 @@
 let currentUser = null;
 let geminiKey = localStorage.getItem('koors_teacher_gemini') || '';
 const TEACHER_MODEL_LS = 'koors_teacher_model';
-function getTeacherModel() { return localStorage.getItem(TEACHER_MODEL_LS) || 'gemini-3.6-flash'; }
+function getTeacherModel() {
+  const m = localStorage.getItem(TEACHER_MODEL_LS);
+  if (!m || m === 'gemini-2.5-flash') { localStorage.setItem(TEACHER_MODEL_LS, 'gemini-3.6-flash'); return 'gemini-3.6-flash'; }
+  return m;
+}
 function saveTeacherModel(v) { localStorage.setItem(TEACHER_MODEL_LS, v); }
 
 function showError(msg) {

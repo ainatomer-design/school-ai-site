@@ -297,7 +297,11 @@
 <script>
 const KEY_LS = 'koors_course_gemini';
 const MODEL_LS = 'koors_course_model';
-function getModel() { return localStorage.getItem(MODEL_LS) || 'gemini-3.6-flash'; }
+function getModel() {
+  const m = localStorage.getItem(MODEL_LS);
+  if (!m || m === 'gemini-2.5-flash') { localStorage.setItem(MODEL_LS, 'gemini-3.6-flash'); return 'gemini-3.6-flash'; }
+  return m;
+}
 function saveModel(v) {
   localStorage.setItem(MODEL_LS, v);
   const hint = document.getElementById('model-save-hint');
