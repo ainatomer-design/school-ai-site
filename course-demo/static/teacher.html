@@ -30,10 +30,12 @@
     .badge-name { background: #1e40af; color: #bfdbfe; padding: 4px 12px; border-radius: 999px; font-size: .8rem; font-weight: 700; }
     .btn-logout { background: #ef4444; color: #fff; padding: 5px 12px; border-radius: 8px; font-weight: 700; border: 0; cursor: pointer; font-family: inherit; font-size: .85rem; }
 
-    .layout { display: grid; grid-template-columns: 200px 1fr; min-height: calc(100vh - 58px); }
+    .layout { display: grid; grid-template-columns: 210px 1fr; min-height: calc(100vh - 58px); }
     nav { background: #fff; border-left: 1px solid var(--border); padding: 12px 0; }
-    .nav-item { display: flex; gap: 8px; padding: 10px 16px; cursor: pointer; color: var(--muted); font-size: .9rem; border-right: 3px solid transparent; }
+    .nav-item { display: flex; gap: 8px; padding: 10px 16px; cursor: pointer; color: var(--muted); font-size: .9rem; border-right: 3px solid transparent; align-items: center; }
     .nav-item.active { background: #e8f0fe; color: var(--primary); font-weight: 700; border-right-color: var(--primary); }
+    .nav-item .nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); margin-right: auto; display: none; }
+    .nav-item.needs-setup .nav-dot { display: block; }
     main { padding: 24px; }
     .panel { display: none; } .panel.active { display: block; }
     h1 { font-size: 1.3rem; margin-bottom: 6px; }
@@ -58,8 +60,24 @@
     .badge-disabled { background: #fee2e2; color: #991b1b; }
 
     .pending-notice { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 14px; margin-bottom: 14px; font-size: .85rem; color: #9a3412; }
+    .no-key-banner { background: #fff7ed; border: 2px solid #f97316; border-radius: 14px; padding: 16px 18px; margin-bottom: 18px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .no-key-banner .nkb-icon { font-size: 1.8rem; flex-shrink: 0; }
+    .no-key-banner .nkb-text { flex: 1; min-width: 160px; }
+    .no-key-banner .nkb-text strong { color: #9a3412; display: block; margin-bottom: 3px; }
+    .no-key-banner .nkb-text span { color: #9a3412; font-size: .83rem; }
 
     .ai-thinking { color: var(--muted); font-style: italic; font-size: .85rem; margin-top: 8px; display: none; }
+
+    /* Settings tab styles */
+    .settings-class-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 8px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+    .settings-class-badge { background: #e8f0fe; color: var(--primary); font-size: .8rem; padding: 5px 14px; border-radius: 999px; font-weight: 700; }
+    .settings-status { font-size: .78rem; padding: 4px 10px; border-radius: 999px; font-weight: 700; }
+    .settings-status.ok { background: #dcfce7; color: #166534; }
+    .settings-status.missing { background: #fee2e2; color: #991b1b; }
+    .key-input-wrap { position: relative; }
+    .key-input-wrap input { padding-left: 40px; }
+    .provider-hint { font-size: .78rem; color: var(--muted); margin-top: 5px; }
+    .provider-hint a { color: var(--primary); }
 
     @media (max-width: 700px) {
       .layout { grid-template-columns: 1fr; }
@@ -77,7 +95,9 @@
     <h1>כניסת מחנך</h1>
     <p class="sub">הזן את קוד הגישה שקיבלת מהמנהל</p>
     <div class="error-msg" id="login-error"></div>
-    <input type="text" id="code-input" placeholder="קוד גישה (לדוגמה: AB12CD34)" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter') login()">
+    <input type="text" id="code-input" placeholder="קוד גישה (לדוגמה: AB12CD34)"
+      oninput="this.value=this.value.toUpperCase()"
+      onkeydown="if(event.key==='Enter') login()">
     <button onclick="login()" style="margin-top:8px">כניסה &rarr;</button>
   </div>
 </div>
@@ -93,9 +113,12 @@
   </header>
   <div class="layout">
     <nav>
-      <div class="nav-item active" data-tab="build">🤖 בנה פיצ'ר עם AI</div>
+      <div class="nav-item active" data-tab="build">🤖 בנה פיצ'ר</div>
       <div class="nav-item" data-tab="my-features">📋 הפיצ'רים שלי</div>
-      <div class="nav-item" data-tab="ai-settings">⚙️ הגדרות AI</div>
+      <div class="nav-item" data-tab="ai-settings" id="nav-ai-settings">
+        ⚙️ הגדרות AI
+        <span class="nav-dot" title="נדרש הגדרה"></span>
+      </div>
       <div class="nav-item" data-tab="class-code">🔑 קוד כיתה</div>
     </nav>
     <main>
@@ -104,6 +127,17 @@
       <section class="panel active" id="tab-build">
         <h1>בנה פיצ'ר חדש עם AI</h1>
         <p class="sub">תאר בעברית מה אתה צריך — ה-AI ייצור אותו ויישלח לאישור המנהל.</p>
+
+        <!-- באנר חסר מפתח — מוסתר כברירת מחדל -->
+        <div class="no-key-banner" id="no-key-banner" style="display:none">
+          <div class="nkb-icon">🔑</div>
+          <div class="nkb-text">
+            <strong>לא הוגדר מפתח AI לכיתה זו</strong>
+            <span>יש להגדיר ספק AI ומפתח לפני שניתן ליצור פיצ'רים.</span>
+          </div>
+          <button class="btn btn-primary" onclick="goToSettings()">הגדר עכשיו ⚙️</button>
+        </div>
+
         <div class="pending-notice">⏳ כל פיצ'ר שתיצור יישלח לאישור המנהל לפני שיופיע בכיתה.</div>
         <div class="card">
           <label>מה אתה צריך?</label>
@@ -118,7 +152,8 @@
           <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
             <strong style="font-size:.85rem">🔒 הגנה על הפיצ'ר</strong>
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;margin-top:8px;color:var(--text)">
-              <input type="checkbox" id="feat-protected" style="width:16px;height:16px;accent-color:var(--primary)" onchange="document.getElementById('feat-code-box').style.display=this.checked?'block':'none'">
+              <input type="checkbox" id="feat-protected" style="width:16px;height:16px;accent-color:var(--primary)"
+                onchange="document.getElementById('feat-code-box').style.display=this.checked?'block':'none'">
               דרוש קוד גישה לפיצ'ר זה
             </label>
             <div id="feat-code-box" style="display:none;margin-top:8px">
@@ -128,8 +163,8 @@
           </div>
           <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <span style="font-size:.78rem;color:var(--muted);font-weight:700">מודל פעיל:</span>
-            <span id="build-model-badge" style="background:#e8f0fe;color:var(--primary);font-size:.78rem;padding:3px 10px;border-radius:999px;font-weight:700">טוען...</span>
-            <button class="chip" onclick="document.querySelector('[data-tab=ai-settings]').click()" style="font-size:.75rem">שנה ⚙️</button>
+            <span id="build-model-badge" style="background:#e8f0fe;color:var(--primary);font-size:.78rem;padding:3px 10px;border-radius:999px;font-weight:700">—</span>
+            <button class="chip" onclick="goToSettings()" style="font-size:.75rem">שנה ⚙️</button>
           </div>
           <div class="btn-row">
             <button class="btn btn-primary" onclick="buildFeature()">✨ צור פיצ'ר</button>
@@ -149,26 +184,41 @@
       <!-- הגדרות AI -->
       <section class="panel" id="tab-ai-settings">
         <h1>הגדרות AI</h1>
-        <p class="sub">בחר ספק AI והזן את המפתח שלך — נשמר בדפדפן לכיתה זו בלבד.</p>
+        <p class="sub">הגדרות אלו נשמרות בדפדפן עבור הכיתה שלך בלבד.</p>
         <div class="card">
+
+          <!-- שורת כיתה + סטטוס -->
+          <div class="settings-class-row">
+            <div>
+              <div style="font-weight:700;margin-bottom:4px">הגדרות AI לכיתה</div>
+              <span class="settings-class-badge" id="settings-class-badge">טוען...</span>
+            </div>
+            <span class="settings-status" id="settings-status-badge">בודק...</span>
+          </div>
+
+          <!-- ספק -->
           <label>ספק AI</label>
-          <select id="teacher-provider-select" onchange="onTeacherProviderChange(this.value)" style="margin-bottom:14px">
+          <select id="teacher-provider-select" onchange="onTeacherProviderChange(this.value)">
             <option value="gemini">🟡 Google Gemini</option>
             <option value="claude">🟣 Anthropic Claude</option>
           </select>
 
-          <div id="teacher-gemini-box">
+          <!-- מפתח Gemini -->
+          <div id="teacher-gemini-box" style="margin-top:12px">
             <label>מפתח Gemini API</label>
-            <input type="password" id="teacher-gemini-key" placeholder="AIza...">
-            <p class="sub" style="margin-top:4px">מתקבל ב-aistudio.google.com — נשמר בדפדפן.</p>
-          </div>
-          <div id="teacher-claude-box" style="display:none">
-            <label>מפתח Anthropic API</label>
-            <input type="password" id="teacher-claude-key" placeholder="sk-ant-...">
-            <p class="sub" style="margin-top:4px">מתקבל ב-console.anthropic.com — נשמר בדפדפן.</p>
+            <input type="password" id="teacher-gemini-key" placeholder="AIza..." autocomplete="off">
+            <p class="provider-hint">מתקבל ב-aistudio.google.com — נשמר רק בדפדפן זה.</p>
           </div>
 
-          <label style="margin-top:14px">מודל AI</label>
+          <!-- מפתח Claude -->
+          <div id="teacher-claude-box" style="display:none;margin-top:12px">
+            <label>מפתח Anthropic API</label>
+            <input type="password" id="teacher-claude-key" placeholder="sk-ant-..." autocomplete="off">
+            <p class="provider-hint">מתקבל ב-console.anthropic.com — נשמר רק בדפדפן זה.</p>
+          </div>
+
+          <!-- מודל -->
+          <label style="margin-top:16px">מודל AI</label>
           <select id="teacher-model-select" onchange="onTeacherModelChange(this.value)">
             <optgroup label="🟡 Google Gemini">
               <option value="gemini-3.6-flash">⚡ Gemini 3.6 Flash — מהיר (מומלץ)</option>
@@ -183,10 +233,10 @@
           </select>
 
           <div class="btn-row">
-            <button class="btn btn-primary" onclick="saveTeacherSettings()">💾 שמור הגדרות</button>
+            <button class="btn btn-ok" onclick="saveTeacherSettings()">💾 שמור והתחל לבנות &larr;</button>
             <button class="btn btn-ghost" onclick="toggleTeacherKeyVis()">👁️ הצג/הסתר</button>
           </div>
-          <div id="teacher-settings-saved" style="display:none;color:#166534;margin-top:8px;font-weight:700;font-size:.85rem">✅ הגדרות AI נשמרו</div>
+          <div id="teacher-settings-msg" style="display:none;margin-top:10px;font-size:.85rem;font-weight:700"></div>
         </div>
       </section>
 
@@ -213,29 +263,85 @@
 <script>
 let currentUser = null;
 
-/* ===== ניהול מפתחות ומודלים ===== */
-function _classId() { return (currentUser && currentUser.class_id) || 'default'; }
-function _lsKey(suffix) { return 'koors_teacher_' + suffix + '_' + _classId(); }
+/* ===== localStorage keys per class_id ===== */
+function _cid() { return (currentUser && currentUser.class_id) || 'default'; }
+function _ls(suffix) { return 'koors_t_' + suffix + '_' + _cid(); }
 
-function detectProvider(model) { return (model || '').startsWith('claude') ? 'claude' : 'gemini'; }
+/* ===== Provider / Model helpers ===== */
+function detectProvider(model) {
+  return (model || '').startsWith('claude') ? 'claude' : 'gemini';
+}
 
+const MODEL_LABELS = {
+  'gemini-3.6-flash':        '⚡ Gemini 3.6 Flash',
+  'gemini-2.5-pro':          '🧠 Gemini 2.5 Pro',
+  'gemini-2.0-flash':        '🔷 Gemini 2.0 Flash',
+  'claude-sonnet-4-6':       '✨ Claude Sonnet 4.6',
+  'claude-opus-4-7':         '💎 Claude Opus 4.7',
+  'claude-haiku-4-5-20251001': '🐦 Claude Haiku 4.5',
+};
+
+/* ===== Get / Save per-class config ===== */
 function getTeacherModel() {
-  const m = localStorage.getItem(_lsKey('model')) || localStorage.getItem('koors_teacher_model');
-  if (!m || m === 'gemini-2.5-flash') { return 'gemini-3.6-flash'; }
-  return m;
+  const m = localStorage.getItem(_ls('model'));
+  return (!m || m === 'gemini-2.5-flash') ? 'gemini-3.6-flash' : m;
 }
-function _saveTeacherModel(v) {
-  localStorage.setItem(_lsKey('model'), v);
-  localStorage.setItem('koors_teacher_model', v);
-}
+function _saveModel(v) { localStorage.setItem(_ls('model'), v); }
+
 function getTeacherKey(provider) {
-  return (localStorage.getItem(_lsKey(provider)) || localStorage.getItem('koors_teacher_' + provider) || '').trim();
+  return (localStorage.getItem(_ls(provider)) || '').trim();
 }
-function _saveTeacherKey(provider, key) {
-  localStorage.setItem(_lsKey(provider), key);
-  localStorage.setItem('koors_teacher_' + provider, key);
+function _saveKey(provider, key) { localStorage.setItem(_ls(provider), key); }
+
+/* ===== Config completeness check ===== */
+function hasValidConfig() {
+  const model    = getTeacherModel();
+  const provider = detectProvider(model);
+  return !!getTeacherKey(provider);
 }
 
+/* ===== UI helpers ===== */
+function _showBuildBanner(show) {
+  const el = document.getElementById('no-key-banner');
+  if (el) el.style.display = show ? 'flex' : 'none';
+}
+
+function _updateNavDot() {
+  const navEl = document.getElementById('nav-ai-settings');
+  if (!navEl) return;
+  if (hasValidConfig()) {
+    navEl.classList.remove('needs-setup');
+  } else {
+    navEl.classList.add('needs-setup');
+  }
+}
+
+function _updateBuildBadge() {
+  const model = getTeacherModel();
+  const el    = document.getElementById('build-model-badge');
+  if (el) el.textContent = MODEL_LABELS[model] || model;
+}
+
+function _updateSettingsStatus() {
+  const ok  = hasValidConfig();
+  const el  = document.getElementById('settings-status-badge');
+  if (!el) return;
+  el.textContent  = ok ? '✅ מוגדר' : '⚠️ חסר הגדרה';
+  el.className    = 'settings-status ' + (ok ? 'ok' : 'missing');
+}
+
+function _updateAll() {
+  _showBuildBanner(!hasValidConfig());
+  _updateBuildBadge();
+  _updateNavDot();
+  _updateSettingsStatus();
+}
+
+function goToSettings() {
+  document.querySelector('[data-tab="ai-settings"]').click();
+}
+
+/* ===== Login ===== */
 function showError(msg) {
   const el = document.getElementById('login-error');
   el.textContent = msg;
@@ -257,76 +363,102 @@ async function login() {
   } catch { showError('שגיאת חיבור'); }
 }
 
-function onTeacherProviderChange(provider) {
+/* ===== Enter App ===== */
+function enterApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display   = 'block';
+  document.getElementById('teacher-name-badge').textContent =
+    currentUser.name + ' · ' + (currentUser.role === 'teacher' ? 'מחנך' : 'צוות');
+
+  loadClassCode();
+  setupNav();
+  _loadSettingsUI();   // populate Settings tab from localStorage
+  _updateAll();        // badges, banner, nav dot
+
+  // If no key configured for this class — go directly to Settings tab (no setTimeout needed)
+  if (!hasValidConfig()) {
+    goToSettings();
+  }
+}
+
+/* ===== Settings Tab Logic ===== */
+function _loadSettingsUI() {
+  // Called once after login to populate the Settings form from localStorage
+  const model    = getTeacherModel();
+  const provider = detectProvider(model);
+  document.getElementById('teacher-model-select').value    = model;
+  document.getElementById('teacher-provider-select').value = provider;
+  _showProviderBox(provider);
+  document.getElementById('teacher-gemini-key').value = getTeacherKey('gemini');
+  document.getElementById('teacher-claude-key').value  = getTeacherKey('claude');
+
+  // Class badge
+  const classLabel = currentUser.class_id ? 'כיתה ' + currentUser.class_id : 'ללא שיוך כיתה';
+  document.getElementById('settings-class-badge').textContent = classLabel;
+}
+
+function _showProviderBox(provider) {
   document.getElementById('teacher-gemini-box').style.display = provider === 'gemini' ? 'block' : 'none';
   document.getElementById('teacher-claude-box').style.display  = provider === 'claude'  ? 'block' : 'none';
-  document.getElementById('teacher-provider-select').value = provider;
 }
+
+function onTeacherProviderChange(provider) {
+  _showProviderBox(provider);
+  // Auto-switch model to a fitting default when provider changes
+  const currentModel = document.getElementById('teacher-model-select').value;
+  const currentProv  = detectProvider(currentModel);
+  if (currentProv !== provider) {
+    const newModel = provider === 'claude' ? 'claude-sonnet-4-6' : 'gemini-3.6-flash';
+    document.getElementById('teacher-model-select').value = newModel;
+  }
+}
+
 function onTeacherModelChange(v) {
-  _saveTeacherModel(v);
-  onTeacherProviderChange(detectProvider(v));
-  _updateBuildBadge();
+  // Sync provider UI when model dropdown changes
+  const provider = detectProvider(v);
+  document.getElementById('teacher-provider-select').value = provider;
+  _showProviderBox(provider);
 }
+
 function saveTeacherSettings() {
   const model    = document.getElementById('teacher-model-select').value;
   const provider = detectProvider(model);
   const inputId  = provider === 'claude' ? 'teacher-claude-key' : 'teacher-gemini-key';
-  const k = document.getElementById(inputId).value.trim();
-  if (!k) { alert('הזן מפתח ' + (provider === 'claude' ? 'Anthropic' : 'Gemini')); return; }
-  _saveTeacherModel(model);
-  _saveTeacherKey(provider, k);
-  const saved = document.getElementById('teacher-settings-saved');
-  saved.style.display = 'block';
-  setTimeout(() => { saved.style.display = 'none'; }, 2000);
-  _updateBuildBadge();
+  const k        = document.getElementById(inputId).value.trim();
+
+  const msgEl = document.getElementById('teacher-settings-msg');
+
+  if (!k) {
+    msgEl.textContent  = '❌ הזן מפתח ' + (provider === 'claude' ? 'Anthropic' : 'Gemini');
+    msgEl.style.color  = '#991b1b';
+    msgEl.style.display = 'block';
+    document.getElementById(inputId).focus();
+    return;
+  }
+
+  _saveModel(model);
+  _saveKey(provider, k);
+  _updateAll();
+
+  msgEl.textContent  = '✅ הגדרות AI נשמרו בהצלחה';
+  msgEl.style.color  = '#166534';
+  msgEl.style.display = 'block';
+
+  // Navigate to Build tab after short confirmation delay
+  setTimeout(() => {
+    msgEl.style.display = 'none';
+    document.querySelector('[data-tab="build"]').click();
+  }, 1100);
 }
+
 function toggleTeacherKeyVis() {
   ['teacher-gemini-key','teacher-claude-key'].forEach(id => {
     const el = document.getElementById(id);
     el.type = el.type === 'password' ? 'text' : 'password';
   });
 }
-function _updateBuildBadge() {
-  const model    = getTeacherModel();
-  const provider = detectProvider(model);
-  const labels   = {
-    'gemini-3.6-flash':'⚡ Gemini 3.6 Flash',
-    'gemini-2.5-pro':'🧠 Gemini 2.5 Pro',
-    'gemini-2.0-flash':'🔷 Gemini 2.0 Flash',
-    'claude-sonnet-4-6':'✨ Claude Sonnet 4.6',
-    'claude-opus-4-7':'💎 Claude Opus 4.7',
-    'claude-haiku-4-5-20251001':'🐦 Claude Haiku 4.5',
-  };
-  const el = document.getElementById('build-model-badge');
-  if (el) el.textContent = labels[model] || model;
-}
 
-function enterApp() {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app-screen').style.display = 'block';
-  document.getElementById('teacher-name-badge').textContent =
-    currentUser.name + ' · ' + (currentUser.role === 'teacher' ? 'מחנך' : 'צוות');
-  loadClassCode();
-  setupNav();
-
-  // טעינת הגדרות AI שמורות
-  const model    = getTeacherModel();
-  const provider = detectProvider(model);
-  document.getElementById('teacher-model-select').value = model;
-  onTeacherProviderChange(provider);
-  document.getElementById('teacher-gemini-key').value = getTeacherKey('gemini');
-  document.getElementById('teacher-claude-key').value  = getTeacherKey('claude');
-
-  // אם אין מפתח בכלל — עבור ישירות להגדרות AI
-  const hasKey = !!(getTeacherKey('gemini') || getTeacherKey('claude'));
-  if (!hasKey) {
-    setTimeout(() => {
-      document.querySelector('[data-tab="ai-settings"]').click();
-    }, 200);
-  }
-  _updateBuildBadge();
-}
-
+/* ===== Navigation ===== */
 async function logout() {
   await fetch('/api/auth/logout', {method:'POST'});
   location.reload();
@@ -340,10 +472,12 @@ function setupNav() {
       el.classList.add('active');
       document.getElementById('tab-' + el.dataset.tab).classList.add('active');
       if (el.dataset.tab === 'my-features') loadMyFeatures();
+      if (el.dataset.tab === 'build') _updateAll();
     };
   });
 }
 
+/* ===== Build Feature ===== */
 function fillDesc(t) {
   document.getElementById('feature-desc').value = t;
   document.getElementById('feature-desc').focus();
@@ -351,55 +485,63 @@ function fillDesc(t) {
 
 async function buildFeature() {
   const desc = document.getElementById('feature-desc').value.trim();
-  if (!desc) { alert('תאר מה אתה צריך'); return; }
+  if (!desc) return;
 
+  // Guard: check config before making any AI call
   const model    = getTeacherModel();
   const provider = detectProvider(model);
   const key      = getTeacherKey(provider);
   if (!key) {
-    document.querySelector('[data-tab="ai-settings"]').click();
-    alert('הזן מפתח ' + (provider === 'claude' ? 'Anthropic' : 'Gemini') + ' בלשונית הגדרות AI');
+    _showBuildBanner(true);
+    goToSettings();
     return;
   }
 
   document.getElementById('ai-thinking').style.display = 'block';
   document.getElementById('build-result').innerHTML = '';
-  try {
-    const protected_ = document.getElementById('feat-protected').checked;
-    const feat_code  = document.getElementById('feat-code').value.trim();
-    const body = {
-      description: desc,
-      target_class: currentUser.class_id || '',
-      model,
-      access_level: protected_ ? 'protected' : 'public',
-      feature_code: protected_ ? feat_code : '',
-    };
-    if (provider === 'claude') { body.anthropic_key = key; }
-    else { body.gemini_key = key; }
 
+  const protected_ = document.getElementById('feat-protected').checked;
+  const feat_code  = document.getElementById('feat-code').value.trim();
+
+  const body = {
+    description:  desc,
+    target_class: currentUser.class_id || '',
+    model,
+    access_level: protected_ ? 'protected' : 'public',
+    feature_code: protected_ ? feat_code : '',
+  };
+  if (provider === 'claude') { body.anthropic_key = key; }
+  else                       { body.gemini_key    = key; }
+
+  try {
     const r = await fetch('/api/features', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify(body)
     });
     const d = await r.json();
     document.getElementById('ai-thinking').style.display = 'none';
-    if (!r.ok) { document.getElementById('build-result').innerHTML = `<div class="card" style="color:#991b1b">שגיאה: ${d.error?.message}</div>`; return; }
+    if (!r.ok) {
+      document.getElementById('build-result').innerHTML =
+        '<div class="card" style="color:#991b1b">שגיאה: ' + esc(d.error && d.error.message ? d.error.message : 'שגיאה לא ידועה') + '</div>';
+      return;
+    }
     const f = d.feature || d.raw || {};
-    document.getElementById('build-result').innerHTML = `
-      <div class="card" style="border:2px solid #34a853">
-        <div style="color:#166534;font-weight:700;margin-bottom:8px">✅ הפיצ'ר נוצר ונשלח לאישור המנהל</div>
-        <div class="fc-title">${esc(f.title||'')}</div>
-        <div class="fc-meta">${esc(f.description||'')}</div>
-        <div class="fc-meta" style="margin-top:6px">סוג: ${esc(f.feature_type||'')}</div>
-      </div>`;
+    document.getElementById('build-result').innerHTML =
+      '<div class="card" style="border:2px solid #34a853">' +
+      '<div style="color:#166534;font-weight:700;margin-bottom:8px">✅ הפיצ\'ר נוצר ונשלח לאישור המנהל</div>' +
+      '<div class="fc-title">' + esc(f.title || '') + '</div>' +
+      '<div class="fc-meta">' + esc(f.description || '') + '</div>' +
+      '<div class="fc-meta" style="margin-top:6px">סוג: ' + esc(f.feature_type || '') + '</div>' +
+      '</div>';
     document.getElementById('feature-desc').value = '';
   } catch(e) {
     document.getElementById('ai-thinking').style.display = 'none';
-    document.getElementById('build-result').innerHTML = `<div class="card" style="color:#991b1b">שגיאה: ${esc(e.message)}</div>`;
+    document.getElementById('build-result').innerHTML =
+      '<div class="card" style="color:#991b1b">שגיאה: ' + esc(e.message) + '</div>';
   }
 }
 
+/* ===== My Features ===== */
 async function loadMyFeatures() {
   const el = document.getElementById('my-features-list');
   el.innerHTML = '<div class="card" style="color:var(--muted)">טוען...</div>';
@@ -407,36 +549,41 @@ async function loadMyFeatures() {
     const statuses = ['pending','active','disabled'];
     const all = [];
     for (const s of statuses) {
-      const r = await fetch(`/api/features?status=${s}`);
+      const r = await fetch('/api/features?status=' + s);
       const d = await r.json();
-      all.push(...(d.features||[]).filter(f => f.creator_name === currentUser.name));
+      all.push(...(d.features || []).filter(f => f.creator_name === currentUser.name));
     }
-    if (!all.length) { el.innerHTML = '<div class="card" style="color:var(--muted)">עדיין לא יצרת פיצרים.</div>'; return; }
-    el.innerHTML = all.map(f => `
-      <div class="feature-card">
-        <div class="fc-title">${esc(f.title)} <span class="badge badge-${f.status}">${statusLabel(f.status)}</span></div>
-        <div class="fc-meta">${esc(f.description)} · ${esc(f.feature_type)}</div>
-        <div class="fc-meta" style="margin-top:4px">נוצר: ${new Date(f.created_at).toLocaleDateString('he-IL')}</div>
-      </div>`).join('');
-  } catch(e) { el.innerHTML = `<div class="card" style="color:#991b1b">${esc(e.message)}</div>`; }
+    if (!all.length) {
+      el.innerHTML = '<div class="card" style="color:var(--muted)">עדיין לא יצרת פיצרים.</div>';
+      return;
+    }
+    el.innerHTML = all.map(f =>
+      '<div class="feature-card">' +
+      '<div class="fc-title">' + esc(f.title) + ' <span class="badge badge-' + f.status + '">' + statusLabel(f.status) + '</span></div>' +
+      '<div class="fc-meta">' + esc(f.description) + ' · ' + esc(f.feature_type) + '</div>' +
+      '<div class="fc-meta" style="margin-top:4px">נוצר: ' + new Date(f.created_at).toLocaleDateString('he-IL') + '</div>' +
+      '</div>'
+    ).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="card" style="color:#991b1b">' + esc(e.message) + '</div>';
+  }
 }
 
+/* ===== Class Code ===== */
 async function loadClassCode() {
   const classId = currentUser.class_id;
-  const urlEl = document.getElementById('class-url-display');
-  const codeEl = document.getElementById('class-code-display');
   if (classId) {
-    codeEl.textContent = classId;
-    urlEl.textContent = location.origin + '/class/' + classId;
+    document.getElementById('class-code-display').textContent = classId;
+    document.getElementById('class-url-display').textContent = location.origin + '/class/' + classId;
   } else {
-    codeEl.textContent = '—';
-    urlEl.textContent = 'לא משויך לכיתה';
+    document.getElementById('class-code-display').textContent = '—';
+    document.getElementById('class-url-display').textContent  = 'לא משויך לכיתה';
   }
   try {
     const r = await fetch('/api/access-settings');
     const d = await r.json();
     const modes = {code:'קוד גישה אישי לכל משתמש', per_user:'קוד כיתה משותף', open:'גישה חופשית'};
-    document.getElementById('access-mode-text').textContent = modes[d.settings?.mode] || d.settings?.mode || '—';
+    document.getElementById('access-mode-text').textContent = modes[d.settings && d.settings.mode] || (d.settings && d.settings.mode) || '—';
   } catch {}
 }
 
@@ -445,8 +592,11 @@ function copyCode() {
   navigator.clipboard.writeText(url).then(() => alert('הקישור הועתק!'));
 }
 
-function statusLabel(s) { return {pending:'ממתין לאישור',active:'פעיל',disabled:'מושבת'}[s]||s; }
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+/* ===== Utils ===== */
+function statusLabel(s) { return {pending:'ממתין לאישור', active:'פעיל', disabled:'מושבת'}[s] || s; }
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 </script>
 </body>
 </html>
