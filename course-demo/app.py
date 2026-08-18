@@ -14,21 +14,27 @@ import httpx
 import urllib3
 from dotenv import load_dotenv
 
-# Bypass SSL verification for filtered networks (e.g. Rimon) that inject self-signed certs
-ssl._create_default_https_context = ssl._create_unverified_context
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# SSL bypass is only needed on local filtered networks (e.g. Rimon).
+# Railway sets RAILWAY_ENVIRONMENT; skip patching there to avoid startup issues.
+_ON_RAILWAY = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_SERVICE_NAME"))
+if not _ON_RAILWAY:
+    try:
+        ssl._create_default_https_context = ssl._create_unverified_context
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-_orig_httpx_init = httpx.Client.__init__
-def _httpx_no_verify(self, *args, **kwargs):
-    kwargs.setdefault("verify", False)
-    _orig_httpx_init(self, *args, **kwargs)
-httpx.Client.__init__ = _httpx_no_verify
+        _orig_httpx_init = httpx.Client.__init__
+        def _httpx_no_verify(self, *args, **kwargs):
+            kwargs.setdefault("verify", False)
+            _orig_httpx_init(self, *args, **kwargs)
+        httpx.Client.__init__ = _httpx_no_verify
 
-_orig_httpx_async_init = httpx.AsyncClient.__init__
-def _httpx_async_no_verify(self, *args, **kwargs):
-    kwargs.setdefault("verify", False)
-    _orig_httpx_async_init(self, *args, **kwargs)
-httpx.AsyncClient.__init__ = _httpx_async_no_verify
+        _orig_httpx_async_init = httpx.AsyncClient.__init__
+        def _httpx_async_no_verify(self, *args, **kwargs):
+            kwargs.setdefault("verify", False)
+            _orig_httpx_async_init(self, *args, **kwargs)
+        httpx.AsyncClient.__init__ = _httpx_async_no_verify
+    except Exception:
+        pass  # never crash startup due to SSL patching
 from flask import Flask, jsonify, request, send_from_directory, session, redirect
 from flask_cors import CORS
 from google import genai
