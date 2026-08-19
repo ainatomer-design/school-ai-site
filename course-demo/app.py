@@ -533,6 +533,19 @@ def _generate_code(length=8):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
 
+@app.route("/api/users-schema")
+def users_schema():
+    """Inspect actual users table columns — helps diagnose column name mismatches."""
+    err = _require_admin()
+    if err: return err
+    try:
+        rows = sb_request("GET", "users?limit=1")
+        cols = list(rows[0].keys()) if rows else []
+        return jsonify({"columns": cols, "sample_row_redacted": {k: ("***" if "code" in k.lower() or "pass" in k.lower() else v) for k, v in (rows[0] if rows else {}).items()}})
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
 @app.route("/api/users", methods=["GET"])
 def list_users():
     err = _require_admin()
