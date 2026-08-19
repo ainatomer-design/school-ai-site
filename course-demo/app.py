@@ -580,7 +580,7 @@ def update_user(uid):
     if "access_code" in data:
         new_code = ''.join(c for c in (data.get("access_code") or "").upper() if c.isalnum())
         if len(new_code) < 4:
-            return jsonify({"error": {"message": "קוד גישה חייב להכיל לפחות 4 תווים"}}), 400
+            return jsonify({"error": {"message": "קוד גישה חייב להכיל לפחות 4 ספרות או אותיות"}}), 400
         patch["access_code"] = new_code
     if "class_code" in data:
         patch["class_code"] = (data.get("class_code") or "").strip() or None
@@ -614,12 +614,12 @@ def change_own_code():
     if not teacher:
         return jsonify({"error": {"message": "נדרשת התחברות"}}), 403
     data = request.get_json(silent=True) or {}
-    current = (data.get("current_code") or "").strip().upper()
+    current = ''.join(c for c in (data.get("current_code") or "").upper() if c.isalnum())
     new_code = ''.join(c for c in (data.get("new_code") or "").upper() if c.isalnum())
     if not current:
         return jsonify({"error": {"message": "הזן את הקוד הנוכחי"}}), 400
     if len(new_code) < 4:
-        return jsonify({"error": {"message": "קוד חדש חייב להכיל לפחות 4 תווים"}}), 400
+        return jsonify({"error": {"message": "קוד חדש חייב להכיל לפחות 4 ספרות או אותיות"}}), 400
     uid = teacher.get("id")
     try:
         rows = sb_request("GET", f"users?id=eq.{uid}&access_code=eq.{current}&select=id")
@@ -653,7 +653,7 @@ def class_page(code):
 @app.route("/api/auth/teacher", methods=["POST"])
 def auth_teacher():
     data = request.get_json(silent=True) or {}
-    code = (data.get("code") or "").strip().upper()
+    code = ''.join(c for c in (data.get("code") or "").upper() if c.isalnum())
     if not code:
         return jsonify({"error": {"message": "קוד גישה חסר"}}), 400
     try:
@@ -671,7 +671,7 @@ def auth_teacher():
 @app.route("/api/auth/class", methods=["POST"])
 def auth_class():
     data = request.get_json(silent=True) or {}
-    code = (data.get("code") or "").strip().upper()
+    code = ''.join(c for c in (data.get("code") or "").upper() if c.isalnum())
     if not code:
         return jsonify({"error": {"message": "קוד כיתה חסר"}}), 400
     try:

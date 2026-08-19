@@ -99,8 +99,8 @@
     <div id="login-class-pill" style="display:none" class="login-class-badge"></div>
     <p class="sub" id="login-sub">הזן את קוד הגישה שקיבלת מהמנהל</p>
     <div class="error-msg" id="login-error"></div>
-    <input type="text" id="code-input" placeholder="קוד גישה (לדוגמה: AB12CD34)"
-      oninput="this.value=this.value.toUpperCase()"
+    <input type="text" id="code-input" placeholder="קוד גישה — לדוגמה: 1234 או AB12CD34"
+      oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')"
       onkeydown="if(event.key==='Enter') login()">
     <button onclick="login()" style="margin-top:8px">כניסה לפאנל &rarr;</button>
   </div>
@@ -245,8 +245,10 @@
           <strong style="font-size:.9rem">🔑 שינוי קוד גישה</strong>
           <p class="sub" style="margin-top:4px">שנה את הקוד שקיבלת מהמנהל לקוד אישי שתזכור בקלות.</p>
           <label style="margin-top:12px">קוד נוכחי</label>
-          <input type="password" id="chpwd-current" placeholder="הקוד שאיתו נכנסת" autocomplete="off">
-          <label>קוד חדש <span style="font-weight:400;color:var(--muted)">(לפחות 4 תווים)</span></label>
+          <input type="text" id="chpwd-current" placeholder="הקוד שאיתו נכנסת"
+            style="text-transform:uppercase;letter-spacing:.1em" autocomplete="off"
+            oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+          <label>קוד חדש <span style="font-weight:400;color:var(--muted)">(לפחות 4 ספרות או אותיות)</span></label>
           <input type="text" id="chpwd-new" placeholder="הקוד החדש שלך"
             style="text-transform:uppercase;letter-spacing:.1em" autocomplete="off"
             oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
@@ -537,7 +539,7 @@ async function changeMyCode() {
   var confirm_ = (document.getElementById('chpwd-confirm').value  || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 
   if (!current)          { _pwdMsg('❌ הזן את הקוד הנוכחי שלך', false); return; }
-  if (newCode.length < 4){ _pwdMsg('❌ הקוד החדש חייב להכיל לפחות 4 תווים', false); return; }
+  if (newCode.length < 4){ _pwdMsg('❌ הקוד החדש חייב להכיל לפחות 4 ספרות או אותיות', false); return; }
   if (newCode !== confirm_){ _pwdMsg('❌ הקוד החדש והאימות אינם תואמים', false); return; }
 
   try {

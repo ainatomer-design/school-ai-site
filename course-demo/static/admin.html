@@ -250,10 +250,12 @@
           </div>
           <label>קוד גישה <span style="font-weight:400;color:var(--muted)">(אופציונלי — ייווצר אוטומטית אם ריק)</span></label>
           <div style="display:flex;gap:8px">
-            <input id="new-user-code" placeholder="לדוגמה: DANA2025" style="text-transform:uppercase;letter-spacing:.08em;flex:1">
+            <input id="new-user-code" placeholder="לדוגמה: 1234 או DANA2025"
+              style="text-transform:uppercase;letter-spacing:.08em;flex:1"
+              oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
             <button type="button" class="btn btn-ghost" onclick="document.getElementById('new-user-code').value=_genCode()" style="flex-shrink:0;white-space:nowrap">🎲 הצע</button>
           </div>
-          <p class="sub" style="margin-top:4px">אם תזין קוד משלך — עליו להכיל לפחות 4 תווים (אותיות/ספרות).</p>
+          <p class="sub" style="margin-top:4px">מותר: ספרות ואותיות בלבד (לדוגמה: <strong>1234</strong> או <strong>DANA2025</strong>). מינימום 4 תווים.</p>
           <div class="btn-row" style="margin-top:14px">
             <button class="btn btn-primary" onclick="createUser()" style="flex:1;padding:12px">➕ צור משתמש וקבל קוד גישה</button>
           </div>
@@ -756,14 +758,19 @@ async function createUser() {
   const name     = document.getElementById('new-user-name').value.trim();
   const role     = document.getElementById('new-user-role').value;
   const class_id = document.getElementById('new-user-class').value.trim() || null;
-  const access_code = document.getElementById('new-user-code').value.trim().toUpperCase() || undefined;
+  const rawCode  = document.getElementById('new-user-code').value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const access_code = rawCode || undefined;
+  const el = document.getElementById('new-user-result');
   if (!name) { toast('הזן שם'); return; }
+  if (rawCode && rawCode.length < 4) {
+    el.innerHTML = '<div style="background:#fee2e2;border-radius:10px;padding:12px;color:#991b1b">❌ קוד גישה חייב להכיל לפחות 4 ספרות או אותיות (לדוגמה: <strong>1234</strong> או <strong>DANA2025</strong>)</div>';
+    return;
+  }
   const r = await fetch('/api/users', {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({name, role, class_id, access_code})
   });
   const d = await r.json();
-  const el = document.getElementById('new-user-result');
   if (!r.ok) { el.innerHTML = `<div style="background:#fee2e2;border-radius:10px;padding:12px;color:#991b1b">❌ ${esc(d.error?.message)}</div>`; return; }
   const code = d.user?.access_code || '—';
   const classLabel = class_id ? ` · כיתה ${class_id}` : '';
@@ -836,7 +843,7 @@ async function saveUserEdit(uid) {
   const codeRaw = (document.getElementById('ucode-' + uid).value || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
   const cls     = document.getElementById('ucls-' + uid).value.trim() || null;
   const msgEl   = document.getElementById('uedit-msg-' + uid);
-  if (codeRaw.length < 4) { _ueditMsg(uid, '❌ קוד חייב להכיל לפחות 4 תווים', false); return; }
+  if (codeRaw.length < 4) { _ueditMsg(uid, '❌ קוד חייב להכיל לפחות 4 ספרות או אותיות', false); return; }
   const r = await fetch('/api/users/' + uid, {
     method:'PATCH', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({access_code: codeRaw, class_code: cls})
