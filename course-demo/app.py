@@ -552,7 +552,7 @@ def list_users():
     if err: return err
     try:
         # class_code is the single login/access code column in DB
-        rows = sb_request("GET", "users?school_id=eq.default&order=created_at.desc&select=id,name,role,class_code,created_at")
+        rows = sb_request("GET", "users?order=created_at.desc&select=id,name,role,class_code,created_at")
         for row in (rows or []):
             cc = row.pop("class_code", None) or None  # "" → null
             row["class_id"] = cc
@@ -582,7 +582,7 @@ def create_user():
     else:
         class_code = _generate_code()
     try:
-        rows = sb_request("POST", "users", json={"school_id": "default", "name": name, "role": role, "class_code": class_code})
+        rows = sb_request("POST", "users", json={"name": name, "role": role, "class_code": class_code})
         user = rows[0] if rows else {}
         cc = user.pop("class_code", None) or class_code
         user["class_id"] = cc or None
