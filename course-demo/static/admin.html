@@ -841,7 +841,7 @@ function toggleUserEdit(uid) {
 
 async function saveUserEdit(uid) {
   const codeRaw = (document.getElementById('ucode-' + uid).value || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
-  const cls     = document.getElementById('ucls-' + uid).value.trim() || null;
+  const cls     = document.getElementById('ucls-' + uid).value.trim() || '';  // "" not null — DB NOT NULL constraint
   const msgEl   = document.getElementById('uedit-msg-' + uid);
   if (codeRaw.length < 4) { _ueditMsg(uid, '❌ קוד חייב להכיל לפחות 4 ספרות או אותיות', false); return; }
   const r = await fetch('/api/users/' + uid, {
