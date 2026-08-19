@@ -248,6 +248,12 @@
             </select>
             <p class="sub" style="margin-top:4px">בחר כיתה מהרשימה — המחנך יוכל להיכנס לפאנל הניהול של אותה כיתה.</p>
           </div>
+          <label>קוד גישה <span style="font-weight:400;color:var(--muted)">(אופציונלי — ייווצר אוטומטית אם ריק)</span></label>
+          <div style="display:flex;gap:8px">
+            <input id="new-user-code" placeholder="לדוגמה: DANA2025" style="text-transform:uppercase;letter-spacing:.08em;flex:1">
+            <button type="button" class="btn btn-ghost" onclick="document.getElementById('new-user-code').value=_genCode()" style="flex-shrink:0;white-space:nowrap">🎲 הצע</button>
+          </div>
+          <p class="sub" style="margin-top:4px">אם תזין קוד משלך — עליו להכיל לפחות 4 תווים (אותיות/ספרות).</p>
           <div class="btn-row" style="margin-top:14px">
             <button class="btn btn-primary" onclick="createUser()" style="flex:1;padding:12px">➕ צור משתמש וקבל קוד גישה</button>
           </div>
@@ -739,57 +745,121 @@ function _toggleClassField(role) {
   if (row) row.style.display = (role === 'staff') ? 'none' : 'block';
 }
 
+function _genCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 8; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
+
 async function createUser() {
-  const name = document.getElementById('new-user-name').value.trim();
-  const role = document.getElementById('new-user-role').value;
+  const name     = document.getElementById('new-user-name').value.trim();
+  const role     = document.getElementById('new-user-role').value;
   const class_id = document.getElementById('new-user-class').value.trim() || null;
+  const access_code = document.getElementById('new-user-code').value.trim().toUpperCase() || undefined;
   if (!name) { toast('הזן שם'); return; }
-  const r = await fetch('/api/users', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, role, class_id}) });
+  const r = await fetch('/api/users', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({name, role, class_id, access_code})
+  });
   const d = await r.json();
   const el = document.getElementById('new-user-result');
   if (!r.ok) { el.innerHTML = `<div style="background:#fee2e2;border-radius:10px;padding:12px;color:#991b1b">❌ ${esc(d.error?.message)}</div>`; return; }
   const code = d.user?.access_code || '—';
   const classLabel = class_id ? ` · כיתה ${class_id}` : '';
   el.innerHTML = `<div style="background:#dcfce7;border-radius:10px;padding:14px;color:#166534">
-    ✅ <strong>${esc(name)}</strong> נוצר בהצלחה${esc(classLabel)}.<br>
-    <div style="margin-top:8px;background:#fff;border-radius:8px;padding:10px;display:inline-block">
-      קוד גישה: <strong style="font-size:1.4rem;letter-spacing:.15em;color:#1a3a6b">${esc(code)}</strong>
-    </div><br>
-    <span style="font-size:.8rem;margin-top:6px;display:block">שתף קוד זה עם ${esc(name)} בלבד — זו כניסתו לפאנל.</span>
+    ✅ <strong>${esc(name)}</strong> נוצר${esc(classLabel)}.
+    <div style="margin-top:10px;background:#fff;border-radius:8px;padding:12px;display:inline-block;min-width:200px">
+      <div style="font-size:.75rem;font-weight:700;color:var(--muted);margin-bottom:4px">קוד גישה</div>
+      <strong style="font-size:1.5rem;letter-spacing:.18em;color:#1a3a6b">${esc(code)}</strong>
+    </div>
+    <div style="font-size:.8rem;margin-top:8px">📲 שתף קוד זה עם ${esc(name)} בלבד — זו כניסתו למערכת.</div>
   </div>`;
   document.getElementById('new-user-name').value = '';
   document.getElementById('new-user-class').value = '';
+  document.getElementById('new-user-code').value = '';
   loadUsers();
 }
 
 async function loadUsers() {
   const el = document.getElementById('users-list');
+  el.innerHTML = '<div style="color:var(--muted)">טוען...</div>';
   const r = await fetch('/api/users');
   const d = await r.json();
   const users = d.users || [];
   if (!users.length) { el.innerHTML = '<span style="color:var(--muted)">אין משתמשים עדיין.</span>'; return; }
+  const roleColor = { teacher:'#1a73e8', staff:'#9c27b0', student:'#34a853' };
   const roleLabel = { teacher:'מחנך', staff:'צוות', student:'תלמיד' };
-  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:.85rem">
-    <thead><tr style="background:#f8fafc">
-      <th style="padding:8px;text-align:right;border-bottom:1px solid var(--border)">שם</th>
-      <th style="padding:8px;text-align:right;border-bottom:1px solid var(--border)">תפקיד</th>
-      <th style="padding:8px;text-align:right;border-bottom:1px solid var(--border)">כיתה</th>
-      <th style="padding:8px;text-align:right;border-bottom:1px solid var(--border)">קוד</th>
-      <th style="padding:8px;border-bottom:1px solid var(--border)"></th>
-    </tr></thead>
-    <tbody>${users.map(u => `<tr>
-      <td style="padding:8px">${esc(u.name)}</td>
-      <td style="padding:8px">${roleLabel[u.role]||u.role}</td>
-      <td style="padding:8px">${esc(u.class_id||'—')}</td>
-      <td style="padding:8px"><code style="background:#f0f4f8;padding:2px 8px;border-radius:6px">${esc(u.access_code)}</code></td>
-      <td style="padding:8px"><button class="btn btn-ghost" style="font-size:.75rem;padding:4px 10px" onclick="deleteUser('${u.id}')">🗑️</button></td>
-    </tr>`).join('')}</tbody>
-  </table>`;
+  el.innerHTML = users.map(u => `
+    <div style="border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-weight:700;flex:1;min-width:100px">${esc(u.name)}</span>
+        <span style="background:${roleColor[u.role]||'#888'};color:#fff;border-radius:999px;padding:2px 10px;font-size:.72rem;font-weight:700">${roleLabel[u.role]||u.role}</span>
+        ${u.class_id ? `<span style="background:#dcfce7;color:#166534;border-radius:999px;padding:2px 10px;font-size:.72rem;font-weight:700">📚 ${esc(u.class_id)}</span>` : ''}
+        <code style="background:#f0f4f8;padding:3px 12px;border-radius:8px;font-size:.9rem;letter-spacing:.1em;font-weight:700">${esc(u.access_code)}</code>
+        <button class="btn btn-ghost" style="font-size:.75rem;padding:5px 10px" onclick="toggleUserEdit('${u.id}')">✏️ ערוך</button>
+        <button class="btn btn-ghost" style="font-size:.75rem;padding:5px 10px;color:var(--danger)" onclick="deleteUser('${u.id}')">🗑️</button>
+      </div>
+      <div id="uedit-${u.id}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div>
+            <label style="font-size:.72rem;margin-bottom:4px">קוד גישה חדש</label>
+            <div style="display:flex;gap:6px">
+              <input id="ucode-${u.id}" value="${esc(u.access_code)}"
+                style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;flex:1">
+              <button class="btn btn-ghost" onclick="document.getElementById('ucode-${u.id}').value=_genCode()" style="padding:8px 10px;flex-shrink:0" title="צור קוד אקראי">🎲</button>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:.72rem;margin-bottom:4px">שיוך כיתה</label>
+            <select id="ucls-${u.id}" style="font-size:.88rem">
+              <option value="">ללא שיוך</option>
+              ${(state.classes||[]).map(c=>`<option value="${esc(c.id)}"${c.id===u.class_id?' selected':''}>${esc(c.name||c.id)}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ok" onclick="saveUserEdit('${u.id}')" style="flex:1">💾 שמור שינויים</button>
+          <button class="btn btn-ghost" onclick="toggleUserEdit('${u.id}')">ביטול</button>
+        </div>
+        <div id="uedit-msg-${u.id}" style="margin-top:6px;font-size:.82rem;font-weight:700;border-radius:8px;padding:0;display:none"></div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleUserEdit(uid) {
+  const el = document.getElementById('uedit-' + uid);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function saveUserEdit(uid) {
+  const codeRaw = (document.getElementById('ucode-' + uid).value || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const cls     = document.getElementById('ucls-' + uid).value.trim() || null;
+  const msgEl   = document.getElementById('uedit-msg-' + uid);
+  if (codeRaw.length < 4) { _ueditMsg(uid, '❌ קוד חייב להכיל לפחות 4 תווים', false); return; }
+  const r = await fetch('/api/users/' + uid, {
+    method:'PATCH', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({access_code: codeRaw, class_code: cls})
+  });
+  const d = await r.json();
+  if (!r.ok) { _ueditMsg(uid, '❌ ' + (d.error?.message || 'שגיאה'), false); return; }
+  _ueditMsg(uid, '✅ עודכן בהצלחה', true);
+  setTimeout(() => loadUsers(), 1000);
+}
+
+function _ueditMsg(uid, text, ok) {
+  const el = document.getElementById('uedit-msg-' + uid);
+  if (!el) return;
+  el.textContent = text;
+  el.style.background = ok ? '#dcfce7' : '#fee2e2';
+  el.style.color = ok ? '#166534' : '#991b1b';
+  el.style.padding = '6px 10px';
+  el.style.display = 'block';
 }
 
 async function deleteUser(uid) {
   if (!confirm('למחוק משתמש זה?')) return;
-  await fetch(`/api/users/${uid}`, {method:'DELETE'});
+  await fetch('/api/users/' + uid, {method:'DELETE'});
   loadUsers();
   toast('משתמש נמחק');
 }

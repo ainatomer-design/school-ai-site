@@ -558,13 +558,41 @@ def create_user():
     class_code = (data.get("class_id") or data.get("class_code") or "").strip() or None
     if not name or role not in ("teacher", "staff", "student"):
         return jsonify({"error": {"message": "שם ותפקיד חובה"}}), 400
-    code = _generate_code()
+    # Use admin-provided code if valid (≥4 alphanumeric chars), else generate
+    custom = ''.join(c for c in (data.get("access_code") or "").upper() if c.isalnum())
+    code = custom if len(custom) >= 4 else _generate_code()
     try:
         rows = sb_request("POST", "users", json={"school_id": "default", "name": name, "role": role, "class_code": class_code, "access_code": code})
         user = rows[0] if rows else {"access_code": code}
         if "class_code" in user:
             user["class_id"] = user.pop("class_code")
         return jsonify({"user": user})
+    except Exception as exc:
+        return jsonify({"error": {"message": str(exc)}}), 500
+
+
+@app.route("/api/users/<uid>", methods=["PATCH"])
+def update_user(uid):
+    err = _require_admin()
+    if err: return err
+    data = request.get_json(silent=True) or {}
+    patch = {}
+    if "access_code" in data:
+        new_code = ''.join(c for c in (data.get("access_code") or "").upper() if c.isalnum())
+        if len(new_code) < 4:
+            return jsonify({"error": {"message": "קוד גישה חייב להכיל לפחות 4 תווים"}}), 400
+        patch["access_code"] = new_code
+    if "class_code" in data:
+        patch["class_code"] = (data.get("class_code") or "").strip() or None
+    if "name" in data:
+        n = (data.get("name") or "").strip()
+        if n:
+            patch["name"] = n
+    if not patch:
+        return jsonify({"error": {"message": "אין שינויים לעדכן"}}), 400
+    try:
+        sb_request("PATCH", f"users?id=eq.{uid}", json=patch)
+        return jsonify({"ok": True})
     except Exception as exc:
         return jsonify({"error": {"message": str(exc)}}), 500
 
@@ -576,6 +604,31 @@ def delete_user(uid):
     try:
         sb_request("DELETE", f"users?id=eq.{uid}")
         return jsonify({"ok": True})
+    except Exception as exc:
+        return jsonify({"error": {"message": str(exc)}}), 500
+
+
+@app.route("/api/auth/change-code", methods=["POST"])
+def change_own_code():
+    teacher = session.get("teacher")
+    if not teacher:
+        return jsonify({"error": {"message": "נדרשת התחברות"}}), 403
+    data = request.get_json(silent=True) or {}
+    current = (data.get("current_code") or "").strip().upper()
+    new_code = ''.join(c for c in (data.get("new_code") or "").upper() if c.isalnum())
+    if not current:
+        return jsonify({"error": {"message": "הזן את הקוד הנוכחי"}}), 400
+    if len(new_code) < 4:
+        return jsonify({"error": {"message": "קוד חדש חייב להכיל לפחות 4 תווים"}}), 400
+    uid = teacher.get("id")
+    try:
+        rows = sb_request("GET", f"users?id=eq.{uid}&access_code=eq.{current}&select=id")
+        if not rows:
+            return jsonify({"error": {"message": "הקוד הנוכחי שגוי"}}), 401
+        sb_request("PATCH", f"users?id=eq.{uid}", json={"access_code": new_code})
+        teacher["access_code"] = new_code
+        session["teacher"] = teacher
+        return jsonify({"ok": True, "new_code": new_code})
     except Exception as exc:
         return jsonify({"error": {"message": str(exc)}}), 500
 

@@ -239,6 +239,26 @@
           </div>
           <div id="teacher-settings-msg" style="display:none;margin-top:10px;font-size:.85rem;font-weight:700"></div>
         </div>
+
+        <!-- שינוי קוד גישה -->
+        <div class="card" style="margin-top:14px">
+          <strong style="font-size:.9rem">🔑 שינוי קוד גישה</strong>
+          <p class="sub" style="margin-top:4px">שנה את הקוד שקיבלת מהמנהל לקוד אישי שתזכור בקלות.</p>
+          <label style="margin-top:12px">קוד נוכחי</label>
+          <input type="password" id="chpwd-current" placeholder="הקוד שאיתו נכנסת" autocomplete="off">
+          <label>קוד חדש <span style="font-weight:400;color:var(--muted)">(לפחות 4 תווים)</span></label>
+          <input type="text" id="chpwd-new" placeholder="הקוד החדש שלך"
+            style="text-transform:uppercase;letter-spacing:.1em" autocomplete="off"
+            oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+          <label>אימות קוד חדש</label>
+          <input type="text" id="chpwd-confirm" placeholder="הזן שוב את הקוד החדש"
+            style="text-transform:uppercase;letter-spacing:.1em" autocomplete="off"
+            oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+          <div class="btn-row" style="margin-top:10px">
+            <button class="btn btn-primary" onclick="changeMyCode()">🔑 שנה קוד גישה</button>
+          </div>
+          <div id="chpwd-msg" style="display:none;margin-top:10px;font-size:.85rem;font-weight:700;border-radius:10px;padding:10px 14px"></div>
+        </div>
       </section>
 
       <!-- קישורי כיתה -->
@@ -508,6 +528,40 @@ function toggleTeacherKeyVis() {
     var el = document.getElementById(id);
     el.type = el.type === 'password' ? 'text' : 'password';
   });
+}
+
+/* ===== Change access code ===== */
+async function changeMyCode() {
+  var current  = (document.getElementById('chpwd-current').value  || '').trim().toUpperCase();
+  var newCode  = (document.getElementById('chpwd-new').value      || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  var confirm_ = (document.getElementById('chpwd-confirm').value  || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+  if (!current)          { _pwdMsg('❌ הזן את הקוד הנוכחי שלך', false); return; }
+  if (newCode.length < 4){ _pwdMsg('❌ הקוד החדש חייב להכיל לפחות 4 תווים', false); return; }
+  if (newCode !== confirm_){ _pwdMsg('❌ הקוד החדש והאימות אינם תואמים', false); return; }
+
+  try {
+    var r = await fetch('/api/auth/change-code', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({current_code: current, new_code: newCode})
+    });
+    var d = await r.json();
+    if (!r.ok) { _pwdMsg('❌ ' + ((d.error && d.error.message) || 'שגיאה'), false); return; }
+    _pwdMsg('✅ הקוד שונה בהצלחה! קוד הגישה החדש שלך: ' + esc(d.new_code), true);
+    document.getElementById('chpwd-current').value  = '';
+    document.getElementById('chpwd-new').value      = '';
+    document.getElementById('chpwd-confirm').value  = '';
+  } catch(e) {
+    _pwdMsg('❌ שגיאת חיבור — נסה שוב', false);
+  }
+}
+
+function _pwdMsg(text, ok) {
+  var el = document.getElementById('chpwd-msg');
+  el.textContent       = text;
+  el.style.background  = ok ? '#dcfce7' : '#fee2e2';
+  el.style.color       = ok ? '#166534' : '#991b1b';
+  el.style.display     = 'block';
 }
 
 /* ===== Navigation ===== */
