@@ -551,10 +551,12 @@ def list_users():
     err = _require_admin()
     if err: return err
     try:
-        # DB column is class_code; normalise to class_id in response for frontend compatibility
-        rows = sb_request("GET", "users?school_id=eq.default&order=created_at.desc&select=id,name,role,class_code,access_code,created_at")
+        # class_code is the single login/access code column in DB
+        rows = sb_request("GET", "users?school_id=eq.default&order=created_at.desc&select=id,name,role,class_code,created_at")
         for row in (rows or []):
-            row["class_id"] = row.pop("class_code", None) or None  # "" → null
+            cc = row.pop("class_code", None) or None  # "" → null
+            row["class_id"] = cc
+            row["access_code"] = cc  # expose as access_code for frontend display
         return jsonify({"users": rows or []})
     except Exception as exc:
         return jsonify({"error": {"message": str(exc)}}), 500
@@ -567,19 +569,24 @@ def create_user():
     data = request.get_json(silent=True) or {}
     name = (data.get("name") or "").strip()
     role = (data.get("role") or "").strip()
-    # Accept class_id or class_code from frontend; write to class_code column in DB
-    # Send "" instead of null — class_code column has NOT NULL constraint in DB
-    class_code = (data.get("class_id") or data.get("class_code") or "").strip()
     if not name or role not in ("teacher", "staff", "student"):
         return jsonify({"error": {"message": "שם ותפקיד חובה"}}), 400
-    # Use admin-provided code if valid (≥4 alphanumeric chars), else generate
+    # class_code is the single field: serves as login code AND class assignment.
+    # Priority: explicit custom code > class dropdown selection > auto-generated.
     custom = ''.join(c for c in (data.get("access_code") or "").upper() if c.isalnum())
-    code = custom if len(custom) >= 4 else _generate_code()
+    from_class = (data.get("class_id") or "").strip()
+    if len(custom) >= 4:
+        class_code = custom
+    elif from_class:
+        class_code = from_class
+    else:
+        class_code = _generate_code()
     try:
-        rows = sb_request("POST", "users", json={"school_id": "default", "name": name, "role": role, "class_code": class_code, "access_code": code})
-        user = rows[0] if rows else {"access_code": code}
-        if "class_code" in user:
-            user["class_id"] = user.pop("class_code") or None  # "" → null for frontend
+        rows = sb_request("POST", "users", json={"school_id": "default", "name": name, "role": role, "class_code": class_code})
+        user = rows[0] if rows else {}
+        cc = user.pop("class_code", None) or class_code
+        user["class_id"] = cc or None
+        user["access_code"] = cc  # frontend shows this as the login code
         return jsonify({"user": user})
     except Exception as exc:
         return jsonify({"error": {"message": str(exc)}}), 500
@@ -591,13 +598,16 @@ def update_user(uid):
     if err: return err
     data = request.get_json(silent=True) or {}
     patch = {}
+    # "access_code" from frontend maps to class_code column (the single login/class field)
     if "access_code" in data:
         new_code = ''.join(c for c in (data.get("access_code") or "").upper() if c.isalnum())
         if len(new_code) < 4:
             return jsonify({"error": {"message": "קוד גישה חייב להכיל לפחות 4 ספרות או אותיות"}}), 400
-        patch["access_code"] = new_code
-    if "class_code" in data:
-        patch["class_code"] = (data.get("class_code") or "").strip()  # "" instead of null
+        patch["class_code"] = new_code
+    elif "class_code" in data:
+        # Explicit class_code update (no access_code override)
+        cc = (data.get("class_code") or "").strip()
+        if cc: patch["class_code"] = cc
     if "name" in data:
         n = (data.get("name") or "").strip()
         if n:
@@ -636,11 +646,12 @@ def change_own_code():
         return jsonify({"error": {"message": "קוד חדש חייב להכיל לפחות 4 ספרות או אותיות"}}), 400
     uid = teacher.get("id")
     try:
-        rows = sb_request("GET", f"users?id=eq.{uid}&access_code=eq.{current}&select=id")
+        rows = sb_request("GET", f"users?id=eq.{uid}&class_code=eq.{current}&select=id")
         if not rows:
             return jsonify({"error": {"message": "הקוד הנוכחי שגוי"}}), 401
-        sb_request("PATCH", f"users?id=eq.{uid}", json={"access_code": new_code})
+        sb_request("PATCH", f"users?id=eq.{uid}", json={"class_code": new_code})
         teacher["access_code"] = new_code
+        teacher["class_id"] = new_code
         session["teacher"] = teacher
         return jsonify({"ok": True, "new_code": new_code})
     except Exception as exc:
@@ -671,11 +682,13 @@ def auth_teacher():
     if not code:
         return jsonify({"error": {"message": "קוד גישה חסר"}}), 400
     try:
-        rows = sb_request("GET", f"users?access_code=eq.{code}&role=in.(teacher,staff)&select=id,name,role,class_code,access_code")
+        rows = sb_request("GET", f"users?class_code=eq.{code}&role=in.(teacher,staff)&select=id,name,role,class_code")
         if not rows:
             return jsonify({"error": {"message": "קוד גישה שגוי"}}), 401
         user = rows[0]
-        user["class_id"] = user.pop("class_code", None) or None  # "" → null for frontend
+        cc = user.pop("class_code", None) or None
+        user["class_id"] = cc
+        user["access_code"] = cc  # for frontend compatibility
         session["teacher"] = user
         return jsonify({"user": user})
     except Exception as exc:
@@ -689,11 +702,11 @@ def auth_class():
     if not code:
         return jsonify({"error": {"message": "קוד כיתה חסר"}}), 400
     try:
-        rows = sb_request("GET", f"users?access_code=eq.{code}&role=eq.student&select=id,name,class_code")
+        rows = sb_request("GET", f"users?class_code=eq.{code}&role=eq.student&select=id,name,class_code")
         if rows:
             student = rows[0]
             return jsonify({"class_id": student.get("class_code") or None, "student_name": student.get("name")})
-        rows_teacher = sb_request("GET", f"users?access_code=eq.{code}&role=in.(teacher,staff)&select=class_code")
+        rows_teacher = sb_request("GET", f"users?class_code=eq.{code}&role=in.(teacher,staff)&select=class_code")
         if rows_teacher:
             return jsonify({"class_id": rows_teacher[0].get("class_code") or None})
         return jsonify({"error": {"message": "קוד לא נמצא"}}), 401
