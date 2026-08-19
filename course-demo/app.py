@@ -59,6 +59,18 @@ app = Flask(__name__, static_folder=str(STATIC), static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY", "koors-school-secret-2025")
 CORS(app)
 
+# Startup key-type check — warn loudly if anon key is detected
+_sb_key_check = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY") or "")
+if _sb_key_check and len(_sb_key_check) < 200:
+    import sys
+    print(
+        "⚠️  WARNING: SUPABASE key looks like an anon/public key (too short for service_role). "
+        "Set SUPABASE_SERVICE_ROLE_KEY to the service_role key from "
+        "Supabase Dashboard → Settings → API → service_role → Reveal. "
+        "Without this, users table operations will fail with 42501 permission denied.",
+        file=sys.stderr, flush=True
+    )
+
 DEFAULT_STATE = {
     "school": {
         "name": "בית ספר הדגמה",
@@ -138,7 +150,16 @@ def sb_request(method: str, path: str, **kwargs):
         **kwargs,
     )
     if res.status_code >= 400:
-        raise RuntimeError(f"Supabase {res.status_code}: {res.text[:400]}")
+        body = res.text[:600]
+        # 42501 = permission denied — almost always means anon key instead of service_role
+        if res.status_code in (401, 403) or '"42501"' in body or "permission denied" in body:
+            raise RuntimeError(
+                "שגיאת הרשאות Supabase (42501 permission denied). "
+                "הגדר את SUPABASE_SERVICE_ROLE_KEY ב-Railway למפתח ה-service_role "
+                "(Supabase Dashboard → Settings → API → service_role → Reveal). "
+                f"פרטים: {body}"
+            )
+        raise RuntimeError(f"Supabase {res.status_code}: {body}")
     if not res.content:
         return None
     return res.json()
@@ -408,20 +429,26 @@ def db_check():
     result = {"url_set": bool(url), "key_set": bool(key), "key_type": "unknown"}
     if key:
         result["key_prefix"] = key[:12] + "..."
-        result["key_type"] = "service_role (likely)" if len(key) > 100 else "anon (likely — too short!)"
+        if len(key) > 200:
+            result["key_type"] = "service_role ✅"
+        else:
+            result["key_type"] = "anon ❌ — must use service_role key!"
+            result["fix"] = "Supabase Dashboard → Settings → API → service_role → Reveal → copy to Railway SUPABASE_SERVICE_ROLE_KEY"
     try:
         rows = sb_request("GET", f"school_state?id=eq.{SCHOOL_ID}&select=id")
-        result["can_read"] = True
+        result["school_state_read"] = True
         result["row_exists"] = bool(rows)
     except Exception as e:
-        result["can_read"] = False
-        result["read_error"] = str(e)
+        result["school_state_read"] = False
+        result["school_state_error"] = str(e)
     try:
-        sb_request("PATCH", f"school_state?id=eq.{SCHOOL_ID}", json={"payload": {"_ping": True}})
-        result["can_write"] = True
+        rows = sb_request("GET", "users?select=id,name,role,class_code&limit=3")
+        result["users_read"] = True
+        result["users_count_sample"] = len(rows or [])
+        result["users_columns"] = list(rows[0].keys()) if rows else []
     except Exception as e:
-        result["can_write"] = False
-        result["write_error"] = str(e)
+        result["users_read"] = False
+        result["users_error"] = str(e)
     return jsonify(result)
 
 @app.route("/api/health")
@@ -532,18 +559,6 @@ def _generate_code(length=8):
     import random, string
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
-
-@app.route("/api/users-schema")
-def users_schema():
-    """Inspect actual users table columns — helps diagnose column name mismatches."""
-    err = _require_admin()
-    if err: return err
-    try:
-        rows = sb_request("GET", "users?limit=1")
-        cols = list(rows[0].keys()) if rows else []
-        return jsonify({"columns": cols, "sample_row_redacted": {k: ("***" if "code" in k.lower() or "pass" in k.lower() else v) for k, v in (rows[0] if rows else {}).items()}})
-    except Exception as exc:
-        return jsonify({"error": str(exc)}), 500
 
 
 @app.route("/api/users", methods=["GET"])
