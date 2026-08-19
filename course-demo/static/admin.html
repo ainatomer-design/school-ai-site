@@ -172,34 +172,56 @@
       </section>
 
       <section class="panel" id="tab-content">
-        <h1>תוכן האתר</h1>
-        <p class="sub">נשמר ל-Supabase. אפשר לערוך ידנית או לתת ל-AI לעדכן.</p>
+        <!-- sticky save bar -->
+        <div style="position:sticky;top:58px;z-index:10;background:#f0f4f8;padding:10px 0 8px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border)">
+          <span style="font-size:.85rem;font-weight:700">✏️ עריכה ידנית — ללא AI</span>
+          <button class="btn btn-ok" onclick="saveAll()" style="padding:9px 22px">☁️ שמור הכל ל-Supabase</button>
+        </div>
+
         <div class="card">
-          <div class="row">
+          <strong style="font-size:.95rem">🏫 פרטי בית הספר</strong>
+          <div class="row" style="margin-top:10px">
             <div><label>שם בית הספר</label><input id="s-name"></div>
-            <div><label>שנה</label><input id="s-year"></div>
+            <div><label>שנת לימודים</label><input id="s-year" placeholder='תשפ"ז'></div>
           </div>
-          <label>סלוגן</label><input id="s-motto">
+          <label>סלוגן / תיאור</label><input id="s-motto" placeholder="משפט השראה...">
           <div class="row">
-            <div><label>צבע ראשי</label><input id="c-primary" type="color"></div>
-            <div><label>צבע משני</label><input id="c-secondary" type="color"></div>
+            <div><label>🎨 צבע ראשי</label><input id="c-primary" type="color"></div>
+            <div><label>🎨 צבע משני</label><input id="c-secondary" type="color"></div>
           </div>
-          <label>הודעה גלובלית</label>
-          <textarea id="ann-text"></textarea>
-          <label><input type="checkbox" id="ann-on" style="width:auto"> הודעה פעילה</label>
         </div>
+
         <div class="card">
-          <strong>כיתות</strong>
-          <div id="class-list" style="margin-top:10px;"></div>
-          <button class="btn btn-ghost" onclick="addClass()">➕ כיתה</button>
+          <strong style="font-size:.95rem">📢 הודעה גלובלית</strong>
+          <textarea id="ann-text" style="margin-top:8px" placeholder="הודעה לתצוגה בכל האתר..."></textarea>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer;font-size:.88rem;color:var(--text)">
+            <input type="checkbox" id="ann-on" style="width:16px;height:16px;accent-color:var(--primary)">
+            הפעל הודעה
+          </label>
         </div>
+
         <div class="card">
-          <strong>כפתורים</strong>
-          <div id="link-list" style="margin-top:10px;"></div>
-          <button class="btn btn-ghost" onclick="addLink()">➕ כפתור</button>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+            <strong style="font-size:.95rem">🏫 כיתות</strong>
+            <button class="btn btn-ghost" onclick="addClass()" style="font-size:.82rem">➕ הוסף כיתה</button>
+          </div>
+          <p class="sub" style="margin-bottom:10px">הוסף כיתה — הקישורים נוצרים אוטומטית. לאחר עריכה לחץ "שמור".</p>
+          <div id="class-list"></div>
         </div>
-        <div class="btn-row">
-          <button class="btn btn-ok" onclick="saveAll()">☁️ שמור ל-Supabase</button>
+
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+            <strong style="font-size:.95rem">🔗 כפתורי ניווט</strong>
+            <button class="btn btn-ghost" onclick="addLink()" style="font-size:.82rem">➕ הוסף כפתור</button>
+          </div>
+          <div style="display:grid;grid-template-columns:60px 1fr 1fr 32px;gap:6px;margin-bottom:6px;font-size:.72rem;font-weight:700;color:var(--muted)">
+            <span>אייקון</span><span>טקסט</span><span>כתובת URL</span><span></span>
+          </div>
+          <div id="link-list"></div>
+        </div>
+
+        <div class="btn-row" style="padding-bottom:24px">
+          <button class="btn btn-ok" onclick="saveAll()" style="flex:1;padding:13px">☁️ שמור הכל ל-Supabase</button>
         </div>
       </section>
 
@@ -210,18 +232,25 @@
         <div class="card">
           <strong>הוסף משתמש חדש</strong>
           <div class="row" style="margin-top:10px">
-            <div><label>שם</label><input id="new-user-name" placeholder="שם מלא"></div>
+            <div><label>שם מלא</label><input id="new-user-name" placeholder="ישראל ישראלי"></div>
             <div><label>תפקיד</label>
-              <select id="new-user-role">
+              <select id="new-user-role" onchange="_toggleClassField(this.value)">
                 <option value="teacher">מחנך</option>
                 <option value="staff">צוות</option>
                 <option value="student">תלמיד</option>
               </select>
             </div>
           </div>
-          <label>כיתה (ID) — אופציונלי</label>
-          <input id="new-user-class" placeholder="לדוגמה: c1">
-          <div class="btn-row"><button class="btn btn-primary" onclick="createUser()">➕ צור משתמש וקבל קוד גישה</button></div>
+          <div id="user-class-row">
+            <label>שיוך לכיתה</label>
+            <select id="new-user-class">
+              <option value="">ללא שיוך לכיתה</option>
+            </select>
+            <p class="sub" style="margin-top:4px">בחר כיתה מהרשימה — המחנך יוכל להיכנס לפאנל הניהול של אותה כיתה.</p>
+          </div>
+          <div class="btn-row" style="margin-top:14px">
+            <button class="btn btn-primary" onclick="createUser()" style="flex:1;padding:12px">➕ צור משתמש וקבל קוד גישה</button>
+          </div>
           <div id="new-user-result" style="margin-top:10px"></div>
         </div>
         <div class="card">
@@ -442,6 +471,7 @@ function fillForm() {
   document.getElementById('ann-text').value = state.announcement.text || '';
   document.getElementById('ann-on').checked = !!state.announcement.active;
   renderClasses(); renderLinks(); renderStaff();
+  _populateClassSelect();
 }
 function readForm() {
   state.school.name = document.getElementById('s-name').value;
@@ -525,12 +555,12 @@ function renderClasses() {
 }
 function renderLinks() {
   document.getElementById('link-list').innerHTML = (state.links || []).map((l,i) => `
-    <div class="link-item">
-      <input value="${esc(l.icon||'🔗')}" oninput="state.links[${i}].icon=this.value">
-      <input value="${esc(l.text||'')}" oninput="state.links[${i}].text=this.value">
-      <input value="${esc(l.url||'')}" oninput="state.links[${i}].url=this.value" placeholder="https://">
-      <button class="btn btn-ghost" onclick="state.links.splice(${i},1);renderLinks()">🗑️</button>
-    </div>`).join('');
+    <div style="display:grid;grid-template-columns:60px 1fr 1fr 32px;gap:6px;margin-bottom:6px;align-items:center">
+      <input value="${esc(l.icon||'🔗')}" oninput="state.links[${i}].icon=this.value" placeholder="🔗" style="text-align:center">
+      <input value="${esc(l.text||'')}" oninput="state.links[${i}].text=this.value" placeholder="טקסט כפתור">
+      <input value="${esc(l.url||'')}" oninput="state.links[${i}].url=this.value" placeholder="https://...">
+      <button class="btn btn-ghost" onclick="state.links.splice(${i},1);renderLinks()" title="מחק">🗑️</button>
+    </div>`).join('') || '<p style="color:var(--muted);font-size:.85rem">אין כפתורים. לחץ ➕ להוספה.</p>';
 }
 function addClass() {
   const newCls = { id: uid(), name: 'כיתה חדשה', teacher: '', room: '', subjects: [], features: [] };
@@ -690,6 +720,25 @@ async function loadLogs() {
 }
 
 // ===== ניהול משתמשים =====
+function _populateClassSelect() {
+  const sel = document.getElementById('new-user-class');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">ללא שיוך לכיתה</option>';
+  (state.classes || []).forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id || '';
+    opt.textContent = (c.name || c.id || '—') + (c.id ? '  [' + c.id + ']' : '');
+    sel.appendChild(opt);
+  });
+  if (prev) sel.value = prev;
+}
+
+function _toggleClassField(role) {
+  const row = document.getElementById('user-class-row');
+  if (row) row.style.display = (role === 'staff') ? 'none' : 'block';
+}
+
 async function createUser() {
   const name = document.getElementById('new-user-name').value.trim();
   const role = document.getElementById('new-user-role').value;
@@ -698,12 +747,15 @@ async function createUser() {
   const r = await fetch('/api/users', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, role, class_id}) });
   const d = await r.json();
   const el = document.getElementById('new-user-result');
-  if (!r.ok) { el.innerHTML = `<span style="color:#991b1b">${esc(d.error?.message)}</span>`; return; }
+  if (!r.ok) { el.innerHTML = `<div style="background:#fee2e2;border-radius:10px;padding:12px;color:#991b1b">❌ ${esc(d.error?.message)}</div>`; return; }
   const code = d.user?.access_code || '—';
-  el.innerHTML = `<div style="background:#dcfce7;border-radius:10px;padding:12px;color:#166534">
-    ✅ <strong>${esc(name)}</strong> נוצר בהצלחה.<br>
-    קוד גישה: <strong style="font-size:1.2rem;letter-spacing:.1em">${esc(code)}</strong><br>
-    <span style="font-size:.8rem">שתף קוד זה עם ${esc(name)}</span>
+  const classLabel = class_id ? ` · כיתה ${class_id}` : '';
+  el.innerHTML = `<div style="background:#dcfce7;border-radius:10px;padding:14px;color:#166534">
+    ✅ <strong>${esc(name)}</strong> נוצר בהצלחה${esc(classLabel)}.<br>
+    <div style="margin-top:8px;background:#fff;border-radius:8px;padding:10px;display:inline-block">
+      קוד גישה: <strong style="font-size:1.4rem;letter-spacing:.15em;color:#1a3a6b">${esc(code)}</strong>
+    </div><br>
+    <span style="font-size:.8rem;margin-top:6px;display:block">שתף קוד זה עם ${esc(name)} בלבד — זו כניסתו לפאנל.</span>
   </div>`;
   document.getElementById('new-user-name').value = '';
   document.getElementById('new-user-class').value = '';
